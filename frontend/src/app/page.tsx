@@ -255,8 +255,9 @@ export default function HomePage() {
           {user ? (
             <div className="flex items-center gap-2.5">
               <div 
-                className="w-8 h-8 rounded-full bg-indigo-650 border border-indigo-500/50 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-sm"
-                title={`${user.name} (${user.email}) - Plan: ${user.plan}`}
+                onClick={() => router.push("/profile")}
+                className="w-8 h-8 rounded-full bg-indigo-650 hover:bg-indigo-500 border border-indigo-500/50 hover:border-indigo-400 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-sm transition-all hover:scale-105 active:scale-95"
+                title={`View Profile: ${user.name} (${user.email}) - Plan: ${user.plan}`}
               >
                 {user.name ? user.name[0].toUpperCase() : "U"}
               </div>
