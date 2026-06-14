@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api import auth, projects, designs, ai, recommend
+from app.db.base import Base
+from app.db.session import engine
+
+# Automatically create all database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="HomeVerse API",
