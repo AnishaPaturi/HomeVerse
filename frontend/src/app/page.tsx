@@ -213,12 +213,12 @@ export default function HomePage() {
                 <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Style Presets</div>
               </div>
               <div className="border-l border-slate-900 pl-4">
-                <div className="text-2xl font-black text-slate-200">YOLOv11</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Object Detect</div>
+                <div className="text-2xl font-black text-slate-200">Instant</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">AI Room Scan</div>
               </div>
               <div className="border-l border-slate-900 pl-4">
-                <div className="text-2xl font-black text-slate-200">SAM 2</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Segmentation</div>
+                <div className="text-2xl font-black text-slate-200">Interactive</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">3D Editor</div>
               </div>
             </div>
           </div>
@@ -263,8 +263,8 @@ export default function HomePage() {
               <span>AI Room Reconstruction</span> <span className="text-purple-500">•</span>
               <span>Custom Material Editor</span> <span className="text-blue-500">•</span>
               <span>Scandinavian Design</span> <span className="text-indigo-500">•</span>
-              <span>YOLOv11 Object Detection</span> <span className="text-purple-500">•</span>
-              <span>Segment Anything 2 (SAM 2)</span> <span className="text-blue-500">•</span>
+              <span>Instant AI Styling</span> <span className="text-purple-500">•</span>
+              <span>Smart Scene Layouts</span> <span className="text-blue-500">•</span>
               <span>Photorealistic Walkthroughs</span> <span className="text-indigo-500">•</span>
               
               {/* Duplicate for loop */}
@@ -273,8 +273,8 @@ export default function HomePage() {
               <span>AI Room Reconstruction</span> <span className="text-purple-500">•</span>
               <span>Custom Material Editor</span> <span className="text-blue-500">•</span>
               <span>Scandinavian Design</span> <span className="text-indigo-500">•</span>
-              <span>YOLOv11 Object Detection</span> <span className="text-purple-500">•</span>
-              <span>Segment Anything 2 (SAM 2)</span> <span className="text-blue-500">•</span>
+              <span>Instant AI Styling</span> <span className="text-purple-500">•</span>
+              <span>Smart Scene Layouts</span> <span className="text-blue-500">•</span>
               <span>Photorealistic Walkthroughs</span> <span className="text-indigo-500">•</span>
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function HomePage() {
             <div className="space-y-2">
               <h3 className="font-bold text-slate-100 group-hover:text-indigo-400 transition-colors">2. Semantic AI Analysis</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                YOLOv11 detects individual furniture objects while SAM 2 isolates walls, floors, and openings in milliseconds.
+                AI automatically recognizes your room layout, identifying walls, floors, windows, and existing furniture pieces in seconds.
               </p>
             </div>
           </div>
@@ -620,7 +620,7 @@ export default function HomePage() {
                     <h3 className="font-bold text-xs flex items-center gap-2">
                       <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" /> AI Room Reconstruction
                     </h3>
-                    <span className="text-[10px] text-blue-400 font-mono animate-pulse">Running YOLOv11 + SAM 2...</span>
+                    <span className="text-[10px] text-blue-400 font-mono animate-pulse">Running AI Layout Scan...</span>
                   </div>
                   <div className="space-y-2.5 text-xs text-slate-400 font-mono bg-slate-950 p-4 rounded-xl border border-slate-900/60 leading-relaxed">
                     <div className="flex items-center justify-between text-green-400">
@@ -628,11 +628,11 @@ export default function HomePage() {
                       <span>[OK]</span>
                     </div>
                     <div className="flex items-center justify-between text-green-400">
-                      <span>✔ Object Detection (YOLOv11: Sofa, Table, TV)</span>
+                      <span>✔ Furniture Recognition (Sofa, Table, TV)</span>
                       <span>[OK]</span>
                     </div>
                     <div className="flex items-center justify-between text-blue-400">
-                      <span className="animate-pulse">🔄 Segmenting walls, doors, ceiling (SAM 2)</span>
+                      <span className="animate-pulse">🔄 Segmenting walls, doors, ceiling</span>
                       <span>[RUNNING]</span>
                     </div>
                     <div className="flex items-center justify-between text-slate-650">
@@ -744,14 +744,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Tech Stack & Architecture Details */}
+      {/* Platform Features Details */}
       <section id="features" className="py-20 px-6 max-w-6xl w-full mx-auto border-b border-slate-900">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Under the Hood: Technical Architecture
+            Advanced Design Capabilities
           </h2>
           <p className="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
-            HomeVerse leverages cutting-edge computer vision, generative AI, and real-time 3D pipelines.
+            HomeVerse combines intelligent computer vision, spatial AI, and interactive 3D modeling.
           </p>
         </div>
 
@@ -762,9 +762,9 @@ export default function HomePage() {
             <div className="p-3 bg-blue-950/30 text-blue-400 border border-blue-950 rounded-xl w-fit">
               <Cpu className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-sm text-slate-100">YOLOv11 + SAM 2</h3>
+            <h3 className="font-bold text-sm text-slate-100">Layout & Object Mapping</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              We employ YOLOv11 for swift, high-confidence bounding box detection of furniture items, coupled with Segment Anything 2 (SAM 2) to establish precise polygons for boundaries like walls, floors, ceilings, and windows.
+              Our spatial analysis model detects existing furniture, estimates exact dimensional bounding boxes, and traces wall boundary locations to build a scale-accurate layout.
             </p>
           </div>
 
@@ -773,9 +773,9 @@ export default function HomePage() {
             <div className="p-3 bg-indigo-950/30 text-indigo-400 border border-indigo-950 rounded-xl w-fit">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-sm text-slate-100">FLUX / Stable Diffusion</h3>
+            <h3 className="font-bold text-sm text-slate-100">AI Design Swapping</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Our backend pipelines feed segmented layout images to generative diffusion models (SDXL/FLUX) configured with custom ControlNets to maintain structural fidelity while generating realistic style redraws.
+              A generative styling engine redraws your room's style into multiple presets instantly, keeping structural lines identical while applying new colors, decorations, and aesthetics.
             </p>
           </div>
 
@@ -784,9 +784,9 @@ export default function HomePage() {
             <div className="p-3 bg-purple-950/30 text-purple-400 border border-purple-950 rounded-xl w-fit">
               <Box className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-sm text-slate-100">Three.js / React Three Fiber</h3>
+            <h3 className="font-bold text-sm text-slate-100">Real-Time 3D Customizer</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Reconstructed coordinates are translated into a custom JSON-based 3D scene representation. React Three Fiber renders this in real-time, enabling click selection, material swaps, and translation tools.
+              Directly edit the workspace in real-time. Click to select items, drag to move them, customize finishes or materials, and view changes from any perspective.
             </p>
           </div>
 
