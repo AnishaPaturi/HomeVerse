@@ -23,6 +23,17 @@ function StudioContent() {
   const searchParams = useSearchParams();
   const initialStyle = searchParams.get("style") || "Modern";
 
+  const [user, setUser] = useState<any | null>(null);
+
+  useEffect(() => {
+    const userSession = localStorage.getItem("user");
+    if (userSession) {
+      setUser(JSON.parse(userSession));
+    } else {
+      router.push("/login");
+    }
+  }, [router]);
+
   // Initial mock room setup
   const [objects, setObjects] = useState<RoomObject[]>([
     {
@@ -284,10 +295,30 @@ function StudioContent() {
 
           <button
             onClick={() => alert("High-fidelity 4K Realistic Render is generating in background... check back shortly!")}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer glow-btn"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer glow-btn mr-1"
           >
             <Download className="w-3.5 h-3.5" /> Export Render
           </button>
+
+          {user && (
+            <div className="flex items-center gap-2 border-l border-slate-800 pl-3.5 ml-1.5">
+              <div 
+                className="w-8 h-8 rounded-full bg-indigo-650 border border-indigo-500/50 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-sm"
+                title={`${user.name} (${user.email}) - Plan: ${user.plan}`}
+              >
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("user");
+                  router.push("/login");
+                }}
+                className="text-[10px] font-bold hover:text-white text-slate-400 border border-slate-850 bg-slate-950 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-slate-900 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

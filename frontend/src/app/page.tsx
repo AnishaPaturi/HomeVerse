@@ -28,6 +28,22 @@ import Hero3DScene from "@/components/landing/Hero3DScene";
 export default function HomePage() {
   const router = useRouter();
   
+  // Auth state
+  const [user, setUser] = useState<any | null>(null);
+
+  useEffect(() => {
+    const userSession = localStorage.getItem("user");
+    if (userSession) {
+      setUser(JSON.parse(userSession));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    router.refresh();
+  };
+  
   // Hero 3D style state
   const [heroStyle, setHeroStyle] = useState<string>("Modern");
 
@@ -161,6 +177,29 @@ export default function HomePage() {
           <span className="text-[10px] font-bold px-3 py-1.5 bg-blue-950/40 text-blue-400 border border-blue-900/60 rounded-full hidden sm:inline-block">
             MVP Academic Prototype
           </span>
+          {user ? (
+            <div className="flex items-center gap-2.5">
+              <div 
+                className="w-8 h-8 rounded-full bg-indigo-650 border border-indigo-500/50 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-sm"
+                title={`${user.name} (${user.email}) - Plan: ${user.plan}`}
+              >
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-[10px] font-bold hover:text-white text-slate-400 border border-slate-800 bg-slate-900/50 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-slate-900 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push("/login")}
+              className="text-xs font-semibold text-slate-350 hover:text-white border border-slate-800 bg-slate-900/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer hover:bg-slate-900/50"
+            >
+              Sign In
+            </button>
+          )}
           <button
             onClick={() => router.push("/studio?style=Modern")}
             className="text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-all cursor-pointer glow-btn shadow-md shadow-blue-600/20"
