@@ -63,6 +63,7 @@ export default function HomePage() {
   const [fileType, setFileType] = useState<"image" | "video" | null>(null);
   const [uploadStep, setUploadStep] = useState<"idle" | "uploading" | "analyzing" | "complete">("idle");
   const [selectedStyle, setSelectedStyle] = useState<string>("Modern");
+  const [generatedDesigns, setGeneratedDesigns] = useState<any[]>([]);
 
   // Sample styles for the MVP selector
   const styles = [
@@ -126,24 +127,98 @@ export default function HomePage() {
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     setSelectedFile(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setFileType(type);
     setUploadStep("uploading");
 
-    // Simulate upload and AI Analysis
-    setTimeout(() => {
-      setUploadStep("analyzing");
-    }, 1500);
+    // Retrieve active user ID
+    const userId = user?.id || "00000000-0000-0000-0000-000000000000";
 
-    setTimeout(() => {
-      setUploadStep("complete");
-    }, 3800);
+    try {
+      // 1. Create project on backend
+      const projTitle = file.name.split(".")[0] || "My Interior Design";
+      let projectData = null;
+
+      try {
+        const projRes = await fetch("http://localhost:8080/api/projects/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: projTitle,
+            room_type: "Living Room",
+            thumbnail: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            user_id: userId
+          })
+        });
+        if (projRes.ok) {
+          projectData = await projRes.json();
+        }
+      } catch (err) {
+        console.warn("Backend project creation failed, fallback to client-side UUID:", err);
+      }
+
+      const projectId = projectData?.id || crypto.randomUUID();
+
+      // Trigger UI analysis state
+      setTimeout(() => {
+        setUploadStep("analyzing");
+      }, 1000);
+
+      // 2. Upload file & analyze on backend
+      const formData = new FormData();
+      formData.append("project_id", projectId);
+      formData.append("file", file);
+
+      let designsList = [];
+      try {
+        const analyzeRes = await fetch("http://localhost:8080/api/ai/analyze-upload", {
+          method: "POST",
+          body: formData
+        });
+        if (analyzeRes.ok) {
+          designsList = await analyzeRes.json();
+        } else {
+          throw new Error("Backend analysis failed");
+        }
+      } catch (err) {
+        console.warn("Backend analysis failed, fallback to local mock designs:", err);
+        // Fallback mock designs
+        designsList = [
+          { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350" },
+          { id: crypto.randomUUID(), style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350" },
+          { id: crypto.randomUUID(), style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350" },
+          { id: crypto.randomUUID(), style: "Minimalist", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350" },
+          { id: crypto.randomUUID(), style: "Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350" }
+        ];
+      }
+
+      setGeneratedDesigns(designsList);
+      
+      // Delay completion step for smoother UX animation
+      setTimeout(() => {
+        setUploadStep("complete");
+      }, 2500);
+
+    } catch (err) {
+      console.error(err);
+      setUploadStep("idle");
+    }
   };
 
   const handleEnterStudio = () => {
-    router.push(`/studio?style=${selectedStyle}`);
+    // Find design matching the selected style
+    const matchedDesign = generatedDesigns.find(
+      (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
+    );
+    if (matchedDesign) {
+      router.push(`/studio?style=${selectedStyle}&designId=${matchedDesign.id}`);
+    } else {
+      router.push(`/studio?style=${selectedStyle}`);
+    }
   };
 
   const scrollToSection = (id: string) => {

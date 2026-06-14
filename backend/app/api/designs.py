@@ -28,6 +28,16 @@ def list_project_designs(project_id: UUID, db: Session = Depends(get_db)):
     designs = db.query(DesignModel).filter(DesignModel.project_id == project_id).all()
     return designs
 
+@router.get("/{design_id}", response_model=DesignSchema)
+def get_design(design_id: UUID, db: Session = Depends(get_db)):
+    design = db.query(DesignModel).filter(DesignModel.id == design_id).first()
+    if not design:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Design not found",
+        )
+    return design
+
 @router.post("/{design_id}/objects", response_model=ObjectSchema, status_code=status.HTTP_201_CREATED)
 def add_object_to_design(design_id: UUID, object_in: ObjectCreate, db: Session = Depends(get_db)):
     obj = ObjectModel(

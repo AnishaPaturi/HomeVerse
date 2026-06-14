@@ -13,9 +13,10 @@ interface ChatMessage {
 interface CopilotChatProps {
   designId: string;
   onCopilotAction: (actionType: string, payload: any) => void;
+  onRefresh?: () => void;
 }
 
-export default function CopilotChat({ designId, onCopilotAction }: CopilotChatProps) {
+export default function CopilotChat({ designId, onCopilotAction, onRefresh }: CopilotChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "init",
@@ -89,6 +90,11 @@ export default function CopilotChat({ designId, onCopilotAction }: CopilotChatPr
           } else if (cmd.includes("add") && (cmd.includes("desk") || cmd.includes("table"))) {
             onCopilotAction("add_object", { object_type: "desk", material: "#4a3b32" });
           }
+        }
+
+        // Refresh objects from backend
+        if (onRefresh) {
+          onRefresh();
         }
       } else {
         throw new Error("API not running");

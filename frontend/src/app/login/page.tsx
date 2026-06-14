@@ -57,7 +57,8 @@ function LoginContent() {
 
     setTimeout(async () => {
       try {
-        const demoUser = {
+        let demoUser = {
+          id: "00000000-0000-0000-0000-000000000000",
           name: DEMO_NAME,
           email: DEMO_EMAIL,
           plan: "Premium",
@@ -68,9 +69,12 @@ function LoginContent() {
         try {
           // Attempt check
           const res = await fetch(`http://localhost:8080/api/auth/me?email=${DEMO_EMAIL}`);
-          if (!res.ok) {
+          let data;
+          if (res.ok) {
+            data = await res.json();
+          } else {
             // Register if not exist
-            await fetch("http://localhost:8080/api/auth/register", {
+            const regRes = await fetch("http://localhost:8080/api/auth/register", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -79,6 +83,12 @@ function LoginContent() {
                 plan: "Premium"
               })
             });
+            if (regRes.ok) {
+              data = await regRes.json();
+            }
+          }
+          if (data && data.id) {
+            demoUser.id = data.id;
           }
         } catch (backendErr) {
           console.warn("Backend server not reachable, logging in locally:", backendErr);
@@ -115,14 +125,14 @@ function LoginContent() {
     try {
       if (isLoginMode) {
         // --- LOGIN MODE ---
-        let userData = { name: email.split("@")[0], email, plan: "Free" };
+        let userData = { id: "00000000-0000-0000-0000-000000000000", name: email.split("@")[0], email, plan: "Free" };
 
         try {
           // Attempt backend query
           const response = await fetch(`http://localhost:8080/api/auth/me?email=${email}`);
           if (response.ok) {
             const data = await response.json();
-            userData = { name: data.name, email: data.email, plan: data.plan };
+            userData = { id: data.id, name: data.name, email: data.email, plan: data.plan };
           } else {
             throw new Error("User not found in database. Please sign up first.");
           }
@@ -145,7 +155,7 @@ function LoginContent() {
 
       } else {
         // --- SIGNUP MODE ---
-        let userData = { name, email, plan };
+        let userData = { id: "00000000-0000-0000-0000-000000000000", name, email, plan };
 
         try {
           const response = await fetch("http://localhost:8080/api/auth/register", {
@@ -166,7 +176,7 @@ function LoginContent() {
           }
 
           const data = await response.json();
-          userData = { name: data.name, email: data.email, plan: data.plan };
+          userData = { id: data.id, name: data.name, email: data.email, plan: data.plan };
         } catch (backendErr: any) {
           console.warn("Backend offline or error, registering locally:", backendErr.message);
           if (backendErr.message.includes("failed") || backendErr.message.includes("registered")) {

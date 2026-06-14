@@ -24,6 +24,7 @@ function StudioContent() {
   const initialStyle = searchParams.get("style") || "Modern";
 
   const [user, setUser] = useState<any | null>(null);
+  const designId = searchParams.get("designId");
 
   useEffect(() => {
     const userSession = localStorage.getItem("user");
@@ -33,6 +34,37 @@ function StudioContent() {
       router.push("/login");
     }
   }, [router]);
+
+  const loadDesignObjects = async () => {
+    if (!designId) return;
+    try {
+      const res = await fetch(`http://localhost:8080/api/designs/${designId}`);
+      if (res.ok) {
+        const designData = await res.json();
+        if (designData && designData.objects && designData.objects.length > 0) {
+          const mappedObjects = designData.objects.map((obj: any) => ({
+            id: obj.id,
+            object_type: obj.object_type,
+            position_x: obj.position_x,
+            position_y: obj.position_y,
+            position_z: obj.position_z,
+            rotation: obj.rotation,
+            scale: obj.scale,
+            material: obj.material
+          }));
+          setObjects(mappedObjects);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load design from backend:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (designId) {
+      loadDesignObjects();
+    }
+  }, [designId]);
 
   // Initial mock room setup
   const [objects, setObjects] = useState<RoomObject[]>([
@@ -189,24 +221,48 @@ function StudioContent() {
     );
   };
 
-  const handleUpdateObject = (id: string, updates: Partial<RoomObject>) => {
+  const handleUpdateObject = async (id: string, updates: Partial<RoomObject>) => {
     setObjects((prev) =>
       prev.map((obj) => (obj.id === id ? { ...obj, ...updates } : obj))
     );
+
+    if (designId && !id.startsWith("temp-") && id.includes("-")) {
+      try {
+        await fetch(`http://localhost:8080/api/designs/objects/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(updates)
+        });
+      } catch (err) {
+        console.warn("Failed to sync object update to backend:", err);
+      }
+    }
   };
 
-  const handleDeleteObject = (id: string) => {
+  const handleDeleteObject = async (id: string) => {
     setObjects((prev) => prev.filter((obj) => obj.id !== id));
     if (selectedObjectId === id) {
       setSelectedObjectId(null);
     }
+
+    if (designId && !id.startsWith("temp-") && id.includes("-")) {
+      try {
+        await fetch(`http://localhost:8080/api/designs/objects/${id}`, {
+          method: "DELETE"
+        });
+      } catch (err) {
+        console.warn("Failed to delete object on backend:", err);
+      }
+    }
   };
 
   // Add object from asset catalog or recommender
-  const handleAddObject = (type: "sofa" | "coffee_table" | "desk", customMaterial?: string, customScale?: number) => {
+  const handleAddObject = async (type: "sofa" | "coffee_table" | "desk", customMaterial?: string, customScale?: number) => {
     const defaultMat = type === "sofa" ? "#ec4899" : type === "desk" ? "#4b5563" : "#f59e0b";
-    const newObj: RoomObject = {
-      id: `${type}-${Date.now()}`,
+    const newObjLocal: RoomObject = {
+      id: `temp-${Date.now()}`,
       object_type: type,
       position_x: (Math.random() - 0.5) * 3,
       position_y: 0,
@@ -215,8 +271,38 @@ function StudioContent() {
       scale: customScale ?? 1.0,
       material: customMaterial ?? defaultMat,
     };
-    setObjects((prev) => [...prev, newObj]);
-    setSelectedObjectId(newObj.id);
+    setObjects((prev) => [...prev, newObjLocal]);
+    setSelectedObjectId(newObjLocal.id);
+
+    if (designId) {
+      try {
+        const res = await fetch(`http://localhost:8080/api/designs/${designId}/objects`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            object_type: type,
+            position_x: newObjLocal.position_x,
+            position_y: newObjLocal.position_y,
+            position_z: newObjLocal.position_z,
+            rotation: newObjLocal.rotation,
+            scale: newObjLocal.scale,
+            material: newObjLocal.material
+          })
+        });
+
+        if (res.ok) {
+          const savedObj = await res.json();
+          setObjects((prev) =>
+            prev.map((o) => (o.id === newObjLocal.id ? { ...o, id: savedObj.id } : o))
+          );
+          setSelectedObjectId(savedObj.id);
+        }
+      } catch (err) {
+        console.warn("Failed to save object to backend:", err);
+      }
+    }
   };
 
   // Process triggers from the AI Copilot chat
@@ -555,7 +641,13 @@ function StudioContent() {
 
           {/* Copilot Chat controller */}
           <div className="flex-1 min-h-[300px]">
-            <CopilotChat designId="mvp-design-token" onCopilotAction={handleCopilotAction} />
+            <Suspense fallback={<div className="text-xs text-slate-500 animate-pulse">Loading Chat...</div>}>
+              <CopilotChat 
+                designId={designId || "mvp-design-token"} 
+                onCopilotAction={handleCopilotAction} 
+                onRefresh={loadDesignObjects} 
+              />
+            </Suspense>
           </div>
         </aside>
       </div>
