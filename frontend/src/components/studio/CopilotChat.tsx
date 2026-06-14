@@ -59,7 +59,7 @@ export default function CopilotChat({ designId, onCopilotAction }: CopilotChatPr
       formData.append("design_id", designId);
       formData.append("message", textToSend);
 
-      const res = await fetch("http://localhost:8000/api/ai/copilot-chat", {
+      const res = await fetch("http://localhost:8080/api/ai/copilot-chat", {
         method: "POST",
         body: formData,
       });

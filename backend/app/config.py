@@ -4,7 +4,7 @@ from typing import List
 class Settings(BaseSettings):
     PROJECT_NAME: str = "HomeVerse"
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/homeverse"
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]
     
     # AI Keys (Future V2/V3 integration)
     OPENAI_API_KEY: str = ""
