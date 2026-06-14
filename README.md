@@ -32,7 +32,7 @@ High-quality Render, Walkthrough & Shopping Guide
 ## 🗺️ Core User Journey
 
 ### Step 1: Upload & Capture
-Users upload or take a photo of their space:
+Users upload, capture a photo, or record/upload a video walkthrough of their space:
 * Living Room
 * Bedroom
 * Kitchen
