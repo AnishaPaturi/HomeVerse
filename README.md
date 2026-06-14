@@ -143,6 +143,59 @@ graph TD
 
 ---
 
+## 📂 Project Structure
+
+HomeVerse is structured as a monorepo with the frontend (Next.js client) and backend (FastAPI server) separated to simplify independent scaling, containerization, and deployment.
+
+```
+HomeVerse/
+├── frontend/             # Next.js & Three.js client application
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx          # Landing & Upload page
+│   │   │   ├── studio/
+│   │   │   │   └── page.tsx      # 3D Design Studio Page
+│   │   │   ├── globals.css       # Style sheets
+│   │   │   └── layout.tsx        # App layout wrapper
+│   │   ├── components/
+│   │   │   └── studio/
+│   │   │       ├── CanvasContainer.tsx       # 3D R3F Room Viewport
+│   │   │       ├── ObjectPropertiesPanel.tsx # Object configurator sidepanel
+│   │   │       └── CopilotChat.tsx           # AI chat sidepanel
+│   │   ├── hooks/
+│   │   └── lib/
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── backend/              # FastAPI Python server application
+│   ├── main.py           # Application entrypoint
+│   ├── requirements.txt  # Project Python dependencies
+│   └── app/
+│       ├── config.py     # Settings and secret key manager
+│       ├── api/          # Route routers
+│       │   ├── auth.py
+│       │   ├── projects.py
+│       │   ├── designs.py
+│       │   └── ai.py
+│       ├── db/           # Connection sessions & ORM aggregation
+│       │   ├── base.py
+│       │   └── session.py
+│       ├── models/       # SQLAlchemy models
+│       │   ├── user.py
+│       │   ├── project.py
+│       │   ├── design.py
+│       │   └── object.py
+│       ├── schemas/      # Pydantic validation schemas
+│       │   ├── user.py
+│       │   ├── project.py
+│       │   ├── design.py
+│       │   └── object.py
+│       └── services/     # Mock & external AI service clients
+│           └── ai_service.py
+```
+
+---
+
 ## 🗄️ Database Schema Design
 
 ### `Users`
