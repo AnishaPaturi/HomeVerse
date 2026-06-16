@@ -12,6 +12,7 @@ class Project(Base):
     title = Column(String, nullable=False)
     room_type = Column(String, nullable=False)
     thumbnail = Column(String, nullable=True)
+    structural_analysis = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="projects")

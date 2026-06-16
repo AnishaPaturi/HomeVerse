@@ -10,8 +10,12 @@ router = APIRouter()
 
 @router.post("/", response_model=ProjectSchema, status_code=status.HTTP_201_CREATED)
 def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
+    user_id = project_in.user_id
+    if str(user_id) == "00000000-0000-0000-0000-000000000000":
+        user_id = UUID("d0000000-0000-0000-0000-000000000000")
+        
     project = ProjectModel(
-        user_id=project_in.user_id,
+        user_id=user_id,
         title=project_in.title,
         room_type=project_in.room_type,
         thumbnail=project_in.thumbnail,
@@ -23,6 +27,8 @@ def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
 
 @router.get("/user/{user_id}", response_model=List[ProjectSchema])
 def list_user_projects(user_id: UUID, db: Session = Depends(get_db)):
+    if str(user_id) == "00000000-0000-0000-0000-000000000000":
+        user_id = UUID("d0000000-0000-0000-0000-000000000000")
     projects = db.query(ProjectModel).filter(ProjectModel.user_id == user_id).all()
     return projects
 
