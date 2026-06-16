@@ -52,6 +52,13 @@ app.include_router(designs.router, prefix="/api/designs", tags=["Designs"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(recommend.router, tags=["default"])
 
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create static directory if it doesn't exist
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "HomeVerse API"}

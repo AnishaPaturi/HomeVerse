@@ -419,10 +419,6 @@ export default function UploadPage() {
                   {/* Grid of Styles */}
                   <div className="grid grid-cols-2 gap-2 flex-1 items-center py-2">
                     {styles.slice(0, 4).map((style) => {
-                      const matchedDesign = generatedDesigns.find(
-                        (d) => d.style.toLowerCase() === style.name.toLowerCase()
-                      );
-                      const displayImg = matchedDesign?.image_url || style.img;
                       return (
                         <button
                           key={style.name}
@@ -438,7 +434,7 @@ export default function UploadPage() {
                         >
                           <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
                             <img
-                              src={displayImg}
+                              src={style.img}
                               alt={style.name}
                               className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                             />
@@ -448,7 +444,7 @@ export default function UploadPage() {
                       );
                     })}
                   </div>
-
+ 
                   {/* Enter Studio Trigger */}
                   <button
                     onClick={handleEnterStudio}
@@ -456,6 +452,14 @@ export default function UploadPage() {
                   >
                     Open in Design Studio <ArrowRight className="w-3.5 h-3.5" />
                   </button>
+
+                  {/* Informational badge for custom room rendering */}
+                  <div className="mt-3 p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2 animate-fadeIn">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
+                    <span>
+                      <strong>Visual Studio Mode:</strong> Open the Design Studio to view the 3D furniture models arranged directly inside your uploaded room photo with realistic shadows!
+                    </span>
+                  </div>
                 </div>
               )}
 

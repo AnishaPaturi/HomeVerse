@@ -269,10 +269,21 @@ class AIService:
 
         detected_room_type = result.get("detected_room_type", "Living Room")
         
-        # Update the project's room type and structural analysis if it exists
+        # Save the uploaded file bytes to static folder
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+        static_filename = f"{project_id}.{file_ext}"
+        static_dir = os.path.join("static", "uploads")
+        os.makedirs(static_dir, exist_ok=True)
+        static_filepath = os.path.join(static_dir, static_filename)
+        with open(static_filepath, "wb") as f:
+            f.write(file_bytes)
+        thumbnail_url = f"http://localhost:8080/static/uploads/{static_filename}"
+
+        # Update the project's room type, thumbnail, and structural analysis if it exists
         project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
         if project:
             project.room_type = detected_room_type
+            project.thumbnail = thumbnail_url
             structural_analysis = result.get("structural_analysis", {})
             project.structural_analysis = json.dumps(structural_analysis)
             db.add(project)
@@ -282,9 +293,18 @@ class AIService:
         generated_designs = []
         styles = ["Modern", "Luxury", "Scandinavian", "Minimalist", "Japandi"]
 
+        import urllib.parse
+        structural_analysis = result.get("structural_analysis", {})
+        layout_desc = structural_analysis.get("layout_description", f"A spacious {detected_room_type}.")
+
         for style in styles:
             style_data = result.get("styles", {}).get(style, {})
-            image_url = get_style_image(style, detected_room_type)
+            gemini_desc = style_data.get("description", "")
+            
+            # Construct a dynamic prompt that keeps the same room structure but changes style details
+            full_prompt = f"Professional architectural photograph of interior design: {layout_desc} beautifully furnished in {style} style, featuring {gemini_desc}. High-end, realistic, 4k, photorealistic."
+            encoded_prompt = urllib.parse.quote(full_prompt)
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true"
             
             design = DesignModel(
                 project_id=project_id,

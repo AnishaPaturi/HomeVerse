@@ -25,6 +25,7 @@ function StudioContent() {
 
   const [user, setUser] = useState<any | null>(null);
   const designId = searchParams.get("designId");
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -53,6 +54,23 @@ function StudioContent() {
             material: obj.material
           }));
           setObjects(mappedObjects);
+        }
+
+        // Fetch project details to load the user's actual room photo as background
+        if (designData && designData.project_id) {
+          try {
+            const projRes = await fetch(`http://localhost:8080/api/projects/${designData.project_id}`);
+            if (projRes.ok) {
+              const projectData = await projRes.json();
+              if (projectData && projectData.thumbnail) {
+                if (!projectData.thumbnail.includes("unsplash.com")) {
+                  setBgImageUrl(projectData.thumbnail);
+                }
+              }
+            }
+          } catch (projErr) {
+            console.warn("Failed to load project details for background image:", projErr);
+          }
         }
       }
     } catch (err) {
@@ -626,6 +644,7 @@ function StudioContent() {
             objects={objects}
             selectedObjectId={selectedObjectId}
             onSelectObject={setSelectedObjectId}
+            backgroundImageUrl={bgImageUrl}
           />
         </main>
 

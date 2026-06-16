@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { useRef, Suspense } from "react";
+import { Canvas, useLoader } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -20,6 +20,13 @@ interface CanvasContainerProps {
   objects: RoomObject[];
   selectedObjectId: string | null;
   onSelectObject: (id: string | null) => void;
+  backgroundImageUrl?: string | null;
+}
+
+// Scene background loader component
+function SceneBackground({ url }: { url: string }) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  return <primitive attach="background" object={texture} />;
 }
 
 // Custom simple 3D Sofa component made of blocks
@@ -140,6 +147,7 @@ export default function CanvasContainer({
   objects,
   selectedObjectId,
   onSelectObject,
+  backgroundImageUrl = null,
 }: CanvasContainerProps) {
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -176,6 +184,13 @@ export default function CanvasContainer({
         />
         <pointLight position={[-5, 5, -5]} intensity={0.5} />
 
+        {/* Load background room photo asynchronously */}
+        {backgroundImageUrl && (
+          <Suspense fallback={null}>
+            <SceneBackground url={backgroundImageUrl} />
+          </Suspense>
+        )}
+
         {/* Floor */}
         <mesh 
           rotation={[-Math.PI / 2, 0, 0]} 
@@ -187,42 +202,51 @@ export default function CanvasContainer({
           }}
         >
           <planeGeometry args={[10, 10]} />
-          <meshStandardMaterial 
-            color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
-            roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
-            metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
-          />
+          {backgroundImageUrl ? (
+            <shadowMaterial transparent opacity={0.4} />
+          ) : (
+            <meshStandardMaterial 
+              color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
+              roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
+              metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
+            />
+          )}
         </mesh>
 
-        {/* Back Wall */}
-        <mesh 
-          position={[0, 2.5, -5]} 
-          receiveShadow
-          onClick={(e) => {
-            e.stopPropagation();
-            if (wallObj) onSelectObject(wallObj.id);
-          }}
-        >
-          <boxGeometry args={[10, 5, 0.1]} />
-          <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-        </mesh>
+        {/* Hide walls and gridline helper if background photo is loaded for realism */}
+        {!backgroundImageUrl && (
+          <>
+            {/* Back Wall */}
+            <mesh 
+              position={[0, 2.5, -5]} 
+              receiveShadow
+              onClick={(e) => {
+                e.stopPropagation();
+                if (wallObj) onSelectObject(wallObj.id);
+              }}
+            >
+              <boxGeometry args={[10, 5, 0.1]} />
+              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+            </mesh>
 
-        {/* Left Wall */}
-        <mesh 
-          position={[-5, 2.5, 0]} 
-          rotation={[0, Math.PI / 2, 0]}
-          receiveShadow
-          onClick={(e) => {
-            e.stopPropagation();
-            if (wallObj) onSelectObject(wallObj.id);
-          }}
-        >
-          <boxGeometry args={[10, 5, 0.1]} />
-          <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-        </mesh>
+            {/* Left Wall */}
+            <mesh 
+              position={[-5, 2.5, 0]} 
+              rotation={[0, Math.PI / 2, 0]}
+              receiveShadow
+              onClick={(e) => {
+                e.stopPropagation();
+                if (wallObj) onSelectObject(wallObj.id);
+              }}
+            >
+              <boxGeometry args={[10, 5, 0.1]} />
+              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+            </mesh>
 
-        {/* Grid helper for architectural feel */}
-        <Grid cellSize={0.5} sectionSize={1.5} fadeDistance={20} infiniteGrid />
+            {/* Grid helper for architectural feel */}
+            <Grid cellSize={0.5} sectionSize={1.5} fadeDistance={20} infiniteGrid />
+          </>
+        )}
 
         {/* Render Editable Furniture Objects */}
         {objects
