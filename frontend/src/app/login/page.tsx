@@ -38,7 +38,7 @@ function LoginContent() {
 
   // Check if already logged in
   useEffect(() => {
-    const userSession = localStorage.getItem("user");
+    const userSession = sessionStorage.getItem("user");
     if (userSession) {
       router.push("/studio?style=Modern");
     }
@@ -94,8 +94,8 @@ function LoginContent() {
           console.warn("Backend server not reachable, logging in locally:", backendErr);
         }
 
-        // Save to localStorage
-        localStorage.setItem("user", JSON.stringify(demoUser));
+        // Save to sessionStorage
+        sessionStorage.setItem("user", JSON.stringify(demoUser));
         setSuccess("Success! Logged in with Demo credentials.");
         
         setTimeout(() => {
@@ -145,7 +145,7 @@ function LoginContent() {
           // Otherwise fallback to local success
         }
 
-        localStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("user", JSON.stringify(userData));
         setSuccess("Welcome back! Logging in...");
         
         setTimeout(() => {
@@ -184,7 +184,7 @@ function LoginContent() {
           }
         }
 
-        localStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("user", JSON.stringify(userData));
         setSuccess("Account created successfully!");
         
         setTimeout(() => {
@@ -207,6 +207,7 @@ function LoginContent() {
       {/* Back to Home Button */}
       <div className="absolute top-6 left-6 z-10">
         <button
+          suppressHydrationWarning
           onClick={() => router.push("/")}
           className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white bg-slate-900/50 hover:bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
         >
@@ -258,6 +259,7 @@ function LoginContent() {
                     <User className="w-4 h-4" />
                   </span>
                   <input
+                    suppressHydrationWarning
                     type="text"
                     required
                     placeholder="John Doe"
@@ -279,6 +281,7 @@ function LoginContent() {
                   <Mail className="w-4 h-4" />
                 </span>
                 <input
+                  suppressHydrationWarning
                   type="email"
                   required
                   placeholder="designer@homeverse.ai"
@@ -299,6 +302,7 @@ function LoginContent() {
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
+                  suppressHydrationWarning
                   type="password"
                   required
                   placeholder="••••••••"
@@ -318,6 +322,7 @@ function LoginContent() {
                 <div className="grid grid-cols-2 gap-2">
                   {["Free", "Premium"].map((tier) => (
                     <button
+                      suppressHydrationWarning
                       key={tier}
                       type="button"
                       onClick={() => setPlan(tier)}
@@ -336,6 +341,7 @@ function LoginContent() {
 
             {/* Submit Button */}
             <button
+              suppressHydrationWarning
               type="submit"
               disabled={loading}
               className="w-full flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn mt-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
@@ -362,6 +368,7 @@ function LoginContent() {
 
           {/* Quick Demo Credentials login */}
           <button
+            suppressHydrationWarning
             type="button"
             onClick={handleDemoLogin}
             disabled={loading}
@@ -374,6 +381,7 @@ function LoginContent() {
           {/* Toggle link */}
           <div className="text-center pt-2">
             <button
+              suppressHydrationWarning
               type="button"
               onClick={() => setIsLoginMode(!isLoginMode)}
               className="text-xs text-blue-400 hover:text-blue-300 font-medium cursor-pointer"

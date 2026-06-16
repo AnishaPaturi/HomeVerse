@@ -44,7 +44,7 @@ export default function ProfilePage() {
 
   // Load user session and projects
   useEffect(() => {
-    const userSession = localStorage.getItem("user");
+    const userSession = sessionStorage.getItem("user");
     if (!userSession) {
       router.push("/login");
       return;
@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
   // Handle Logout
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     router.push("/login");
     router.refresh();
   };
@@ -124,9 +124,9 @@ export default function ProfilePage() {
         console.warn("Backend offline, skipping server plan update:", backendErr);
       }
 
-      // Update local storage
+      // Update session storage
       const updatedUser = { ...currentUser, plan: nextPlan };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      sessionStorage.setItem("user", JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
     } catch (err) {
       setError("Failed to update plan.");

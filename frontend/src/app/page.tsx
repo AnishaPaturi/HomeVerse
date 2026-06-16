@@ -32,14 +32,14 @@ export default function HomePage() {
   const [user, setUser] = useState<any | null>(null);
 
   useEffect(() => {
-    const userSession = localStorage.getItem("user");
+    const userSession = sessionStorage.getItem("user");
     if (userSession) {
       setUser(JSON.parse(userSession));
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     setUser(null);
     router.refresh();
   };
