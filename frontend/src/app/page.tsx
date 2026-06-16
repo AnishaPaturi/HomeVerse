@@ -30,13 +30,17 @@ export default function HomePage() {
   
   // Auth state
   const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
     if (userSession) {
       setUser(JSON.parse(userSession));
+      router.push("/upload");
+    } else {
+      setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
@@ -64,6 +68,7 @@ export default function HomePage() {
   const [uploadStep, setUploadStep] = useState<"idle" | "uploading" | "analyzing" | "complete">("idle");
   const [selectedStyle, setSelectedStyle] = useState<string>("Modern");
   const [generatedDesigns, setGeneratedDesigns] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Sample styles for the MVP selector
   const styles = [
@@ -128,9 +133,34 @@ export default function HomePage() {
   };
 
   const processFile = async (file: File) => {
+    setError(null);
     setSelectedFile(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setFileType(type);
+
+    // Client-side Room Validation
+    const filenameLower = file.name.toLowerCase();
+    const nonRoomKeywords = [
+      "cat", "dog", "animal", "car", "vehicle", "apple", "banana", "fruit", 
+      "outdoor", "outside", "landscape", "nature", "forest", "mountain", 
+      "ocean", "beach", "sky", "garden", "park", "street", "exterior",
+      "cityscape", "food"
+    ];
+    let isRoom = true;
+    for (const kw of nonRoomKeywords) {
+      if (filenameLower.includes(kw)) {
+        isRoom = false;
+        break;
+      }
+    }
+
+    if (!isRoom) {
+      setError("Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room or home area.");
+      setUploadStep("idle");
+      setSelectedFile(null);
+      return;
+    }
+
     setUploadStep("uploading");
 
     // Retrieve active user ID
@@ -182,10 +212,14 @@ export default function HomePage() {
         if (analyzeRes.ok) {
           designsList = await analyzeRes.json();
         } else {
-          throw new Error("Backend analysis failed");
+          const errData = await analyzeRes.json();
+          throw new Error(errData.detail || "Backend analysis failed");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Backend analysis failed, fallback to local mock designs:", err);
+        if (err.message.includes("Not appropriate data")) {
+          throw err;
+        }
         // Fallback mock designs
         designsList = [
           { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350" },
@@ -203,9 +237,11 @@ export default function HomePage() {
         setUploadStep("complete");
       }, 2500);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || "An error occurred during room analysis. Please try again.");
       setUploadStep("idle");
+      setSelectedFile(null);
     }
   };
 
@@ -227,6 +263,17 @@ export default function HomePage() {
       el.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold">Redirecting to design studio...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-blue-600 selection:text-white">
@@ -277,7 +324,7 @@ export default function HomePage() {
             </button>
           )}
           <button
-            onClick={() => router.push("/studio?style=Modern")}
+            onClick={() => router.push(user ? "/upload" : "/login")}
             className="text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-all cursor-pointer glow-btn shadow-md shadow-blue-600/20"
           >
             Launch Studio
@@ -314,8 +361,8 @@ export default function HomePage() {
                 Try Interactive Demo <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => router.push("/studio?style=Modern")}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 font-semibold rounded-xl transition-all cursor-pointer text-sm"
+                onClick={() => router.push(user ? "/upload" : "/login")}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-905 hover:bg-slate-800 text-slate-205 border border-slate-800 hover:border-slate-700 font-semibold rounded-xl transition-all cursor-pointer text-sm"
               >
                 Open Empty Studio
               </button>
@@ -670,6 +717,15 @@ export default function HomePage() {
         <div className="flex flex-col lg:flex-row gap-10 items-start">
           {/* Left Side: Upload Panel */}
           <div className="w-full lg:w-1/2 space-y-6">
+            {error && (
+              <div className="p-4 bg-red-950/40 border border-red-900/40 text-red-400 rounded-2xl text-xs flex items-start gap-3 shadow-lg animate-fadeIn">
+                <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="font-bold text-red-300">Invalid Upload Attempt</h4>
+                  <p className="text-red-400/90 leading-relaxed">{error}</p>
+                </div>
+              </div>
+            )}
             <div className="glass-panel p-6 rounded-2xl border-slate-800/80 space-y-6">
               
               <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">

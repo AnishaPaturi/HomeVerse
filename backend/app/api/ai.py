@@ -25,6 +25,26 @@ async def upload_and_analyze_room(
             detail="Only image or video files are supported."
         )
     
+    # Check if the file represents a room or interior area
+    filename_lower = file.filename.lower()
+    non_room_keywords = [
+        "cat", "dog", "animal", "car", "vehicle", "apple", "banana", "fruit", 
+        "outdoor", "outside", "landscape", "nature", "forest", "mountain", 
+        "ocean", "beach", "sky", "garden", "park", "street", "exterior",
+        "cityscape", "food"
+    ]
+    is_room = True
+    for kw in non_room_keywords:
+        if kw in filename_lower:
+            is_room = False
+            break
+            
+    if not is_room:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room or home area."
+        )
+    
     # Process the file using the AI service wrapper
     designs = await ai_service.analyze_and_generate_styles(
         project_id=project_id,

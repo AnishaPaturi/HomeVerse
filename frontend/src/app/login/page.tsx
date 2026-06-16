@@ -40,7 +40,7 @@ function LoginContent() {
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
     if (userSession) {
-      router.push("/studio?style=Modern");
+      router.push("/upload");
     }
   }, [router]);
 
@@ -99,7 +99,7 @@ function LoginContent() {
         setSuccess("Success! Logged in with Demo credentials.");
         
         setTimeout(() => {
-          router.push("/studio?style=Modern");
+          router.push("/upload");
           router.refresh();
         }, 800);
       } catch (err: any) {
@@ -149,7 +149,7 @@ function LoginContent() {
         setSuccess("Welcome back! Logging in...");
         
         setTimeout(() => {
-          router.push("/studio?style=Modern");
+          router.push("/upload");
           router.refresh();
         }, 1000);
 
@@ -188,7 +188,7 @@ function LoginContent() {
         setSuccess("Account created successfully!");
         
         setTimeout(() => {
-          router.push("/studio?style=Modern");
+          router.push("/upload");
           router.refresh();
         }, 1000);
       }
