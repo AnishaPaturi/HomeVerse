@@ -69,6 +69,24 @@ export default function HomePage() {
   const [selectedStyle, setSelectedStyle] = useState<string>("Modern");
   const [generatedDesigns, setGeneratedDesigns] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+
+  const getFilterForStyle = (style: string) => {
+    switch (style) {
+      case "Modern":
+        return "contrast(1.15) saturate(0.85) brightness(0.95) hue-rotate(-5deg)";
+      case "Luxury":
+        return "contrast(1.1) saturate(1.25) sepia(0.15) brightness(0.95)";
+      case "Scandinavian":
+        return "brightness(1.15) contrast(0.95) saturate(1.05) sepia(0.05)";
+      case "Minimalist":
+        return "brightness(1.1) saturate(0.3) contrast(1.05)";
+      case "Japandi":
+        return "sepia(0.2) brightness(1.05) saturate(0.9) contrast(0.95)";
+      default:
+        return "none";
+    }
+  };
 
   // Sample styles for the MVP selector
   const styles = [
@@ -137,6 +155,10 @@ export default function HomePage() {
     setSelectedFile(file);
     const type = file.type.startsWith("video") ? "video" : "image";
     setFileType(type);
+    
+    // Create local object URL for previewing
+    const fileUrl = URL.createObjectURL(file);
+    setUploadedFileUrl(fileUrl);
 
     // Client-side Room Validation
     const filenameLower = file.name.toLowerCase();
@@ -839,8 +861,16 @@ export default function HomePage() {
                             : "border-slate-850"
                         }`}
                       >
-                        <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
-                          <img src={style.img} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" />
+                        <div className="relative aspect-video rounded-lg overflow-hidden mb-2 bg-slate-900 flex items-center justify-center">
+                          {uploadedFileUrl ? (
+                            fileType === "video" ? (
+                              <video src={uploadedFileUrl} className="object-cover w-full h-full group-hover:scale-105 transition-transform" muted style={{ filter: getFilterForStyle(style.name) }} />
+                            ) : (
+                              <img src={uploadedFileUrl} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" style={{ filter: getFilterForStyle(style.name) }} />
+                            )
+                          ) : (
+                            <img src={style.img} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" />
+                          )}
                         </div>
                         <span className="font-bold text-xs text-slate-200">{style.name}</span>
                       </button>
@@ -869,11 +899,32 @@ export default function HomePage() {
               </div>
               <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
                 {uploadStep === "complete" ? (
-                  <img
-                    src={styles.find((s) => s.name === selectedStyle)?.img}
-                    alt={selectedStyle}
-                    className="w-full h-full object-cover"
-                  />
+                  uploadedFileUrl ? (
+                    fileType === "video" ? (
+                      <video
+                        src={uploadedFileUrl}
+                        className="w-full h-full object-cover animate-fadeIn"
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                        style={{ filter: getFilterForStyle(selectedStyle) }}
+                      />
+                    ) : (
+                      <img
+                        src={uploadedFileUrl}
+                        alt={selectedStyle}
+                        className="w-full h-full object-cover animate-fadeIn"
+                        style={{ filter: getFilterForStyle(selectedStyle) }}
+                      />
+                    )
+                  ) : (
+                    <img
+                      src={styles.find((s) => s.name === selectedStyle)?.img}
+                      alt={selectedStyle}
+                      className="w-full h-full object-cover"
+                    />
+                  )
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-600 p-6 text-center">
                     <Layers className="w-12 h-12 mb-3 text-slate-800" />
