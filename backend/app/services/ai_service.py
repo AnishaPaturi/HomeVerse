@@ -119,17 +119,37 @@ class AIService:
         
         3. Context-Aware 3D Layout Placement:
            For each style, you must generate a set of 3D objects to populate the interactive 3D editor.
-           You MUST align the furniture layout with the detected room structure. For example, seating (like a sofa or chair) should face the primary window/light source or fireplace, and desks should be positioned to utilize the natural light without glare.
+           You MUST align the furniture layout with the detected room structure. For example, seating (like a sofa or chair) should face the primary window/light source, and desks should be positioned to utilize the natural light without glare.
+           
+           3D Coordinate System Rules:
+           - The center of the room is (0.0, 0.0, -3.0).
+           - Positive X-axis points to the RIGHT wall (X > 0).
+           - Negative X-axis points to the LEFT wall (X < 0).
+           - Positive Y-axis points UP (height, 0.0 for floor/furniture, 1.5 for walls).
+           - Negative Z-axis points deeper into the room towards the BACK wall (Z < 0).
+           - Positive Z-axis points towards the front wall / camera (Z > 0).
+           
+           Rotation Rules (in Radians):
+           - rotation = 0.0: Object faces towards the CAMERA (front / positive Z).
+           - rotation = 3.14: Object faces away from the camera (BACK wall / negative Z).
+           - rotation = -1.57 (approx -pi/2): Object faces towards the RIGHT wall (positive X).
+           - rotation = 1.57 (approx pi/2): Object faces towards the LEFT wall (negative X).
+           
+           Seating Face Light Rules:
+           - If a window/light source is on the RIGHT wall, seating (sofa, chair) placed on the left side (X < 0) or center of the room MUST be rotated to face the window (rotation = -1.57, or angled towards it).
+           - If a window/light source is on the LEFT wall, seating placed on the right side (X > 0) or center of the room MUST be rotated to face the window (rotation = 1.57, or angled towards it).
+           - If a window/light source is on the BACK wall, seating placed in the room MUST face the back wall (rotation = 3.14, or angled towards it).
+           
            You MUST include at least:
            - 1 floor object (object_type: "floor")
            - 1 wall object (object_type: "wall")
            - 1-3 furniture or decor objects relevant to the room type (e.g. sofa, coffee_table, bed, desk, chair, lamp).
            For each object, specify:
            - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor"
-           - "position_x": float (approximate horizontal position, usually -3.0 to 3.0)
-           - "position_y": float (height: 0.0 for floor/furniture, 1.5 for walls)
-           - "position_z": float (depth: usually -5.0 to 0.0)
-           - "rotation": float (in radians, e.g. 0.0)
+           - "position_x": float
+           - "position_y": float
+           - "position_z": float
+           - "rotation": float (use the Rotation Rules above to face the light/window)
            - "scale": float (default 1.0)
            - "material": string (hex color code like "#fafafa" or a texture name like "wood_light", "wood_dark", "marble", "granite", "leather_brown")
         
