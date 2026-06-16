@@ -70,6 +70,7 @@ export default function HomePage() {
   const [generatedDesigns, setGeneratedDesigns] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const getFilterForStyle = (style: string) => {
     switch (style) {
@@ -851,30 +852,35 @@ export default function HomePage() {
 
                   {/* Grid of Styles */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {styles.map((style) => (
-                      <button
-                        key={style.name}
-                        onClick={() => setSelectedStyle(style.name)}
-                        className={`group relative rounded-xl overflow-hidden border text-left p-3.5 bg-slate-950/50 hover:bg-slate-900/80 transition-all cursor-pointer ${
-                          selectedStyle === style.name
-                            ? "border-blue-500 ring-1 ring-blue-500/50"
-                            : "border-slate-850"
-                        }`}
-                      >
-                        <div className="relative aspect-video rounded-lg overflow-hidden mb-2 bg-slate-900 flex items-center justify-center">
-                          {uploadedFileUrl ? (
-                            fileType === "video" ? (
-                              <video src={uploadedFileUrl} className="object-cover w-full h-full group-hover:scale-105 transition-transform" muted style={{ filter: getFilterForStyle(style.name) }} />
-                            ) : (
-                              <img src={uploadedFileUrl} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" style={{ filter: getFilterForStyle(style.name) }} />
-                            )
-                          ) : (
-                            <img src={style.img} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" />
-                          )}
-                        </div>
-                        <span className="font-bold text-xs text-slate-200">{style.name}</span>
-                      </button>
-                    ))}
+                    {styles.map((style) => {
+                      const matchedDesign = generatedDesigns.find(
+                        (d) => d.style.toLowerCase() === style.name.toLowerCase()
+                      );
+                      const displayImg = matchedDesign?.image_url || style.img;
+                      return (
+                        <button
+                          key={style.name}
+                          onClick={() => {
+                            setSelectedStyle(style.name);
+                            setShowOriginal(false); // Switch preview to show redesign on click
+                          }}
+                          className={`group relative rounded-xl overflow-hidden border text-left p-3.5 bg-slate-950/50 hover:bg-slate-900/80 transition-all cursor-pointer ${
+                            selectedStyle === style.name
+                              ? "border-blue-500 ring-1 ring-blue-500/50"
+                              : "border-slate-850"
+                          }`}
+                        >
+                          <div className="relative aspect-video rounded-lg overflow-hidden mb-2 bg-slate-900 flex items-center justify-center">
+                            <img
+                              src={displayImg}
+                              alt={style.name}
+                              className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <span className="font-bold text-xs text-slate-200">{style.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Enter Studio Trigger */}
@@ -895,11 +901,35 @@ export default function HomePage() {
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Active Workspace Preview</span>
+                {uploadStep === "complete" && (
+                  <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                    <button
+                      onClick={() => setShowOriginal(true)}
+                      className={`text-[10px] px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
+                        showOriginal
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      Original
+                    </button>
+                    <button
+                      onClick={() => setShowOriginal(false)}
+                      className={`text-[10px] px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
+                        !showOriginal
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      AI Redesign
+                    </button>
+                  </div>
+                )}
                 <span className={`w-2.5 h-2.5 rounded-full ${uploadStep === "complete" ? "bg-emerald-500 animate-pulse" : "bg-blue-500 animate-pulse"}`} />
               </div>
               <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
                 {uploadStep === "complete" ? (
-                  uploadedFileUrl ? (
+                  showOriginal && uploadedFileUrl ? (
                     fileType === "video" ? (
                       <video
                         src={uploadedFileUrl}
@@ -908,22 +938,28 @@ export default function HomePage() {
                         loop
                         autoPlay
                         playsInline
-                        style={{ filter: getFilterForStyle(selectedStyle) }}
                       />
                     ) : (
                       <img
                         src={uploadedFileUrl}
-                        alt={selectedStyle}
+                        alt="Original Room"
                         className="w-full h-full object-cover animate-fadeIn"
-                        style={{ filter: getFilterForStyle(selectedStyle) }}
                       />
                     )
                   ) : (
-                    <img
-                      src={styles.find((s) => s.name === selectedStyle)?.img}
-                      alt={selectedStyle}
-                      className="w-full h-full object-cover"
-                    />
+                    (() => {
+                      const matchedDesign = generatedDesigns.find(
+                        (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
+                      );
+                      const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
+                      return (
+                        <img
+                          src={displayImg}
+                          alt={selectedStyle}
+                          className="w-full h-full object-cover animate-fadeIn"
+                        />
+                      );
+                    })()
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-600 p-6 text-center">

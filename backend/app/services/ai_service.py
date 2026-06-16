@@ -11,8 +11,15 @@ class AIService:
         In production, this would upload the file to S3/Cloudinary,
         run YOLOv11 and SAM 2, and use FLUX/SDXL to generate style variations.
         """
-        # Example style options
+        # Example style options and their corresponding room images
         styles = ["Modern", "Luxury", "Scandinavian", "Minimalist", "Japandi"]
+        style_images = {
+            "Modern": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600",
+            "Japandi": "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=600",
+            "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600",
+            "Minimalist": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=600",
+            "Luxury": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=600"
+        }
         generated_designs = []
 
         # Create mock design variations in database
@@ -20,7 +27,7 @@ class AIService:
             design = DesignModel(
                 project_id=project_id,
                 style=style,
-                image_url=f"https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600" # Placeholder room
+                image_url=style_images.get(style, "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600")
             )
             db.add(design)
             db.commit()

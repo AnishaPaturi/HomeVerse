@@ -43,6 +43,7 @@ export default function UploadPage() {
   const [generatedDesigns, setGeneratedDesigns] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const getFilterForStyle = (style: string) => {
     switch (style) {
@@ -417,30 +418,35 @@ export default function UploadPage() {
 
                   {/* Grid of Styles */}
                   <div className="grid grid-cols-2 gap-2 flex-1 items-center py-2">
-                    {styles.slice(0, 4).map((style) => (
-                      <button
-                        key={style.name}
-                        onClick={() => setSelectedStyle(style.name)}
-                        className={`group relative rounded-xl overflow-hidden border text-left p-2 bg-slate-950/50 hover:bg-slate-900/80 transition-all cursor-pointer h-24 flex flex-col justify-between ${
-                          selectedStyle === style.name
-                            ? "border-blue-500 ring-1 ring-blue-500/50"
-                            : "border-slate-850"
-                        }`}
-                      >
-                        <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
-                          {uploadedFileUrl ? (
-                            fileType === "video" ? (
-                              <video src={uploadedFileUrl} className="object-cover w-full h-full group-hover:scale-105 transition-transform" muted style={{ filter: getFilterForStyle(style.name) }} />
-                            ) : (
-                              <img src={uploadedFileUrl} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" style={{ filter: getFilterForStyle(style.name) }} />
-                            )
-                          ) : (
-                            <img src={style.img} alt={style.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" />
-                          )}
-                        </div>
-                        <span className="font-bold text-[10px] text-slate-300">{style.name}</span>
-                      </button>
-                    ))}
+                    {styles.slice(0, 4).map((style) => {
+                      const matchedDesign = generatedDesigns.find(
+                        (d) => d.style.toLowerCase() === style.name.toLowerCase()
+                      );
+                      const displayImg = matchedDesign?.image_url || style.img;
+                      return (
+                        <button
+                          key={style.name}
+                          onClick={() => {
+                            setSelectedStyle(style.name);
+                            setShowOriginal(false); // Switch preview to show redesign on click
+                          }}
+                          className={`group relative rounded-xl overflow-hidden border text-left p-2 bg-slate-950/50 hover:bg-slate-900/80 transition-all cursor-pointer h-24 flex flex-col justify-between ${
+                            selectedStyle === style.name
+                              ? "border-blue-500 ring-1 ring-blue-500/50"
+                              : "border-slate-850"
+                          }`}
+                        >
+                          <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
+                            <img
+                              src={displayImg}
+                              alt={style.name}
+                              className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <span className="font-bold text-[10px] text-slate-300">{style.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Enter Studio Trigger */}
@@ -461,12 +467,36 @@ export default function UploadPage() {
             <div className="glass-panel p-6 rounded-3xl border-slate-800/80 space-y-4 flex flex-col justify-between flex-1 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-900">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Active Workspace Preview</span>
+                {uploadStep === "complete" && (
+                  <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-900/60">
+                    <button
+                      onClick={() => setShowOriginal(true)}
+                      className={`text-[9px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer ${
+                        showOriginal
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-350"
+                      }`}
+                    >
+                      Original
+                    </button>
+                    <button
+                      onClick={() => setShowOriginal(false)}
+                      className={`text-[9px] px-2 py-0.5 rounded font-medium transition-all cursor-pointer ${
+                        !showOriginal
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-350"
+                      }`}
+                    >
+                      AI Redesign
+                    </button>
+                  </div>
+                )}
                 <span className={`w-2 h-2 rounded-full ${uploadStep === "complete" ? "bg-emerald-500 animate-pulse" : "bg-blue-500 animate-pulse"}`} />
               </div>
 
               <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center flex-1 min-h-[160px]">
                 {uploadStep === "complete" ? (
-                  uploadedFileUrl ? (
+                  showOriginal && uploadedFileUrl ? (
                     fileType === "video" ? (
                       <video
                         src={uploadedFileUrl}
@@ -475,22 +505,28 @@ export default function UploadPage() {
                         loop
                         autoPlay
                         playsInline
-                        style={{ filter: getFilterForStyle(selectedStyle) }}
                       />
                     ) : (
                       <img
                         src={uploadedFileUrl}
-                        alt={selectedStyle}
+                        alt="Original Room"
                         className="w-full h-full object-cover animate-fadeIn"
-                        style={{ filter: getFilterForStyle(selectedStyle) }}
                       />
                     )
                   ) : (
-                    <img
-                      src={styles.find((s) => s.name === selectedStyle)?.img}
-                      alt={selectedStyle}
-                      className="w-full h-full object-cover animate-fadeIn"
-                    />
+                    (() => {
+                      const matchedDesign = generatedDesigns.find(
+                        (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
+                      );
+                      const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
+                      return (
+                        <img
+                          src={displayImg}
+                          alt={selectedStyle}
+                          className="w-full h-full object-cover animate-fadeIn"
+                        />
+                      );
+                    })()
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-650 p-4 text-center">
