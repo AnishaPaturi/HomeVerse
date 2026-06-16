@@ -196,6 +196,102 @@ HomeVerse/
 
 ---
 
+## 🚀 Getting Started
+
+To run **HomeVerse** locally, you need to set up and run both the backend FastAPI server and the frontend Next.js application.
+
+### Prerequisites
+
+Before starting, ensure you have the following installed:
+* **Python**: `v3.10` or higher
+* **Node.js**: `v18.0` or higher
+* **Package Manager**: `npm` (packaged with Node.js) or `yarn` / `pnpm` / `bun`
+* **PostgreSQL** (Optional): The application attempts to connect to PostgreSQL. If a database connection fails, it automatically falls back to a local SQLite database (`homeverse.db`) in the backend folder.
+
+---
+
+### 1. Backend Setup (FastAPI)
+
+The backend is built with FastAPI. Follow these steps to set it up:
+
+1. **Navigate to the Backend Directory**:
+   ```bash
+   cd backend
+   ```
+
+2. **Create a Virtual Environment**:
+   A virtual environment prevents dependency conflicts. You can create one using:
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate the Virtual Environment**:
+   * **Windows (PowerShell)**:
+     ```powershell
+     .\venv\Scripts\Activate.ps1
+     ```
+   * **Windows (Command Prompt)**:
+     ```cmd
+     .\venv\Scripts\activate.bat
+     ```
+   * **macOS / Linux**:
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install Dependencies**:
+   Install all required Python packages from [backend/requirements.txt](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/requirements.txt):
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Configuration (Optional)**:
+   Settings are managed in [backend/app/config.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/config.py). You can create a `.env` file in the `backend/` directory to customize configurations:
+   ```env
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/homeverse
+   GEMINI_API_KEY=your-api-key-here
+   ```
+   *Note: If no PostgreSQL configuration is specified or the connection fails, SQLite will be automatically initialized at `backend/homeverse.db`.*
+
+6. **Run the Backend Server**:
+   Start the FastAPI development server by running [backend/main.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/main.py):
+   ```bash
+   python main.py
+   ```
+   Alternatively, you can run Uvicorn directly:
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+   ```
+
+The backend server will run on [http://localhost:8080](http://localhost:8080). You can check its health at `/health` and view the auto-generated Swagger documentation at [http://localhost:8080/docs](http://localhost:8080/docs).
+
+---
+
+### 2. Frontend Setup (Next.js)
+
+The frontend is a Next.js application using React Three Fiber. Follow these steps to start it:
+
+1. **Navigate to the Frontend Directory**:
+   ```bash
+   cd ../frontend
+   ```
+
+2. **Install Node Modules**:
+   Install dependencies listed in [frontend/package.json](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/package.json):
+   ```bash
+   npm install
+   ```
+
+3. **Start the Development Server**:
+   Run the Next.js development server:
+   ```bash
+   npm run dev
+   ```
+
+The frontend application will be served at [http://localhost:3000](http://localhost:3000).
+
+---
+
 ## 🗄️ Database Schema Design
 
 ### `Users`
