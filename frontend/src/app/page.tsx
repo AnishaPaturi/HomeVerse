@@ -853,10 +853,8 @@ export default function HomePage() {
                   {/* Grid of Styles */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {styles.map((style) => {
-                      const matchedDesign = generatedDesigns.find(
-                        (d) => d.style.toLowerCase() === style.name.toLowerCase()
-                      );
-                      const displayImg = matchedDesign?.image_url || style.img;
+                      const displayImg = uploadedFileUrl || style.img;
+                      const filterStyle = uploadedFileUrl ? getFilterForStyle(style.name) : "none";
                       return (
                         <button
                           key={style.name}
@@ -873,6 +871,7 @@ export default function HomePage() {
                           <div className="relative aspect-video rounded-lg overflow-hidden mb-2 bg-slate-900 flex items-center justify-center">
                             <img
                               src={displayImg}
+                              style={{ filter: filterStyle }}
                               alt={style.name}
                               className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                             />
@@ -948,13 +947,12 @@ export default function HomePage() {
                     )
                   ) : (
                     (() => {
-                      const matchedDesign = generatedDesigns.find(
-                        (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
-                      );
-                      const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
+                      const displayImg = uploadedFileUrl || styles.find((s) => s.name === selectedStyle)?.img;
+                      const filterStyle = getFilterForStyle(selectedStyle);
                       return (
                         <img
                           src={displayImg}
+                          style={{ filter: filterStyle }}
                           alt={selectedStyle}
                           className="w-full h-full object-cover animate-fadeIn"
                         />
