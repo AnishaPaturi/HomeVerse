@@ -57,7 +57,7 @@ export default function ProfilePage() {
       setLoading(true);
       setError(null);
       
-      const userId = parsedUser.id || "00000000-0000-0000-0000-000000000000";
+      const userId = parsedUser.id || "d0000000-0000-0000-0000-000000000000";
 
       try {
         const res = await fetch(`http://localhost:8080/api/projects/user/${userId}`);

@@ -58,7 +58,7 @@ function LoginContent() {
     setTimeout(async () => {
       try {
         let demoUser = {
-          id: "00000000-0000-0000-0000-000000000000",
+          id: "d0000000-0000-0000-0000-000000000000",
           name: DEMO_NAME,
           email: DEMO_EMAIL,
           plan: "Premium",
@@ -125,7 +125,7 @@ function LoginContent() {
     try {
       if (isLoginMode) {
         // --- LOGIN MODE ---
-        let userData = { id: "00000000-0000-0000-0000-000000000000", name: email.split("@")[0], email, plan: "Free" };
+        let userData = { id: "d0000000-0000-0000-0000-000000000000", name: email.split("@")[0], email, plan: "Free" };
 
         try {
           // Attempt backend query
@@ -155,7 +155,7 @@ function LoginContent() {
 
       } else {
         // --- SIGNUP MODE ---
-        let userData = { id: "00000000-0000-0000-0000-000000000000", name, email, plan };
+        let userData = { id: "d0000000-0000-0000-0000-000000000000", name, email, plan };
 
         try {
           const response = await fetch("http://localhost:8080/api/auth/register", {

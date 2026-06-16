@@ -187,7 +187,7 @@ export default function HomePage() {
     setUploadStep("uploading");
 
     // Retrieve active user ID
-    const userId = user?.id || "00000000-0000-0000-0000-000000000000";
+    const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
 
     try {
       // 1. Create project on backend

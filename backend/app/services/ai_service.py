@@ -153,7 +153,7 @@ class AIService:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-3.5-flash")
             response = model.generate_content(
                 contents,
                 generation_config={"response_mime_type": "application/json"}
@@ -305,7 +305,7 @@ class AIService:
         """
 
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-3.5-flash")
             response = model.generate_content(
                 prompt,
                 generation_config={"response_mime_type": "application/json"}
