@@ -107,10 +107,19 @@ class AIService:
 
         prompt = """
         You are an AI Interior Designer and Architect.
-        Analyze this room photo or video scan.
-        1. Identify the room type (e.g., Living Room, Bedroom, Office, Kitchen).
+        Analyze this room photo or video scan to perform a detailed structural layout and lighting analysis, then generate style recommendations and 3D object arrangements.
+
+        1. Structural & Lighting Analysis:
+           - Identify the locations of windows (e.g. "left wall", "right wall", "back wall").
+           - Identify the direction and nature of the primary light sources (e.g. "natural light coming from the left window").
+           - Identify the locations of doors or openings.
+           - Identify the room shape (e.g., "rectangular", "square", "L-shaped") and wall orientations.
+        
         2. Create 5 distinct interior design styles for this room: "Modern", "Luxury", "Scandinavian", "Minimalist", "Japandi".
-        3. For each style, you must generate a set of 3D objects to populate the interactive 3D editor.
+        
+        3. Context-Aware 3D Layout Placement:
+           For each style, you must generate a set of 3D objects to populate the interactive 3D editor.
+           You MUST align the furniture layout with the detected room structure. For example, seating (like a sofa or chair) should face the primary window/light source or fireplace, and desks should be positioned to utilize the natural light without glare.
            You MUST include at least:
            - 1 floor object (object_type: "floor")
            - 1 wall object (object_type: "wall")
@@ -127,6 +136,27 @@ class AIService:
         Respond ONLY with a valid JSON object matching the following JSON Schema:
         {
           "detected_room_type": "string",
+          "structural_analysis": {
+            "layout_description": "A clear, descriptive summary of the room layout, walls, and lighting direction.",
+            "windows": [
+              {
+                "wall": "left" | "right" | "back" | "front",
+                "size": "large" | "medium" | "small"
+              }
+            ],
+            "light_sources": [
+              {
+                "direction": "left" | "right" | "back" | "front",
+                "type": "natural" | "artificial"
+              }
+            ],
+            "doors": [
+              {
+                "wall": "left" | "right" | "back" | "front"
+              }
+            ],
+            "room_shape": "string"
+          },
           "styles": {
             "Modern": {
               "description": "string description",
@@ -142,10 +172,62 @@ class AIService:
                 }
               ]
             },
-            "Luxury": { ... },
-            "Scandinavian": { ... },
-            "Minimalist": { ... },
-            "Japandi": { ... }
+            "Luxury": {
+              "description": "string description",
+              "objects": [
+                {
+                  "object_type": "string",
+                  "position_x": float,
+                  "position_y": float,
+                  "position_z": float,
+                  "rotation": float,
+                  "scale": float,
+                  "material": "string"
+                }
+              ]
+            },
+            "Scandinavian": {
+              "description": "string description",
+              "objects": [
+                {
+                  "object_type": "string",
+                  "position_x": float,
+                  "position_y": float,
+                  "position_z": float,
+                  "rotation": float,
+                  "scale": float,
+                  "material": "string"
+                }
+              ]
+            },
+            "Minimalist": {
+              "description": "string description",
+              "objects": [
+                {
+                  "object_type": "string",
+                  "position_x": float,
+                  "position_y": float,
+                  "position_z": float,
+                  "rotation": float,
+                  "scale": float,
+                  "material": "string"
+                }
+              ]
+            },
+            "Japandi": {
+              "description": "string description",
+              "objects": [
+                {
+                  "object_type": "string",
+                  "position_x": float,
+                  "position_y": float,
+                  "position_z": float,
+                  "rotation": float,
+                  "scale": float,
+                  "material": "string"
+                }
+              ]
+            }
           }
         }
         Do not include any markdown styling like ```json. Return only the raw JSON.
@@ -167,10 +249,12 @@ class AIService:
 
         detected_room_type = result.get("detected_room_type", "Living Room")
         
-        # Update the project's room type if it exists
+        # Update the project's room type and structural analysis if it exists
         project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
         if project:
             project.room_type = detected_room_type
+            structural_analysis = result.get("structural_analysis", {})
+            project.structural_analysis = json.dumps(structural_analysis)
             db.add(project)
             db.commit()
             db.refresh(project)

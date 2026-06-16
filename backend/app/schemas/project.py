@@ -8,6 +8,7 @@ class ProjectBase(BaseModel):
     title: str
     room_type: str
     thumbnail: Optional[str] = None
+    structural_analysis: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
     user_id: UUID
