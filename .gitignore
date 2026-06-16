@@ -1,0 +1,51 @@
+# HomeVerse gitignore configuration
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+
+# Python Pycache and byte-code
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Databases
+*.db
+*.sqlite3
+homeverse.db
+backend/homeverse.db
+
+# Environment and sensitive variables
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+
+# Node.js / Frontend dependencies
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.vercel/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# OS & Editor configurations
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
