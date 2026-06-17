@@ -24,6 +24,7 @@ import {
   Box
 } from "lucide-react";
 import Hero3DScene from "@/components/landing/Hero3DScene";
+import CanvasContainer from "@/components/studio/CanvasContainer";
 
 export default function HomePage() {
   const router = useRouter();
@@ -71,6 +72,15 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    if (uploadStep === "complete") {
+      setImageLoading(true);
+      setImageError(false);
+    }
+  }, [selectedStyle, uploadStep, generatedDesigns]);
 
   const getFilterForStyle = (style: string) => {
     switch (style) {
@@ -86,6 +96,38 @@ export default function HomePage() {
         return "sepia(0.2) brightness(1.05) saturate(0.9) contrast(0.95)";
       default:
         return "none";
+    }
+  };
+
+  const getMockObjectsForStyle = (style: string) => {
+    switch (style) {
+      case "Modern":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#27272a" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#78350f" }
+        ];
+      case "Japandi":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.2, rotation: -0.2, scale: 0.95, material: "#e4e4e7" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.1, rotation: 0.0, scale: 1.0, material: "#d97706" }
+        ];
+      case "Scandinavian":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.3, scale: 1.0, material: "#cbd5e1" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -0.9, rotation: 0.0, scale: 0.9, material: "#fcd34d" }
+        ];
+      case "Minimalist":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -1.8, rotation: 0.0, scale: 1.0, material: "#f4f4f5" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -0.8, rotation: 1.57, scale: 0.8, material: "#71717a" }
+        ];
+      case "Luxury":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.1, rotation: -0.1, scale: 1.05, material: "#0f766e" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#d97706" }
+        ];
+      default:
+        return [];
     }
   };
 
@@ -853,8 +895,6 @@ export default function HomePage() {
                   {/* Grid of Styles */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {styles.map((style) => {
-                      const displayImg = uploadedFileUrl || style.img;
-                      const filterStyle = uploadedFileUrl ? getFilterForStyle(style.name) : "none";
                       return (
                         <button
                           key={style.name}
@@ -870,8 +910,7 @@ export default function HomePage() {
                         >
                           <div className="relative aspect-video rounded-lg overflow-hidden mb-2 bg-slate-900 flex items-center justify-center">
                             <img
-                              src={displayImg}
-                              style={{ filter: filterStyle }}
+                              src={style.img}
                               alt={style.name}
                               className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                             />
@@ -947,15 +986,32 @@ export default function HomePage() {
                     )
                   ) : (
                     (() => {
-                      const displayImg = uploadedFileUrl || styles.find((s) => s.name === selectedStyle)?.img;
-                      const filterStyle = getFilterForStyle(selectedStyle);
+                      const matchedDesign = generatedDesigns.find(
+                        (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
+                      );
+                      const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
                       return (
-                        <img
-                          src={displayImg}
-                          style={{ filter: filterStyle }}
-                          alt={selectedStyle}
-                          className="w-full h-full object-cover animate-fadeIn"
-                        />
+                        <div className="relative w-full h-full">
+                          {imageLoading && (
+                            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center space-y-3 z-10">
+                              <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+                              <div className="text-center">
+                                <p className="text-xs font-semibold text-slate-350">Generating AI Redesign...</p>
+                                <p className="text-[10px] text-slate-500 mt-1">Applying {selectedStyle} style to your room layout</p>
+                              </div>
+                            </div>
+                          )}
+                          <img
+                            src={displayImg}
+                            onLoad={() => setImageLoading(false)}
+                            onError={() => {
+                              setImageLoading(false);
+                              setImageError(true);
+                            }}
+                            alt={selectedStyle}
+                            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? "opacity-0" : "opacity-100"}`}
+                          />
+                        </div>
                       );
                     })()
                   )
