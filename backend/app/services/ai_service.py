@@ -108,7 +108,7 @@ class AIService:
                 "data": file_bytes
             })
 
-        prompt = f"""
+        prompt = """
         You are an AI Interior Designer and Architect.
         Analyze this room photo or video scan to perform a detailed structural layout and lighting analysis, then generate style recommendations and 3D object arrangements.
 
@@ -258,6 +258,7 @@ class AIService:
         }
         Do not include any markdown styling like ```json. Return only the raw JSON.
         """
+        prompt = prompt.replace("{room_type_hint}", room_type_hint)
         contents.append(prompt)
 
         try:
