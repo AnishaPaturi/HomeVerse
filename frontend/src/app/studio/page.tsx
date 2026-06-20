@@ -26,6 +26,7 @@ function StudioContent() {
   const [user, setUser] = useState<any | null>(null);
   const designId = searchParams.get("designId");
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+  const [hasLoadedFromDb, setHasLoadedFromDb] = useState(false);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -54,6 +55,7 @@ function StudioContent() {
             material: obj.material
           }));
           setObjects(mappedObjects);
+          setHasLoadedFromDb(true);
         }
 
         // Fetch project details to load the user's actual room photo as background
@@ -139,13 +141,13 @@ function StudioContent() {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendError, setRecommendError] = useState<string | null>(null);
 
-  // Auto-apply starting style presets
+  // Auto-apply starting style presets only if we haven't loaded objects from database
   useEffect(() => {
-    if (initialStyle) {
+    if (initialStyle && !hasLoadedFromDb) {
       applyStylePreset(initialStyle);
       setRecommendQuery(initialStyle);
     }
-  }, [initialStyle]);
+  }, [initialStyle, hasLoadedFromDb]);
 
   // Fetch recommendations from backend
   const fetchRecommendations = async () => {
@@ -326,30 +328,34 @@ function StudioContent() {
   // Process triggers from the AI Copilot chat
   const handleCopilotAction = (actionType: string, payload: any) => {
     if (actionType === "update_wall") {
-      setObjects((prev) =>
-        prev.map((o) => (o.object_type === "wall" ? { ...o, ...payload } : o))
-      );
+      const wall = objects.find((o) => o.object_type === "wall");
+      if (wall) {
+        handleUpdateObject(wall.id, payload);
+      } else {
+        setObjects((prev) =>
+          prev.map((o) => (o.object_type === "wall" ? { ...o, ...payload } : o))
+        );
+      }
     } else if (actionType === "update_floor") {
-      setObjects((prev) =>
-        prev.map((o) => (o.object_type === "floor" ? { ...o, ...payload } : o))
-      );
+      const floor = objects.find((o) => o.object_type === "floor");
+      if (floor) {
+        handleUpdateObject(floor.id, payload);
+      } else {
+        setObjects((prev) =>
+          prev.map((o) => (o.object_type === "floor" ? { ...o, ...payload } : o))
+        );
+      }
     } else if (actionType === "update_sofa") {
-      setObjects((prev) =>
-        prev.map((o) => (o.object_type === "sofa" ? { ...o, ...payload } : o))
-      );
+      const sofa = objects.find((o) => o.object_type === "sofa");
+      if (sofa) {
+        handleUpdateObject(sofa.id, payload);
+      } else {
+        setObjects((prev) =>
+          prev.map((o) => (o.object_type === "sofa" ? { ...o, ...payload } : o))
+        );
+      }
     } else if (actionType === "add_object") {
-      const newObj: RoomObject = {
-        id: `${payload.object_type}-${Date.now()}`,
-        object_type: payload.object_type,
-        position_x: 1.5,
-        position_y: 0,
-        position_z: -1.5,
-        rotation: 0,
-        scale: 1,
-        material: payload.material,
-      };
-      setObjects((prev) => [...prev, newObj]);
-      setSelectedObjectId(newObj.id);
+      handleAddObject(payload.object_type, payload.material, payload.scale);
     }
   };
 
@@ -363,8 +369,9 @@ function StudioContent() {
       <header className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md px-5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/upload")}
             className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            title="Back to Room Selection"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -375,6 +382,9 @@ function StudioContent() {
               <span className="text-[10px] px-2 py-0.5 bg-blue-900/40 text-blue-300 border border-blue-800/60 rounded-full font-mono capitalize">
                 Style: {initialStyle}
               </span>
+              <span className="text-[9px] px-2 py-0.5 bg-green-950/40 text-green-400 border border-green-900/60 rounded-full font-semibold flex items-center gap-1 font-mono uppercase">
+                <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" /> Synced to Database
+              </span>
             </div>
             <p className="text-[10px] text-slate-500">Interactive 3D Editor Sandbox</p>
           </div>
@@ -382,6 +392,24 @@ function StudioContent() {
 
         {/* Exporter Controls */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("homeverse_upload_step");
+              sessionStorage.removeItem("homeverse_generated_designs");
+              sessionStorage.removeItem("homeverse_selected_style");
+              sessionStorage.removeItem("homeverse_uploaded_file_url");
+              sessionStorage.removeItem("homeverse_file_type");
+              sessionStorage.removeItem("homeverse_project_title");
+              sessionStorage.removeItem("homeverse_room_type");
+              sessionStorage.removeItem("homeverse_file_name");
+              sessionStorage.removeItem("homeverse_project_id");
+              router.push("/upload");
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 rounded-xl transition-all cursor-pointer mr-1"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-400" /> Upload Another Image
+          </button>
+
           <button
             onClick={() => alert("Simulating Video game walkthrough walkmode controls... Use Orbit Controls to drag around!")}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"

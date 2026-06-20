@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List
 from app.db.session import get_db
 from app.models.project import Project as ProjectModel
-from app.schemas.project import Project as ProjectSchema, ProjectCreate
+from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
 
 router = APIRouter()
 
@@ -40,6 +40,21 @@ def get_project(project_id: UUID, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
+    return project
+
+@router.put("/{project_id}", response_model=ProjectSchema)
+def update_project(project_id: UUID, project_in: ProjectUpdate, db: Session = Depends(get_db)):
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+    update_data = project_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(project, field, value)
+    db.commit()
+    db.refresh(project)
     return project
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

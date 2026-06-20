@@ -48,12 +48,151 @@ export default function UploadPage() {
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Persistence and custom design naming states
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectTitle, setProjectTitle] = useState<string>("My Interior Design");
+  const [roomType, setRoomType] = useState<string>("Living Room");
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
     if (uploadStep === "complete") {
       setImageLoading(true);
       setImageError(false);
     }
   }, [selectedStyle, uploadStep, generatedDesigns]);
+
+  // Load state from sessionStorage on mount
+  useEffect(() => {
+    const savedStep = sessionStorage.getItem("homeverse_upload_step");
+    if (savedStep && savedStep !== "idle") {
+      setUploadStep(savedStep as any);
+      
+      const savedDesigns = sessionStorage.getItem("homeverse_generated_designs");
+      if (savedDesigns) setGeneratedDesigns(JSON.parse(savedDesigns));
+      
+      const savedStyle = sessionStorage.getItem("homeverse_selected_style");
+      if (savedStyle) setSelectedStyle(savedStyle);
+      
+      const savedUrl = sessionStorage.getItem("homeverse_uploaded_file_url");
+      if (savedUrl) setUploadedFileUrl(savedUrl);
+      
+      const savedType = sessionStorage.getItem("homeverse_file_type");
+      if (savedType) setFileType(savedType as any);
+      
+      const savedProjId = sessionStorage.getItem("homeverse_project_id");
+      if (savedProjId) setProjectId(savedProjId);
+      
+      const savedProjTitle = sessionStorage.getItem("homeverse_project_title");
+      if (savedProjTitle) setProjectTitle(savedProjTitle);
+      
+      const savedRoomType = sessionStorage.getItem("homeverse_room_type");
+      if (savedRoomType) setRoomType(savedRoomType);
+
+      const savedFileName = sessionStorage.getItem("homeverse_file_name");
+      if (savedFileName) {
+        setSelectedFile({ name: savedFileName } as any);
+      }
+    }
+    setIsReady(true);
+  }, []);
+
+  // Save states to sessionStorage
+  useEffect(() => {
+    if (!isReady) return;
+    if (uploadStep !== "idle") {
+      sessionStorage.setItem("homeverse_upload_step", uploadStep);
+    } else {
+      sessionStorage.removeItem("homeverse_upload_step");
+    }
+  }, [uploadStep, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (generatedDesigns.length > 0) {
+      sessionStorage.setItem("homeverse_generated_designs", JSON.stringify(generatedDesigns));
+    } else {
+      sessionStorage.removeItem("homeverse_generated_designs");
+    }
+  }, [generatedDesigns, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_selected_style", selectedStyle);
+  }, [selectedStyle, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (uploadedFileUrl) {
+      sessionStorage.setItem("homeverse_uploaded_file_url", uploadedFileUrl);
+    } else {
+      sessionStorage.removeItem("homeverse_uploaded_file_url");
+    }
+  }, [uploadedFileUrl, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (fileType) {
+      sessionStorage.setItem("homeverse_file_type", fileType);
+    } else {
+      sessionStorage.removeItem("homeverse_file_type");
+    }
+  }, [fileType, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (projectId) {
+      sessionStorage.setItem("homeverse_project_id", projectId);
+    } else {
+      sessionStorage.removeItem("homeverse_project_id");
+    }
+  }, [projectId, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (projectTitle) {
+      sessionStorage.setItem("homeverse_project_title", projectTitle);
+    } else {
+      sessionStorage.removeItem("homeverse_project_title");
+    }
+  }, [projectTitle, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (roomType) {
+      sessionStorage.setItem("homeverse_room_type", roomType);
+    } else {
+      sessionStorage.removeItem("homeverse_room_type");
+    }
+  }, [roomType, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (selectedFile) {
+      sessionStorage.setItem("homeverse_file_name", selectedFile.name);
+    } else {
+      sessionStorage.removeItem("homeverse_file_name");
+    }
+  }, [selectedFile, isReady]);
+
+  // Update project title and room type in the database
+  const handleUpdateProjectDetails = async (newTitle: string, newRoomType: string) => {
+    const activeProjId = projectId || sessionStorage.getItem("homeverse_project_id");
+    if (!activeProjId) return;
+    try {
+      await fetch(`http://localhost:8080/api/projects/${activeProjId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: newTitle,
+          room_type: newRoomType
+        })
+      });
+    } catch (err) {
+      console.warn("Failed to update project details on backend:", err);
+    }
+  };
 
   const getFilterForStyle = (style: string) => {
     switch (style) {
@@ -179,6 +318,8 @@ export default function UploadPage() {
     try {
       // 1. Create project on backend
       const projTitle = file.name.split(".")[0] || "My Interior Design";
+      setProjectTitle(projTitle);
+      setRoomType("Living Room");
       let projectData = null;
 
       try {
@@ -201,7 +342,9 @@ export default function UploadPage() {
         console.warn("Backend project creation failed, fallback to client-side UUID:", err);
       }
 
-      const projectId = projectData?.id || crypto.randomUUID();
+      const activeProjId = projectData?.id || crypto.randomUUID();
+      setProjectId(activeProjId);
+      sessionStorage.setItem("homeverse_project_id", activeProjId);
 
       // Trigger UI analysis state
       setTimeout(() => {
@@ -210,7 +353,7 @@ export default function UploadPage() {
 
       // 2. Upload file & analyze on backend
       const formData = new FormData();
-      formData.append("project_id", projectId);
+      formData.append("project_id", activeProjId);
       formData.append("file", file);
 
       let designsList = [];
@@ -256,7 +399,12 @@ export default function UploadPage() {
     }
   };
 
-  const handleEnterStudio = () => {
+  const handleEnterStudio = async () => {
+    // Sync final project details before entering studio
+    if (projectId) {
+      await handleUpdateProjectDetails(projectTitle, roomType);
+    }
+
     // Find design matching the selected style
     const matchedDesign = generatedDesigns.find(
       (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
@@ -456,6 +604,48 @@ export default function UploadPage() {
                     <span className="flex items-center gap-1 text-[9px] text-green-400 font-semibold bg-green-950/20 border border-green-900/40 px-2 py-0.5 rounded-full font-mono">
                       <Check className="w-3 h-3" /> Ready
                     </span>
+                  </div>
+
+                  {/* Name and Room Type inputs */}
+                  <div className="space-y-3 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
+                        Design Name / Title
+                      </label>
+                      <input
+                        type="text"
+                        value={projectTitle}
+                        onChange={(e) => {
+                          setProjectTitle(e.target.value);
+                          sessionStorage.setItem("homeverse_project_title", e.target.value);
+                        }}
+                        onBlur={() => handleUpdateProjectDetails(projectTitle, roomType)}
+                        placeholder="e.g. Master Bedroom design"
+                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-650 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
+                        Room / Space Type
+                      </label>
+                      <select
+                        value={roomType}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setRoomType(val);
+                          sessionStorage.setItem("homeverse_room_type", val);
+                          handleUpdateProjectDetails(projectTitle, val);
+                        }}
+                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                      >
+                        <option value="Living Room">Living Room</option>
+                        <option value="Bedroom">Bedroom</option>
+                        <option value="Office">Home Office</option>
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Bathroom">Bathroom</option>
+                        <option value="Dining Room">Dining Room</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Grid of Styles */}

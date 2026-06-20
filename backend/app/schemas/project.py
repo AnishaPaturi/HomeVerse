@@ -13,6 +13,12 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     user_id: UUID
 
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = None
+    room_type: Optional[str] = None
+    thumbnail: Optional[str] = None
+    structural_analysis: Optional[str] = None
+
 class Project(ProjectBase):
     id: UUID
     user_id: UUID
