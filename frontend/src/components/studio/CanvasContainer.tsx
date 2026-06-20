@@ -35,30 +35,48 @@ function Sofa3D({ material, isSelected, onClick }: { material: string; isSelecte
   
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Sofa Legs */}
+      <mesh position={[-0.95, 0.075, -0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.95, 0.075, -0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[-0.95, 0.075, 0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.95, 0.075, 0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      
       {/* Base Cushion */}
-      <mesh position={[0, 0.25, 0]}>
+      <mesh position={[0, 0.3, 0]}>
         <boxGeometry args={[2, 0.3, 0.9]} />
         <meshStandardMaterial color={color} roughness={0.8} />
       </mesh>
       {/* Back Support */}
-      <mesh position={[0, 0.7, -0.4]}>
+      <mesh position={[0, 0.65, -0.35]}>
         <boxGeometry args={[2, 0.6, 0.2]} />
         <meshStandardMaterial color={color} roughness={0.8} />
       </mesh>
       {/* Left Armrest */}
-      <mesh position={[-1.05, 0.5, 0]}>
-        <boxGeometry args={[0.2, 0.5, 0.9]} />
+      <mesh position={[-1.05, 0.45, 0]}>
+        <boxGeometry args={[0.2, 0.6, 0.9]} />
         <meshStandardMaterial color={color} roughness={0.8} />
       </mesh>
       {/* Right Armrest */}
-      <mesh position={[1.05, 0.5, 0]}>
-        <boxGeometry args={[0.2, 0.5, 0.9]} />
+      <mesh position={[1.05, 0.45, 0]}>
+        <boxGeometry args={[0.2, 0.6, 0.9]} />
         <meshStandardMaterial color={color} roughness={0.8} />
       </mesh>
       
       {/* Highlight Box if selected */}
       {isSelected && (
-        <mesh position={[0, 0.5, 0]}>
+        <mesh position={[0, 0.475, 0]}>
           <boxGeometry args={[2.3, 1.0, 1.1]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
@@ -74,7 +92,7 @@ function CoffeeTable3D({ material, isSelected, onClick }: { material: string; is
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
       {/* Tabletop */}
-      <mesh position={[0, 0.4, 0]}>
+      <mesh position={[0, 0.44, 0]}>
         <boxGeometry args={[1.2, 0.08, 0.7]} />
         <meshStandardMaterial color={color} roughness={0.5} metalness={0.1} />
       </mesh>
@@ -97,7 +115,7 @@ function CoffeeTable3D({ material, isSelected, onClick }: { material: string; is
       </mesh>
       
       {isSelected && (
-        <mesh position={[0, 0.22, 0]}>
+        <mesh position={[0, 0.24, 0]}>
           <boxGeometry args={[1.3, 0.5, 0.8]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
@@ -118,24 +136,142 @@ function Desk3D({ material, isSelected, onClick }: { material: string; isSelecte
         <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
       {/* Left Panel */}
-      <mesh position={[-0.65, 0.37, 0]}>
-        <boxGeometry args={[0.05, 0.74, 0.75]} />
+      <mesh position={[-0.65, 0.36, 0]}>
+        <boxGeometry args={[0.05, 0.72, 0.75]} />
         <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
       {/* Right Panel */}
-      <mesh position={[0.65, 0.37, 0]}>
-        <boxGeometry args={[0.05, 0.74, 0.75]} />
+      <mesh position={[0.65, 0.36, 0]}>
+        <boxGeometry args={[0.05, 0.72, 0.75]} />
         <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
       {/* Backboard */}
-      <mesh position={[0, 0.5, -0.35]}>
-        <boxGeometry args={[1.25, 0.4, 0.02]} />
+      <mesh position={[0, 0.48, -0.35]}>
+        <boxGeometry args={[1.25, 0.48, 0.02]} />
         <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
       
       {isSelected && (
-        <mesh position={[0, 0.38, 0]}>
+        <mesh position={[0, 0.39, 0]}>
           <boxGeometry args={[1.5, 0.82, 0.9]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom simple 3D Chair
+function Chair3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#475569";
+  
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Seat */}
+      <mesh position={[0, 0.45, 0]}>
+        <boxGeometry args={[0.6, 0.05, 0.6]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
+      </mesh>
+      {/* Backrest */}
+      <mesh position={[0, 0.8, -0.275]}>
+        <boxGeometry args={[0.6, 0.6, 0.05]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
+      </mesh>
+      {/* Legs */}
+      <mesh position={[-0.25, 0.225, -0.25]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.45]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0.25, 0.225, -0.25]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.45]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[-0.25, 0.225, 0.25]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.45]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      <mesh position={[0.25, 0.225, 0.25]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.45]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      
+      {isSelected && (
+        <mesh position={[0, 0.475, 0]}>
+          <boxGeometry args={[0.7, 0.95, 0.7]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom simple 3D Bed
+function Bed3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#1e3a8a";
+  
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Bed Base / Frame */}
+      <mesh position={[0, 0.075, 0]}>
+        <boxGeometry args={[1.62, 0.15, 2.02]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      {/* Mattress */}
+      <mesh position={[0, 0.35, 0]}>
+        <boxGeometry args={[1.6, 0.4, 2.0]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+      {/* Headboard */}
+      <mesh position={[0, 0.45, -1.05]}>
+        <boxGeometry args={[1.7, 0.9, 0.1]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      {/* Pillow 1 */}
+      <mesh position={[-0.4, 0.58, -0.7]}>
+        <boxGeometry args={[0.5, 0.1, 0.35]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </mesh>
+      {/* Pillow 2 */}
+      <mesh position={[0.4, 0.58, -0.7]}>
+        <boxGeometry args={[0.5, 0.1, 0.35]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </mesh>
+      
+      {isSelected && (
+        <mesh position={[0, 0.45, 0]}>
+          <boxGeometry args={[1.8, 1.1, 2.2]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom simple 3D Lamp
+function Lamp3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#eab308";
+  
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Base */}
+      <mesh position={[0, 0.025, 0]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.05]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Stem */}
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 1.4]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Shade */}
+      <mesh position={[0, 1.4, 0]}>
+        <cylinderGeometry args={[0.18, 0.25, 0.3, 16]} />
+        <meshStandardMaterial color={color} roughness={0.3} emissive={color} emissiveIntensity={0.2} />
+      </mesh>
+      
+      {isSelected && (
+        <mesh position={[0, 0.775, 0]}>
+          <boxGeometry args={[0.6, 1.6, 0.6]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
       )}
@@ -270,6 +406,15 @@ export default function CanvasContainer({
                 )}
                 {obj.object_type === "desk" && (
                   <Desk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                )}
+                {obj.object_type === "chair" && (
+                  <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                )}
+                {obj.object_type === "bed" && (
+                  <Bed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                )}
+                {obj.object_type === "lamp" && (
+                  <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
                 )}
               </group>
             );

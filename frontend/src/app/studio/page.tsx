@@ -18,6 +18,48 @@ interface RoomObject {
   material: string;
 }
 
+const getInitialObjectsForRoomType = (roomType: string, style: string): RoomObject[] => {
+  const room = roomType.toLowerCase();
+  const floorMat = style === "Luxury" ? "granite" : "wood_light";
+  const wallMat = style === "Minimalist" ? "#ffffff" : style === "Luxury" ? "#1e293b" : "#f1f5f9";
+  
+  const baseObjects = [
+    { id: "floor-1", object_type: "floor", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1, material: floorMat },
+    { id: "wall-1", object_type: "wall", position_x: 0, position_y: 1.5, position_z: -4, rotation: 0, scale: 1, material: wallMat }
+  ];
+
+  if (room.includes("bed")) {
+    return [
+      ...baseObjects,
+      { id: "bed-1", object_type: "bed", position_x: 0, position_y: 0, position_z: -2.5, rotation: 3.14, scale: 1.05, material: "leather_brown" },
+      { id: "chair-1", object_type: "chair", position_x: 1.2, position_y: 0, position_z: -1.8, rotation: 1.57, scale: 0.9, material: "#334155" },
+      { id: "lamp-1", object_type: "lamp", position_x: -1.2, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#fbbf24" }
+    ];
+  } else if (room.includes("office") || room.includes("work") || room.includes("study")) {
+    return [
+      ...baseObjects,
+      { id: "desk-1", object_type: "desk", position_x: 0, position_y: 0, position_z: -2.2, rotation: 3.14, scale: 1.0, material: "wood_dark" },
+      { id: "chair-1", object_type: "chair", position_x: 0, position_y: 0, position_z: -1.5, rotation: 0, scale: 0.9, material: "#1f2937" },
+      { id: "lamp-1", object_type: "lamp", position_x: -0.5, position_y: 0.75, position_z: -2.2, rotation: 0, scale: 1.0, material: "#fafafa" }
+    ];
+  } else if (room.includes("kitchen") || room.includes("dining")) {
+    return [
+      ...baseObjects,
+      { id: "desk-1", object_type: "desk", position_x: 0, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.1, material: "marble" },
+      { id: "chair-1", object_type: "chair", position_x: -0.8, position_y: 0, position_z: -2.5, rotation: -1.57, scale: 0.9, material: "wood_light" },
+      { id: "chair-2", object_type: "chair", position_x: 0.8, position_y: 0, position_z: -2.5, rotation: 1.57, scale: 0.9, material: "wood_light" }
+    ];
+  } else {
+    // Default to Living Room
+    return [
+      ...baseObjects,
+      { id: "sofa-1", object_type: "sofa", position_x: 0, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#cbd5e1" },
+      { id: "coffee-table-1", object_type: "coffee_table", position_x: 0, position_y: 0, position_z: -1.2, rotation: 0, scale: 1.0, material: "#78350f" },
+      { id: "lamp-1", object_type: "lamp", position_x: -1.5, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#fbbf24" }
+    ];
+  }
+};
+
 function StudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,6 +69,7 @@ function StudioContent() {
   const designId = searchParams.get("designId");
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [hasLoadedFromDb, setHasLoadedFromDb] = useState(false);
+  const [roomType, setRoomType] = useState<string>("Living Room");
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -43,6 +86,7 @@ function StudioContent() {
       const res = await fetch(`http://localhost:8080/api/designs/${designId}`);
       if (res.ok) {
         const designData = await res.json();
+        let currentObjects = [];
         if (designData && designData.objects && designData.objects.length > 0) {
           const mappedObjects = designData.objects.map((obj: any) => ({
             id: obj.id,
@@ -56,6 +100,7 @@ function StudioContent() {
           }));
           setObjects(mappedObjects);
           setHasLoadedFromDb(true);
+          currentObjects = mappedObjects;
         }
 
         // Fetch project details to load the user's actual room photo as background
@@ -67,6 +112,54 @@ function StudioContent() {
               if (projectData && projectData.thumbnail) {
                 if (!projectData.thumbnail.includes("unsplash.com")) {
                   setBgImageUrl(projectData.thumbnail);
+                }
+              }
+              if (projectData && projectData.room_type) {
+                setRoomType(projectData.room_type);
+                if (currentObjects.length === 0) {
+                  const initialObjs = getInitialObjectsForRoomType(projectData.room_type, initialStyle);
+                  setObjects(initialObjs);
+                  
+                  // Save them to database so they persist
+                  try {
+                    const savedObjs: RoomObject[] = [];
+                    for (const obj of initialObjs) {
+                      const resSave = await fetch(`http://localhost:8080/api/designs/${designId}/objects`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                          object_type: obj.object_type,
+                          position_x: obj.position_x,
+                          position_y: obj.position_y,
+                          position_z: obj.position_z,
+                          rotation: obj.rotation,
+                          scale: obj.scale,
+                          material: obj.material
+                        })
+                      });
+                      if (resSave.ok) {
+                        const savedData = await resSave.json();
+                        savedObjs.push({
+                          id: savedData.id,
+                          object_type: savedData.object_type,
+                          position_x: savedData.position_x,
+                          position_y: savedData.position_y,
+                          position_z: savedData.position_z,
+                          rotation: savedData.rotation,
+                          scale: savedData.scale,
+                          material: savedData.material
+                        });
+                      }
+                    }
+                    if (savedObjs.length > 0) {
+                      setObjects(savedObjs);
+                      setHasLoadedFromDb(true);
+                    }
+                  } catch (saveErr) {
+                    console.warn("Failed to automatically save initial room objects to database:", saveErr);
+                  }
                 }
               }
             }
@@ -186,10 +279,14 @@ function StudioContent() {
   }, [initialStyle]);
 
   // Helpers to map recommendations to 3D representation
-  const mapCategoryTo3DType = (category: string): "sofa" | "coffee_table" | "desk" => {
+  const mapCategoryTo3DType = (category: string): "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" => {
     const cat = category.toLowerCase();
-    if (cat === "sofa" || cat === "chair") return "sofa";
-    if (cat === "table") return "coffee_table";
+    if (cat === "sofa") return "sofa";
+    if (cat === "table" || cat === "coffee_table") return "coffee_table";
+    if (cat === "desk") return "desk";
+    if (cat === "chair") return "chair";
+    if (cat === "bed") return "bed";
+    if (cat === "lighting" || cat === "lamp") return "lamp";
     return "desk";
   };
 
@@ -279,8 +376,18 @@ function StudioContent() {
   };
 
   // Add object from asset catalog or recommender
-  const handleAddObject = async (type: "sofa" | "coffee_table" | "desk", customMaterial?: string, customScale?: number) => {
-    const defaultMat = type === "sofa" ? "#ec4899" : type === "desk" ? "#4b5563" : "#f59e0b";
+  const handleAddObject = async (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp", customMaterial?: string, customScale?: number) => {
+    const defaultMat = type === "sofa" 
+      ? "#ec4899" 
+      : type === "desk" 
+        ? "#4b5563" 
+        : type === "coffee_table" 
+          ? "#f59e0b" 
+          : type === "chair" 
+            ? "#475569" 
+            : type === "bed" 
+              ? "#1e3a8a" 
+              : "#eab308";
     const newObjLocal: RoomObject = {
       id: `temp-${Date.now()}`,
       object_type: type,
@@ -527,6 +634,45 @@ function StudioContent() {
                         <span className="text-[10px] text-slate-500 font-normal">Nordic working desk</span>
                       </div>
                     </button>
+
+                    <button
+                      onClick={() => handleAddObject("chair")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-purple-950/20 border border-purple-900/40 rounded-lg text-purple-400">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Chair</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Ergonomic or accent chair</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("bed")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-indigo-950/20 border border-indigo-900/40 rounded-lg text-indigo-400">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Bed</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Queen/King bed frame</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("lamp")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-yellow-950/20 border border-yellow-900/40 rounded-lg text-yellow-400">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Lamp</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Floor or desk lamp</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -603,6 +749,15 @@ function StudioContent() {
                             alt={item.name}
                             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
+                          {item.tier && (
+                            <span className={`absolute top-1 left-1 text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                              item.tier === "budget" 
+                                ? "bg-emerald-950/90 text-emerald-400 border border-emerald-800/50" 
+                                : "bg-amber-950/90 text-amber-400 border border-amber-800/50"
+                            }`}>
+                              {item.tier === "budget" ? "Budget Friendly" : "Premium Pick"}
+                            </span>
+                          )}
                           <span className="absolute bottom-1 right-1 text-[9px] bg-slate-950/80 border border-slate-800 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">
                             {item.price}
                           </span>
@@ -621,17 +776,29 @@ function StudioContent() {
                           {item.description}
                         </p>
 
-                        {/* Action: Add to scene */}
-                        <button
-                          onClick={() => handleAddObject(
-                            mapCategoryTo3DType(item.category),
-                            mapProductToMaterial(item.name),
-                            item.category === "Chair" ? 0.65 : 1.0
+                        {/* Action: Add to scene & Shop link */}
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleAddObject(
+                              mapCategoryTo3DType(item.category),
+                              mapProductToMaterial(item.name),
+                              item.category === "Chair" ? 0.65 : item.category === "Lighting" ? 0.8 : 1.0
+                            )}
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-blue-650 hover:bg-blue-600 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add
+                          </button>
+                          {item.product_url && (
+                            <a
+                              href={item.product_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 border border-slate-700/60"
+                            >
+                              <ShoppingBag className="w-3.5 h-3.5 text-blue-400" /> Shop
+                            </a>
                           )}
-                          className="w-full flex items-center justify-center gap-1 py-1.5 bg-slate-800 hover:bg-blue-600 hover:text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer border border-slate-700/60"
-                        >
-                          <Plus className="w-3 h-3" /> Add to Room
-                        </button>
+                        </div>
                       </div>
                     ))
                   )}

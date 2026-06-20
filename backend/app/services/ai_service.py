@@ -59,6 +59,9 @@ class AIService:
         Uploads the file (image/video) to Gemini API and uses Gemini 1.5 Flash to segment
         and recommend style variations + 3D object positions.
         """
+        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        room_type_hint = project.room_type if project and project.room_type else "Living Room"
+
         api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise HTTPException(
@@ -105,9 +108,12 @@ class AIService:
                 "data": file_bytes
             })
 
-        prompt = """
+        prompt = f"""
         You are an AI Interior Designer and Architect.
         Analyze this room photo or video scan to perform a detailed structural layout and lighting analysis, then generate style recommendations and 3D object arrangements.
+
+        The user has specified that this room is a {room_type_hint}.
+        Therefore, all generated style recommendations and 3D object arrangements MUST be designed specifically for a {room_type_hint} layout and functionality.
 
         1. Structural & Lighting Analysis:
            - Identify the locations of windows (e.g. "left wall", "right wall", "back wall").
@@ -265,7 +271,8 @@ class AIService:
             # Check if it's a 429 rate limit or any other API error. Provide a fallback mock response.
             print(f"Gemini API analysis failed: {e}. Falling back to mock room analysis.")
             filename_lower = file.filename.lower()
-            if "bed" in filename_lower:
+            room_hint_lower = room_type_hint.lower()
+            if "bed" in room_hint_lower or "bed" in filename_lower:
                 result = {
                     "detected_room_type": "Bedroom",
                     "structural_analysis": {
@@ -328,7 +335,7 @@ class AIService:
                         }
                     }
                 }
-            elif "office" in filename_lower or "study" in filename_lower or "desk" in filename_lower or "work" in filename_lower:
+            elif "office" in room_hint_lower or "study" in room_hint_lower or "work" in room_hint_lower or "office" in filename_lower or "study" in filename_lower or "desk" in filename_lower or "work" in filename_lower:
                 result = {
                     "detected_room_type": "Office",
                     "structural_analysis": {
@@ -387,6 +394,69 @@ class AIService:
                                 {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 3.14, "scale": 1.0, "material": "wood_dark"},
                                 {"object_type": "chair", "position_x": 0.0, "position_y": 0.0, "position_z": -2.2, "rotation": 0.0, "scale": 1.0, "material": "#78716c"},
                                 {"object_type": "lamp", "position_x": -0.8, "position_y": 0.75, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#e7e5e4"}
+                            ]
+                        }
+                    }
+                }
+            elif "kitchen" in room_hint_lower or "dining" in room_hint_lower or "kitchen" in filename_lower or "dining" in filename_lower:
+                result = {
+                    "detected_room_type": "Kitchen/Dining",
+                    "structural_analysis": {
+                        "layout_description": "A spacious kitchen and dining area with a clean dining table setup, window on the left wall, and tile floors.",
+                        "windows": [{"wall": "left", "size": "medium"}],
+                        "light_sources": [{"direction": "left", "type": "natural"}],
+                        "doors": [{"wall": "right"}],
+                        "room_shape": "rectangular"
+                    },
+                    "styles": {
+                        "Modern": {
+                            "description": "A contemporary dining room with marble table, minimalist light wooden chairs, and soft pendant lighting.",
+                            "objects": [
+                                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "marble"},
+                                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#f3f4f6"},
+                                {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "marble"},
+                                {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
+                                {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"}
+                            ]
+                        },
+                        "Luxury": {
+                            "description": "A luxury dining room with dark granite table, premium black leather chairs, and crystal lighting.",
+                            "objects": [
+                                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "granite"},
+                                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#1e293b"},
+                                {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "granite"},
+                                {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "leather_black"},
+                                {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "leather_black"}
+                            ]
+                        },
+                        "Scandinavian": {
+                            "description": "A Scandinavian dining space with light wood dining table and chairs, and bright airy walls.",
+                            "objects": [
+                                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
+                                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#fafafa"},
+                                {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "wood_light"},
+                                {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
+                                {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"}
+                            ]
+                        },
+                        "Minimalist": {
+                            "description": "An ultra-clean minimalist dining room with white table and black design chairs.",
+                            "objects": [
+                                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
+                                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#ffffff"},
+                                {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "#ffffff"},
+                                {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "#1f2937"},
+                                {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "#1f2937"}
+                            ]
+                        },
+                        "Japandi": {
+                            "description": "A peaceful Japandi kitchen and dining area featuring natural wood grains and earthy neutral colors.",
+                            "objects": [
+                                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
+                                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#f5f5f4"},
+                                {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "wood_dark"},
+                                {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
+                                {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"}
                             ]
                         }
                     }
@@ -469,7 +539,6 @@ class AIService:
         thumbnail_url = f"http://localhost:8080/static/uploads/{static_filename}"
 
         # Update the project's room type, thumbnail, and structural analysis if it exists
-        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
         if project:
             project.room_type = detected_room_type
             project.thumbnail = thumbnail_url
