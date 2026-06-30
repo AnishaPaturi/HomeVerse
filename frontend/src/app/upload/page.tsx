@@ -35,8 +35,14 @@ export default function UploadPage() {
     }
   }, [router]);
 
-  // Active mode state: upload or build from scratch
-  const [activeMode, setActiveMode] = useState<"upload" | "scratch">("upload");
+  // Active mode state: upload, lidar scan, or build from scratch
+  const [activeMode, setActiveMode] = useState<"upload" | "lidar" | "scratch">("upload");
+
+  // LiDAR scan states
+  const [lidarStatus, setLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
+  const [lidarProgress, setLidarProgress] = useState<number>(0);
+  const [lidarPoints, setLidarPoints] = useState<number>(0);
+  const [lidarLogs, setLidarLogs] = useState<string[]>([]);
 
   // Upload/Analysis states
   const [dragActive, setDragActive] = useState(false);
@@ -485,6 +491,140 @@ export default function UploadPage() {
     }
   };
 
+  const handleStartLidarScan = () => {
+    setLidarStatus("scanning");
+    setLidarProgress(0);
+    setLidarPoints(0);
+    setLidarLogs(["Initializing LiDAR depth sensor...", "Calibrating IMU spatial mapping..."]);
+
+    const scanInterval = setInterval(() => {
+      setLidarProgress((prev) => {
+        const next = prev + 5;
+        setLidarPoints((pts) => pts + Math.floor(Math.random() * 8000) + 4000);
+        
+        // Push live updates to logs based on scan progress
+        if (next === 20) {
+          setLidarLogs((l) => [...l, "Mapped floor boundary: 10m x 10m"]);
+        } else if (next === 40) {
+          setLidarLogs((l) => [...l, "Detecting vertical wall surfaces..."]);
+        } else if (next === 60) {
+          setLidarLogs((l) => [...l, "Identifying furniture structural meshes..."]);
+        } else if (next === 75) {
+          setLidarLogs((l) => [...l, "Sofa detected: width=2.0m, depth=0.9m"]);
+        } else if (next === 85) {
+          setLidarLogs((l) => [...l, "Coffee table detected: width=1.2m, depth=0.7m"]);
+        } else if (next === 95) {
+          setLidarLogs((l) => [...l, "Optimizing structural wireframe graph..."]);
+        }
+
+        if (next >= 100) {
+          clearInterval(scanInterval);
+          setLidarStatus("completed");
+          setLidarLogs((l) => [...l, "Scan complete! Export ready."]);
+          return 100;
+        }
+        return next;
+      });
+    }, 200);
+  };
+
+  const handleCreateFromLidarScan = async () => {
+    setError(null);
+    setUploadStep("uploading");
+
+    const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
+    const projTitle = projectTitle.trim() || `LiDAR Scan - ${roomType}`;
+
+    try {
+      // 1. Create project on backend with custom structural_analysis (room size detected)
+      const struct = {
+        room_width: 10,
+        room_depth: 10,
+        scanned_via: "LiDAR"
+      };
+
+      let projectIdFromBackend = null;
+      try {
+        const projRes = await fetch("http://localhost:8080/api/projects/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: projTitle,
+            room_type: roomType,
+            thumbnail: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350",
+            user_id: userId,
+            structural_analysis: JSON.stringify(struct)
+          })
+        });
+        if (projRes.ok) {
+          const projectData = await projRes.json();
+          projectIdFromBackend = projectData.id;
+        }
+      } catch (err) {
+        console.warn("Backend project creation failed, fallback to client UUID:", err);
+      }
+
+      const activeProjId = projectIdFromBackend || crypto.randomUUID();
+      setProjectId(activeProjId);
+      sessionStorage.setItem("homeverse_project_id", activeProjId);
+      sessionStorage.setItem("homeverse_project_title", projTitle);
+      sessionStorage.setItem("homeverse_room_type", roomType);
+
+      // 2. Create design on backend
+      let activeDesignId = crypto.randomUUID();
+      try {
+        const designRes = await fetch("http://localhost:8080/api/designs/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            project_id: activeProjId,
+            style: selectedStyle,
+            image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350"
+          })
+        });
+        if (designRes.ok) {
+          const designData = await designRes.json();
+          activeDesignId = designData.id;
+        }
+      } catch (err) {
+        console.warn("Backend design creation failed, fallback to client UUID:", err);
+      }
+
+      // 3. Seed detected objects from LiDAR Scan (Sofa, Coffee Table, Lamp)
+      const detectedObjs = [
+        { object_type: "sofa", position_x: 0, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#ec4899" },
+        { object_type: "coffee_table", position_x: 0, position_y: 0, position_z: -1.2, rotation: 0, scale: 1.0, material: "#f59e0b" },
+        { object_type: "lamp", position_x: 1.5, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#eab308" }
+      ];
+
+      for (const obj of detectedObjs) {
+        try {
+          await fetch(`http://localhost:8080/api/designs/${activeDesignId}/objects`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(obj)
+          });
+        } catch (err) {
+          console.warn("Failed to seed object on backend:", err);
+        }
+      }
+
+      setUploadStep("complete");
+      router.push(`/studio?style=${selectedStyle}&designId=${activeDesignId}`);
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to initialize LiDAR scanned design.");
+      setUploadStep("idle");
+    }
+  };
+
   const handleEnterStudio = async () => {
     // Sync final project details before entering studio
     if (projectId) {
@@ -604,27 +744,192 @@ export default function UploadPage() {
 
               {/* Mode Toggle Tabs */}
               {uploadStep === "idle" && (
-                <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
+                <div className="grid grid-cols-3 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
                   <button
                     onClick={() => setActiveMode("upload")}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                       activeMode === "upload"
                         ? "bg-blue-600 text-white shadow"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <Upload className="w-3.5 h-3.5" /> Reconstruct Room
+                    <Upload className="w-3 h-3" /> Reconstruct Room
+                  </button>
+                  <button
+                    onClick={() => setActiveMode("lidar")}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                      activeMode === "lidar"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3" /> LiDAR Scanner
                   </button>
                   <button
                     onClick={() => setActiveMode("scratch")}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                       activeMode === "scratch"
                         ? "bg-blue-600 text-white shadow"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5" /> Start from Scratch
+                    <Sparkles className="w-3 h-3" /> Start Scratch
                   </button>
+                </div>
+              )}
+
+              {/* LiDAR Scanner Viewport */}
+              {uploadStep === "idle" && activeMode === "lidar" && (
+                <div className="flex-1 flex flex-col gap-4">
+                  {/* Smartphone scan viewport */}
+                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] max-w-xl mx-auto w-full shadow-2xl flex flex-col">
+                    {/* Viewport Backdrop Image */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center opacity-60"
+                      style={{ 
+                        backgroundImage: "url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600')" 
+                      }}
+                    />
+
+                    {/* Laser scanning line */}
+                    {lidarStatus === "scanning" && (
+                      <div className="absolute left-0 w-full h-1 bg-green-500 shadow-[0_0_15px_#22c55e] z-10 animate-pulse" 
+                           style={{
+                             top: `${(Math.sin(lidarProgress / 3) + 1) * 50}%`,
+                             transition: "top 0.1s ease-in-out"
+                           }}
+                      />
+                    )}
+
+                    {/* LiDAR Point Cloud Dots Overlay */}
+                    {lidarStatus === "scanning" && (
+                      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                        {Array.from({ length: 40 }).map((_, i) => (
+                          <div 
+                            key={i}
+                            className="absolute w-1.5 h-1.5 bg-green-400 rounded-full animate-ping opacity-75"
+                            style={{
+                              left: `${Math.random() * 100}%`,
+                              top: `${Math.random() * 100}%`,
+                              animationDelay: `${Math.random() * 1.5}s`,
+                              animationDuration: `${1 + Math.random() * 2}s`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Camera view HUD overlay */}
+                    <div className="absolute inset-0 p-4 flex flex-col justify-between z-10 select-none pointer-events-none">
+                      {/* Top HUD bar */}
+                      <div className="flex justify-between items-center text-[9px] text-slate-350 font-mono bg-slate-950/75 px-2.5 py-1.5 rounded-lg border border-slate-800 backdrop-blur-sm">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${lidarStatus === "scanning" ? "bg-red-500 animate-pulse" : "bg-slate-500"}`} />
+                           <span>{lidarStatus === "scanning" ? "REC" : "STANDBY"}</span>
+                        </div>
+                        <div>FPS: 60 | RES: 1.2cm</div>
+                        <div>BAT: 94%</div>
+                      </div>
+
+                      {/* Center Reticle */}
+                      <div className="self-center flex flex-col items-center justify-center gap-2">
+                        {lidarStatus === "idle" && (
+                          <div className="w-12 h-12 border border-dashed border-white/40 rounded-full flex items-center justify-center animate-spin" />
+                        )}
+                        {lidarStatus === "scanning" && (
+                          <div className="w-16 h-16 border-2 border-green-500/70 rounded-full flex items-center justify-center relative">
+                            <div className="absolute w-2 h-2 bg-green-500 rounded-full" />
+                            <div className="absolute -top-3 text-[8px] font-mono text-green-400 font-bold bg-slate-950/80 px-1 py-0.5 rounded">
+                              {lidarProgress}%
+                            </div>
+                          </div>
+                        )}
+                        {lidarStatus === "completed" && (
+                          <div className="w-12 h-12 bg-green-500/20 border border-green-400 rounded-full flex items-center justify-center text-green-400 font-bold text-lg">
+                            ✓
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Bottom Diagnostics HUD */}
+                      <div className="flex justify-between items-end gap-3 text-[8px] font-mono text-slate-350 bg-slate-950/75 p-2 rounded-xl border border-slate-800 backdrop-blur-sm">
+                        <div className="space-y-1">
+                          <p>SENSOR: SOLID-STATE LIDAR</p>
+                          <p>VERTICES: <span className="text-green-400 font-bold">{lidarPoints.toLocaleString()}</span></p>
+                          <p>CONFIDENCE: HIGH</p>
+                        </div>
+                        <div className="text-right space-y-0.5 max-h-[45px] overflow-hidden text-[7px] text-slate-400">
+                          {lidarLogs.slice(-3).map((log, index) => (
+                            <p key={index}>{log}</p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions / settings below scanner */}
+                  <div className="bg-slate-900/35 border border-slate-900/80 rounded-2xl p-4 space-y-3 flex flex-col">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                          Room Type
+                        </label>
+                        <select
+                          value={roomType}
+                          onChange={(e) => setRoomType(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
+                        >
+                          <option value="Living Room">Living Room</option>
+                          <option value="Bedroom">Bedroom</option>
+                          <option value="Home Office">Home Office</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                          Style Preset
+                        </label>
+                        <select
+                          value={selectedStyle}
+                          onChange={(e) => setSelectedStyle(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
+                        >
+                          <option value="Modern">Modern</option>
+                          <option value="Japandi">Japandi</option>
+                          <option value="Scandinavian">Scandinavian</option>
+                          <option value="Minimalist">Minimalist</option>
+                          <option value="Luxury">Luxury</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {lidarStatus === "idle" && (
+                      <button
+                        onClick={handleStartLidarScan}
+                        className="w-full bg-blue-650 hover:bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles className="w-4 h-4 animate-pulse" /> Start LiDAR Scan
+                      </button>
+                    )}
+
+                    {lidarStatus === "scanning" && (
+                      <button
+                        disabled
+                        className="w-full bg-slate-900 border border-slate-800 text-slate-500 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 select-none"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Scanning Space ({lidarProgress}%)
+                      </button>
+                    )}
+
+                    {lidarStatus === "completed" && (
+                      <button
+                        onClick={handleCreateFromLidarScan}
+                        className="w-full bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="w-4 h-4" /> Export Scan to Studio
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
