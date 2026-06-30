@@ -468,38 +468,6 @@ function StudioContent() {
     }, 150);
   };
 
-  const handleStartImgTo3D = () => {
-    setImgTo3DStatus("processing");
-    setImgTo3DProgress(0);
-    setImgTo3DLogs(["Loading silhouette segmentation module...", "Analyzing depth boundaries..."]);
-
-    const processInterval = setInterval(() => {
-      setImgTo3DProgress((prev) => {
-        const next = prev + 10;
-        
-        if (next === 20) {
-          setImgTo3DLogs((l) => [...l, "Generating occupancy network grid..."]);
-        } else if (next === 40) {
-          setImgTo3DLogs((l) => [...l, "Tracing contour points: 2,408 vertices extracted..."]);
-        } else if (next === 60) {
-          setImgTo3DLogs((l) => [...l, "Fitting basic primitives to mesh structure..."]);
-        } else if (next === 80) {
-          setImgTo3DLogs((l) => [...l, "Synthesizing material textures & normal mapping..."]);
-        } else if (next === 90) {
-          setImgTo3DLogs((l) => [...l, "Smoothing mesh normals & finalizing format..."]);
-        }
-
-        if (next >= 100) {
-          clearInterval(processInterval);
-          setImgTo3DStatus("completed");
-          setImgTo3DLogs((l) => [...l, "3D Object generation successful! Ready to place in scene."]);
-          return 100;
-        }
-        return next;
-      });
-    }, 150);
-  };
-
   // Add object from asset catalog or recommender
   const handleAddObject = async (
     type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition",
@@ -733,7 +701,7 @@ function StudioContent() {
           </div>
 
           <div className="flex-1 space-y-4 min-h-0">
-            {activeLeftTab === "library" ? (
+            {activeLeftTab === "library" && (
               <div className="space-y-4">
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block mb-3">Asset Library</span>
@@ -831,7 +799,9 @@ function StudioContent() {
                   </div>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {activeLeftTab === "recommendations" && (
               <div className="space-y-4 flex flex-col h-full">
                 {/* Search query form */}
                 <div className="space-y-2">
@@ -854,7 +824,7 @@ function StudioContent() {
                     <button
                       onClick={fetchRecommendations}
                       disabled={loadingRecommendations}
-                      className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 bg-blue-650 hover:bg-blue-600 disabled:bg-blue-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
                       Go
                     </button>
@@ -922,22 +892,12 @@ function StudioContent() {
                         <div>
                           <div className="flex items-start justify-between gap-1">
                             <h4 className="font-bold text-[11px] text-slate-200 line-clamp-1">{item.name}</h4>
-                        <div className="flex gap-2.5">
-                          {item.image_url && (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name} 
-                              className="w-12 h-12 rounded-lg object-cover border border-slate-800/80"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-slate-200 truncate">{item.name}</h4>
-                            <p className="text-[10px] text-slate-400 capitalize">{item.category} • {item.style}</p>
-                            <p className="text-[10px] font-mono text-blue-400 font-bold mt-0.5">{item.price}</p>
                           </div>
+                          <span className="text-[9px] text-slate-500 uppercase tracking-wider">{item.style} • {item.category}</span>
                         </div>
 
-                        <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-950/40 p-2 rounded-lg border border-slate-900/60">
+                        {/* Description */}
+                        <p className="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
                           {item.description}
                         </p>
 
@@ -978,14 +938,14 @@ function StudioContent() {
                   
                   {imgTo3DStatus === "idle" && (
                     <div className="space-y-4">
-                      <div className="border border-dashed border-slate-805 rounded-xl p-4 text-center text-slate-400 text-xs">
-                        <ImageIcon className="w-6 h-6 mx-auto mb-2 text-slate-550" />
+                      <div className="border border-dashed border-slate-800 rounded-xl p-4 text-center text-slate-400 text-xs">
+                        <ImageIcon className="w-6 h-6 mx-auto mb-2 text-slate-500" />
                         <p>Upload a photo of furniture</p>
                         <p className="text-[9px] text-slate-500 mt-0.5">We will extract the silhouette and style preset</p>
                       </div>
                       
                       <div className="space-y-2">
-                        <span className="text-[9px] uppercase font-bold tracking-widest text-slate-550 block font-mono">Or select a preset item:</span>
+                        <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500 block font-mono">Or select a preset item:</span>
                         <div className="grid grid-cols-3 gap-2">
                           <button
                             onClick={() => {
@@ -1032,7 +992,7 @@ function StudioContent() {
                   )}
 
                   {(imgTo3DStatus === "uploaded" || imgTo3DStatus === "processing" || imgTo3DStatus === "completed") && (
-                    <div className="space-y-4 font-sans">
+                    <div className="space-y-4">
                       {/* Viewfinder frame */}
                       <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex flex-col justify-center items-center">
                         {imgTo3DFile && (
@@ -1042,7 +1002,7 @@ function StudioContent() {
                         {imgTo3DStatus === "processing" && (
                           <div className="absolute inset-0 bg-slate-950/50 flex flex-col justify-center items-center text-center p-3 select-none">
                             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2" />
-                            <p className="text-[10px] font-mono text-blue-400 font-bold">RECONSTRUCTING MESH... {imgTo3DProgress}%</p>
+                            <p className="text-[10px] font-mono text-blue-450 font-bold">RECONSTRUCTING MESH... {imgTo3DProgress}%</p>
                           </div>
                         )}
 
@@ -1056,7 +1016,7 @@ function StudioContent() {
                       </div>
 
                       {/* Diagnostic Logs HUD */}
-                      <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-900 font-mono text-[8px] text-slate-450 space-y-0.5">
+                      <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-900 font-mono text-[8px] text-slate-400 space-y-0.5">
                         {imgTo3DLogs.slice(-2).map((log, idx) => (
                           <p key={idx} className={log.includes("successful") ? "text-green-400" : ""}>{log}</p>
                         ))}
