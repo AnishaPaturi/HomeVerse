@@ -21,6 +21,8 @@ interface CanvasContainerProps {
   selectedObjectId: string | null;
   onSelectObject: (id: string | null) => void;
   backgroundImageUrl?: string | null;
+  roomWidth?: number;
+  roomDepth?: number;
 }
 
 // Scene background loader component
@@ -284,6 +286,8 @@ export default function CanvasContainer({
   selectedObjectId,
   onSelectObject,
   backgroundImageUrl = null,
+  roomWidth = 10,
+  roomDepth = 10,
 }: CanvasContainerProps) {
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -330,14 +334,14 @@ export default function CanvasContainer({
         {/* Floor */}
         <mesh 
           rotation={[-Math.PI / 2, 0, 0]} 
-          position={[0, 0, 0]} 
+          position={[0, 0, -2.5]} 
           receiveShadow
           onClick={(e) => {
             e.stopPropagation();
             if (floorObj) onSelectObject(floorObj.id);
           }}
         >
-          <planeGeometry args={[10, 10]} />
+          <planeGeometry args={[roomWidth, roomDepth]} />
           {backgroundImageUrl ? (
             <shadowMaterial transparent opacity={0.4} />
           ) : (
@@ -354,20 +358,20 @@ export default function CanvasContainer({
           <>
             {/* Back Wall */}
             <mesh 
-              position={[0, 2.5, -5]} 
+              position={[0, 2.5, -roomDepth / 2 - 2.5]} 
               receiveShadow
               onClick={(e) => {
                 e.stopPropagation();
                 if (wallObj) onSelectObject(wallObj.id);
               }}
             >
-              <boxGeometry args={[10, 5, 0.1]} />
+              <boxGeometry args={[roomWidth, 5, 0.1]} />
               <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
             </mesh>
 
             {/* Left Wall */}
             <mesh 
-              position={[-5, 2.5, 0]} 
+              position={[-roomWidth / 2, 2.5, -2.5]} 
               rotation={[0, Math.PI / 2, 0]}
               receiveShadow
               onClick={(e) => {
@@ -375,7 +379,21 @@ export default function CanvasContainer({
                 if (wallObj) onSelectObject(wallObj.id);
               }}
             >
-              <boxGeometry args={[10, 5, 0.1]} />
+              <boxGeometry args={[roomDepth, 5, 0.1]} />
+              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+            </mesh>
+
+            {/* Right Wall */}
+            <mesh 
+              position={[roomWidth / 2, 2.5, -2.5]} 
+              rotation={[0, Math.PI / 2, 0]}
+              receiveShadow
+              onClick={(e) => {
+                e.stopPropagation();
+                if (wallObj) onSelectObject(wallObj.id);
+              }}
+            >
+              <boxGeometry args={[roomDepth, 5, 0.1]} />
               <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
             </mesh>
 

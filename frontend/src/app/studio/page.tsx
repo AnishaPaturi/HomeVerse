@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag } from "lucide-react";
 import CanvasContainer from "@/components/studio/CanvasContainer";
+import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
 import CopilotChat from "@/components/studio/CopilotChat";
 
@@ -70,6 +71,10 @@ function StudioContent() {
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [hasLoadedFromDb, setHasLoadedFromDb] = useState(false);
   const [roomType, setRoomType] = useState<string>("Living Room");
+  const [roomWidth, setRoomWidth] = useState(10);
+  const [roomDepth, setRoomDepth] = useState(10);
+  const [viewMode, setViewMode] = useState<"2D" | "3D">("3D");
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -105,10 +110,20 @@ function StudioContent() {
 
         // Fetch project details to load the user's actual room photo as background
         if (designData && designData.project_id) {
+          setProjectId(designData.project_id);
           try {
             const projRes = await fetch(`http://localhost:8080/api/projects/${designData.project_id}`);
             if (projRes.ok) {
               const projectData = await projRes.json();
+              if (projectData && projectData.structural_analysis) {
+                try {
+                  const struct = JSON.parse(projectData.structural_analysis);
+                  if (struct.room_width) setRoomWidth(Number(struct.room_width));
+                  if (struct.room_depth) setRoomDepth(Number(struct.room_depth));
+                } catch (e) {
+                  console.warn("Failed to parse structural analysis dimensions:", e);
+                }
+              }
               if (projectData && projectData.thumbnail) {
                 if (!projectData.thumbnail.includes("unsplash.com")) {
                   setBgImageUrl(projectData.thumbnail);
@@ -336,6 +351,43 @@ function StudioContent() {
         return obj;
       })
     );
+  };
+
+  const handleUpdateRoomDimensions = async (width: number, depth: number) => {
+    setRoomWidth(width);
+    setRoomDepth(depth);
+
+    const activeProjId = projectId || sessionStorage.getItem("homeverse_project_id");
+    if (!activeProjId) return;
+
+    try {
+      // Fetch current project to preserve other structural_analysis properties
+      const projRes = await fetch(`http://localhost:8080/api/projects/${activeProjId}`);
+      let currentStruct: any = {};
+      if (projRes.ok) {
+        const projectData = await projRes.json();
+        if (projectData.structural_analysis) {
+          try {
+            currentStruct = JSON.parse(projectData.structural_analysis);
+          } catch (e) {}
+        }
+      }
+
+      currentStruct.room_width = width;
+      currentStruct.room_depth = depth;
+
+      await fetch(`http://localhost:8080/api/projects/${activeProjId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          structural_analysis: JSON.stringify(currentStruct)
+        })
+      });
+    } catch (err) {
+      console.warn("Failed to sync room dimensions to backend:", err);
+    }
   };
 
   const handleUpdateObject = async (id: string, updates: Partial<RoomObject>) => {
@@ -833,14 +885,65 @@ function StudioContent() {
           </div>
         </aside>
 
-        {/* Center: Three.js viewport */}
-        <main className="flex-1 p-4 bg-slate-950 flex flex-col min-w-0">
-          <CanvasContainer
-            objects={objects}
-            selectedObjectId={selectedObjectId}
-            onSelectObject={setSelectedObjectId}
-            backgroundImageUrl={bgImageUrl}
-          />
+        {/* Center: Dual Canvas view switcher */}
+        <main className="flex-1 p-4 bg-slate-950 flex flex-col min-w-0 gap-3">
+          {/* View mode toggle header */}
+          <div className="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Editor Perspective:</span>
+              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
+                <button
+                  onClick={() => setViewMode("2D")}
+                  className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                    viewMode === "2D"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  2D Floor Plan
+                </button>
+                <button
+                  onClick={() => setViewMode("3D")}
+                  className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                    viewMode === "3D"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  3D Staging
+                </button>
+              </div>
+            </div>
+            
+            <div className="text-[10px] text-slate-500 font-medium">
+              Dimensions: <span className="font-mono text-slate-350 font-bold">{roomWidth.toFixed(1)}m × {roomDepth.toFixed(1)}m</span>
+            </div>
+          </div>
+
+          <div className="flex-1 relative min-h-[400px]">
+            {viewMode === "2D" ? (
+              <BlueprintEditor2D
+                objects={objects}
+                selectedObjectId={selectedObjectId}
+                onSelectObject={setSelectedObjectId}
+                onUpdateObject={handleUpdateObject}
+                onDeleteObject={handleDeleteObject}
+                onAddObject={handleAddObject}
+                roomWidth={roomWidth}
+                roomDepth={roomDepth}
+                onUpdateRoomDimensions={handleUpdateRoomDimensions}
+              />
+            ) : (
+              <CanvasContainer
+                objects={objects}
+                selectedObjectId={selectedObjectId}
+                onSelectObject={setSelectedObjectId}
+                backgroundImageUrl={bgImageUrl}
+                roomWidth={roomWidth}
+                roomDepth={roomDepth}
+              />
+            )}
+          </div>
         </main>
 
         {/* Right Tab Stack: Properties & Copilot Chat */}

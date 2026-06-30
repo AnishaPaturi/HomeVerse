@@ -67,11 +67,13 @@ HomeVerse is an AI-powered interior design and room customization web applicatio
 
 ---
 
-## 🚀 MVP Scope
+## 🚀 MVP Scope (Completed)
 
-The immediate goal is to build a functional prototype proving the core user journey:
-1. **Upload**: User uploads a room image.
-2. **Generative Styles**: Outputs 5 redesign variations.
-3. **Selection**: User chooses one.
-4. **3D View**: Renders the room in a basic interactive Three.js canvas.
-5. **Editing**: User can modify wall colors and replace/move furniture objects.
+The core user journey prototype has been successfully built:
+1. **Upload**: Users can upload room image or video scan in [upload/page.tsx](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/src/app/upload/page.tsx).
+2. **Generative Styles**: Generates 5 distinct design variations (Modern, Luxury, Scandinavian, Minimalist, Japandi) with dynamic Pollinations AI imaging and Gemini structural extraction.
+3. **Selection**: Users select their preferred redesign.
+4. **3D View**: Renders the room in an interactive React Three Fiber editor in [studio/page.tsx](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/src/app/studio/page.tsx).
+5. **Editing**: Fully functional visual configurator and conversational AI Design Copilot to update wall/floor textures and add, swap, modify, or delete 3D scene elements.
+
+For future targets (First-Person Walkthroughs, glTF loading, AR previews), see [project_todo_roadmap.md](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/project_todo_roadmap.md).

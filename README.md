@@ -339,24 +339,28 @@ The frontend application will be served at [http://localhost:3000](http://localh
 
 ## 🚀 Roadmap
 
-### 📦 MVP (Phase 1: Build First)
+For a detailed breakdown of all accomplished features and future developer tasks, see [project_todo_roadmap.md](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/project_todo_roadmap.md).
+
+### 📦 MVP (Phase 1: Build First) - Completed
 Focus is strictly on proving the core concept.
-* [ ] Upload room image.
-* [ ] Generate 5 interior styles (Static preview).
-* [ ] Select one design variation.
-* [ ] Enter basic 3D editor viewport.
-* [ ] Modify colors (walls) and swap/replace basic furniture objects.
+* [x] Upload room image & video walkthroughs.
+* [x] Generate 5 interior styles (Modern, Luxury, Scandinavian, Minimalist, Japandi) with structural detection.
+* [x] Select one design variation.
+* [x] Enter basic 3D editor viewport.
+* [x] Modify colors (walls) and swap/replace/move furniture objects in a 3D R3F canvas.
 
-### 🌟 Phase 2: AI & Catalog (V2)
-* [ ] Integrations with Gemini/GPT for the AI Chat Designer.
-* [ ] Expanded furniture asset catalog.
-* [ ] Advanced object rotation, translation, and placement tools.
+### 🌟 Phase 2: AI & Catalog (V2) - Completed
+* [x] Integrations with Gemini 3.5 Flash for the conversational AI Design Copilot.
+* [x] Expanded furniture asset recommendation engine linking to real e-commerce store listings and price points.
+* [x] Advanced object rotation, translation, scaling, and placement tools in a side configurator panel.
 
-### 👓 Phase 3: AR & Walkthroughs (V3)
-* [ ] AR room placement preview on mobile devices.
-* [ ] Immersive walkthrough modes.
-* [ ] Cost estimations and budget planners.
+### 👓 Phase 3: Realism & Walkthroughs (V3) - In Progress
+* [ ] Immersive walkthrough modes (First-person pointer lock WASD + mouse controls).
+* [ ] Real glTF/GLB 3D models loading.
+* [ ] Production-ready Cloud Storage integration (Cloudinary/AWS S3).
+* [ ] Shopping cart invoicing and cost estimations.
 
-### 🏠 Phase 4: Full-Scale Architecture (V4)
-* [ ] Multi-room house generation.
-* [ ] Structural renovation and architectural drafting mode.
+### 🏠 Phase 4: Full-Scale Architecture (V4) - Planned
+* [ ] AR room placement preview on mobile devices (WebXR/AR).
+* [ ] Multi-room house generation and blueprint layout drafting modes.
+* [ ] Collaborative real-time multiplayer co-editing sessions.

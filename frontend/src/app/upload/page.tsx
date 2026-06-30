@@ -35,6 +35,9 @@ export default function UploadPage() {
     }
   }, [router]);
 
+  // Active mode state: upload or build from scratch
+  const [activeMode, setActiveMode] = useState<"upload" | "scratch">("upload");
+
   // Upload/Analysis states
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -399,6 +402,89 @@ export default function UploadPage() {
     }
   };
 
+  const handleCreateFromScratch = async () => {
+    setError(null);
+    setUploadStep("uploading");
+
+    const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
+
+    try {
+      // 1. Create project on backend
+      const projTitle = projectTitle.trim() || `My ${roomType} Design`;
+      let projectIdFromBackend = null;
+      try {
+        const projRes = await fetch("http://localhost:8080/api/projects/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: projTitle,
+            room_type: roomType,
+            thumbnail: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            user_id: userId
+          })
+        });
+        if (projRes.ok) {
+          const projectData = await projRes.json();
+          projectIdFromBackend = projectData.id;
+        }
+      } catch (err) {
+        console.warn("Backend project creation failed, fallback to client UUID:", err);
+      }
+
+      const activeProjId = projectIdFromBackend || crypto.randomUUID();
+      setProjectId(activeProjId);
+      sessionStorage.setItem("homeverse_project_id", activeProjId);
+      sessionStorage.setItem("homeverse_project_title", projTitle);
+      sessionStorage.setItem("homeverse_room_type", roomType);
+
+      // 2. Create design on backend
+      let designIdFromBackend = null;
+      try {
+        const designRes = await fetch("http://localhost:8080/api/designs/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            project_id: activeProjId,
+            style: selectedStyle,
+            image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            selected: true
+          })
+        });
+        if (designRes.ok) {
+          const designData = await designRes.json();
+          designIdFromBackend = designData.id;
+        }
+      } catch (err) {
+        console.warn("Backend design creation failed:", err);
+      }
+
+      const activeDesignId = designIdFromBackend || crypto.randomUUID();
+      const localDesign = {
+        id: activeDesignId,
+        style: selectedStyle,
+        image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350"
+      };
+
+      setGeneratedDesigns([localDesign]);
+      sessionStorage.setItem("homeverse_generated_designs", JSON.stringify([localDesign]));
+      sessionStorage.setItem("homeverse_selected_style", selectedStyle);
+      sessionStorage.setItem("homeverse_upload_step", "complete");
+      setUploadStep("complete");
+
+      // Redirect directly to studio
+      router.push(`/studio?style=${selectedStyle}&designId=${activeDesignId}`);
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to initialize scratch design.");
+      setUploadStep("idle");
+    }
+  };
+
   const handleEnterStudio = async () => {
     // Sync final project details before entering studio
     if (projectId) {
@@ -509,15 +595,41 @@ export default function UploadPage() {
               
               <div className="flex items-center justify-between pb-3 border-b border-slate-900">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                  Upload Console
+                  {activeMode === "upload" ? "Upload Console" : "Scratch Designer"}
                 </span>
                 <span className="text-[9px] text-blue-400 font-semibold px-2 py-0.5 bg-blue-950/40 border border-blue-900/40 rounded-full font-mono uppercase animate-pulse">
                   {uploadStep}
                 </span>
               </div>
 
-              {/* Upload Dropzone */}
+              {/* Mode Toggle Tabs */}
               {uploadStep === "idle" && (
+                <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
+                  <button
+                    onClick={() => setActiveMode("upload")}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      activeMode === "upload"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Reconstruct Room
+                  </button>
+                  <button
+                    onClick={() => setActiveMode("scratch")}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      activeMode === "scratch"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Start from Scratch
+                  </button>
+                </div>
+              )}
+
+              {/* Upload Dropzone */}
+              {uploadStep === "idle" && activeMode === "upload" && (
                 <div
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
@@ -548,6 +660,84 @@ export default function UploadPage() {
                       <span className="text-slate-800">|</span>
                       <span className="flex items-center gap-1.5"><Video className="w-3 h-3 text-slate-500" /> Video Scan</span>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Start from Scratch Form */}
+              {uploadStep === "idle" && activeMode === "scratch" && (
+                <div className="space-y-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-3 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                        Design Name / Title
+                      </label>
+                      <input
+                        type="text"
+                        value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
+                        onChange={(e) => {
+                          setProjectTitle(e.target.value);
+                        }}
+                        placeholder="e.g. Dream Living Room"
+                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                        Room / Space Type
+                      </label>
+                      <select
+                        value={roomType}
+                        onChange={(e) => {
+                          setRoomType(e.target.value);
+                        }}
+                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                      >
+                        <option value="Living Room">Living Room</option>
+                        <option value="Bedroom">Bedroom</option>
+                        <option value="Office">Home Office</option>
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Dining Room">Dining Room</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Choose Style Preset */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                      Starting Style Theme
+                    </span>
+                    <div className="grid grid-cols-5 gap-1.5 py-1">
+                      {styles.map((style) => (
+                        <button
+                          key={style.name}
+                          type="button"
+                          onClick={() => setSelectedStyle(style.name)}
+                          className={`rounded-lg p-1.5 text-center transition-all cursor-pointer border text-[10px] font-bold ${
+                            selectedStyle === style.name
+                              ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/10"
+                              : "bg-slate-950/60 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
+                          }`}
+                        >
+                          {style.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleCreateFromScratch}
+                    className="w-full flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn mt-2 text-xs"
+                  >
+                    Open 3D Studio Canvas <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className="p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
+                    <span>
+                      <strong>Scratch Studio Mode:</strong> Renders a blank architectural floor plan layout. You can place furniture, add walls, change finishes, and edit coordinates manually.
+                    </span>
                   </div>
                 </div>
               )}
@@ -781,13 +971,28 @@ export default function UploadPage() {
                     })()
                   )
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-650 p-4 text-center">
-                    <Layers className="w-10 h-10 mb-2 text-slate-800" />
-                    <p className="text-xs font-semibold text-slate-400">3D Room View Empty</p>
-                    <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
-                      Please upload a room image to run the AI mapping pipeline.
-                    </p>
-                  </div>
+                  activeMode === "scratch" ? (
+                    <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center space-y-4 animate-fadeIn">
+                      <div className="relative w-36 h-20 border border-slate-800 rounded-xl flex items-center justify-center bg-slate-900/30 overflow-hidden shadow-inner">
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:12px_12px] opacity-60" />
+                        <Sparkles className="w-6 h-6 text-blue-500 animate-pulse relative z-10" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-slate-200">Empty Virtual Room Sandbox</p>
+                        <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
+                          Starting with an empty grid, walls, and flooring template matching your chosen room type and style.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-650 p-4 text-center">
+                      <Layers className="w-10 h-10 mb-2 text-slate-800" />
+                      <p className="text-xs font-semibold text-slate-400">3D Room View Empty</p>
+                      <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
+                        Please upload a room image to run the AI mapping pipeline.
+                      </p>
+                    </div>
+                  )
                 )}
               </div>
 
