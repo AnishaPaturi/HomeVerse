@@ -36,13 +36,19 @@ export default function UploadPage() {
   }, [router]);
 
   // Active mode state: upload, lidar scan, or build from scratch
-  const [activeMode, setActiveMode] = useState<"upload" | "lidar" | "scratch">("upload");
+  const [activeMode, setActiveMode] = useState<"upload" | "lidar" | "vectorizer" | "scratch">("upload");
 
   // LiDAR scan states
   const [lidarStatus, setLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
   const [lidarProgress, setLidarProgress] = useState<number>(0);
   const [lidarPoints, setLidarPoints] = useState<number>(0);
   const [lidarLogs, setLidarLogs] = useState<string[]>([]);
+
+  // Vectorizer states
+  const [vectorizerStatus, setVectorizerStatus] = useState<"idle" | "uploaded" | "processing" | "completed">("idle");
+  const [vectorizerProgress, setVectorizerProgress] = useState<number>(0);
+  const [vectorizerLogs, setVectorizerLogs] = useState<string[]>([]);
+  const [useSampleBlueprint, setUseSampleBlueprint] = useState<boolean>(false);
 
   // Upload/Analysis states
   const [dragActive, setDragActive] = useState(false);
@@ -625,6 +631,157 @@ export default function UploadPage() {
     }
   };
 
+  const handleStartVectorizer = () => {
+    setVectorizerStatus("processing");
+    setVectorizerProgress(0);
+    setVectorizerLogs(["Loading blueprint vectorization engine...", "Reading pixel data & image resolution..."]);
+
+    const processInterval = setInterval(() => {
+      setVectorizerProgress((prev) => {
+        const next = prev + 5;
+        
+        // Push live updates to logs based on vectorization progress
+        if (next === 20) {
+          setVectorizerLogs((l) => [...l, "Analyzing scale: 1 pixel = 0.025m"]);
+        } else if (next === 40) {
+          setVectorizerLogs((l) => [...l, "Tracing outer structural boundaries..."]);
+        } else if (next === 60) {
+          setVectorizerLogs((l) => [...l, "Vectorizing internal partition walls..."]);
+        } else if (next === 80) {
+          setVectorizerLogs((l) => [...l, "Detecting furniture contours (Bed, Sofa, Desk)..."]);
+        } else if (next === 95) {
+          setVectorizerLogs((l) => [...l, "Assembling 3D layout coordinates..."]);
+        }
+
+        if (next >= 100) {
+          clearInterval(processInterval);
+          setVectorizerStatus("completed");
+          setVectorizerLogs((l) => [...l, "Vectorization complete! Created 3D layout blueprint successfully."]);
+          return 100;
+        }
+        return next;
+      });
+    }, 150);
+  };
+
+  const handleCreateFromBlueprint = async () => {
+    setError(null);
+    setUploadStep("uploading");
+
+    const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
+    const projTitle = projectTitle.trim() || `Vectorizer - ${roomType}`;
+
+    try {
+      // 1. Create project on backend with custom structural_analysis (room size detected)
+      const struct = {
+        room_width: 11.5,
+        room_depth: 9.5,
+        scanned_via: "BlueprintVectorizer"
+      };
+
+      let projectIdFromBackend = null;
+      try {
+        const projRes = await fetch("http://localhost:8080/api/projects/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: projTitle,
+            room_type: roomType,
+            thumbnail: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350",
+            user_id: userId,
+            structural_analysis: JSON.stringify(struct)
+          })
+        });
+        if (projRes.ok) {
+          const projectData = await projRes.json();
+          projectIdFromBackend = projectData.id;
+        }
+      } catch (err) {
+        console.warn("Backend project creation failed, fallback to client UUID:", err);
+      }
+
+      const activeProjId = projectIdFromBackend || crypto.randomUUID();
+      setProjectId(activeProjId);
+      sessionStorage.setItem("homeverse_project_id", activeProjId);
+      sessionStorage.setItem("homeverse_project_title", projTitle);
+      sessionStorage.setItem("homeverse_room_type", roomType);
+
+      // 2. Create design on backend
+      let activeDesignId = crypto.randomUUID();
+      try {
+        const designRes = await fetch("http://localhost:8080/api/designs/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            project_id: activeProjId,
+            style: selectedStyle,
+            image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350"
+          })
+        });
+        if (designRes.ok) {
+          const designData = await designRes.json();
+          activeDesignId = designData.id;
+        }
+      } catch (err) {
+        console.warn("Backend design creation failed, fallback to client UUID:", err);
+      }
+
+      // 3. Seed partition walls and objects based on roomType
+      let detectedObjs: any[] = [];
+      
+      if (roomType === "Bedroom") {
+        detectedObjs = [
+          // Partition walls separating bedroom and study/bathroom area
+          { object_type: "partition", position_x: -2.0, position_y: 0, position_z: -2.5, rotation: 1.57, scale: 1.8, material: "#e2e8f0" }, // vertical divider
+          { object_type: "partition", position_x: 2.0, position_y: 0, position_z: -1.0, rotation: 0, scale: 1.2, material: "#e2e8f0" }, // horizontal divider
+          // Bedroom furniture
+          { object_type: "bed", position_x: 1.0, position_y: 0, position_z: -3.2, rotation: 3.14, scale: 1.0, material: "#1e3a8a" },
+          { object_type: "desk", position_x: -3.5, position_y: 0, position_z: -2.2, rotation: 1.57, scale: 1.0, material: "#4b5563" },
+          { object_type: "chair", position_x: -2.8, position_y: 0, position_z: -2.2, rotation: -1.57, scale: 1.0, material: "#475569" },
+          { object_type: "lamp", position_x: -3.8, position_y: 0, position_z: -3.8, rotation: 0, scale: 1.0, material: "#eab308" }
+        ];
+      } else {
+        // Living Room or office default layout
+        detectedObjs = [
+          // Partitions
+          { object_type: "partition", position_x: 0, position_y: 0, position_z: -3.5, rotation: 0, scale: 1.5, material: "#e2e8f0" },
+          // Living room furniture
+          { object_type: "sofa", position_x: -1.0, position_y: 0, position_z: -2.0, rotation: 0, scale: 1.0, material: "#ec4899" },
+          { object_type: "coffee_table", position_x: -1.0, position_y: 0, position_z: -0.8, rotation: 0, scale: 1.0, material: "#f59e0b" },
+          { object_type: "desk", position_x: 3.0, position_y: 0, position_z: -2.5, rotation: -1.57, scale: 1.0, material: "#4b5563" },
+          { object_type: "chair", position_x: 2.2, position_y: 0, position_z: -2.5, rotation: 1.57, scale: 1.0, material: "#475569" },
+          { object_type: "lamp", position_x: -2.5, position_y: 0, position_z: -2.0, rotation: 0, scale: 1.0, material: "#eab308" }
+        ];
+      }
+
+      for (const obj of detectedObjs) {
+        try {
+          await fetch(`http://localhost:8080/api/designs/${activeDesignId}/objects`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(obj)
+          });
+        } catch (err) {
+          console.warn("Failed to seed blueprint object on backend:", err);
+        }
+      }
+
+      setUploadStep("complete");
+      router.push(`/studio?style=${selectedStyle}&designId=${activeDesignId}`);
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to initialize blueprint design.");
+      setUploadStep("idle");
+    }
+  };
+
   const handleEnterStudio = async () => {
     // Sync final project details before entering studio
     if (projectId) {
@@ -744,36 +901,46 @@ export default function UploadPage() {
 
               {/* Mode Toggle Tabs */}
               {uploadStep === "idle" && (
-                <div className="grid grid-cols-3 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
+                <div className="grid grid-cols-4 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
                   <button
-                    onClick={() => setActiveMode("upload")}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    onClick={() => { setActiveMode("upload"); setError(null); }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                       activeMode === "upload"
                         ? "bg-blue-600 text-white shadow"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <Upload className="w-3 h-3" /> Reconstruct Room
+                    <Upload className="w-3.5 h-3.5" /> Reconstruct Room
                   </button>
                   <button
-                    onClick={() => setActiveMode("lidar")}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    onClick={() => { setActiveMode("lidar"); setError(null); }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                       activeMode === "lidar"
                         ? "bg-blue-600 text-white shadow"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <Sparkles className="w-3 h-3" /> LiDAR Scanner
+                    <Sparkles className="w-3.5 h-3.5" /> LiDAR Scanner
                   </button>
                   <button
-                    onClick={() => setActiveMode("scratch")}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    onClick={() => { setActiveMode("vectorizer"); setError(null); }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                      activeMode === "vectorizer"
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Blueprint
+                  </button>
+                  <button
+                    onClick={() => { setActiveMode("scratch"); setError(null); }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                       activeMode === "scratch"
                         ? "bg-blue-600 text-white shadow"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <Sparkles className="w-3 h-3" /> Start Scratch
+                    <Sparkles className="w-3.5 h-3.5" /> Start Scratch
                   </button>
                 </div>
               )}
@@ -930,6 +1097,201 @@ export default function UploadPage() {
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Blueprint Vectorizer Viewport */}
+              {uploadStep === "idle" && activeMode === "vectorizer" && (
+                <div className="flex-1 flex flex-col gap-4 font-sans">
+                  {/* Mock phone / tablet canvas blueprint vectorizer */}
+                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] max-w-xl mx-auto w-full shadow-2xl flex flex-col justify-center">
+                    {/* If nothing is uploaded/selected */}
+                    {vectorizerStatus === "idle" && (
+                      <div className="p-6 text-center space-y-4 flex flex-col items-center justify-center">
+                        <div className="p-3.5 bg-slate-900 border border-slate-850 rounded-2xl text-blue-400">
+                          <ImageIcon className="w-8 h-8" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-200">Upload Floorplan Blueprint Image</p>
+                          <p className="text-[10px] text-slate-500 mt-1">Upload a top-down blueprint plan to construct 3D walls automatically</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setUseSampleBlueprint(true);
+                            setVectorizerStatus("uploaded");
+                            setVectorizerLogs(["Loaded sample floorplan blueprint: Modern Bedroom Layout."]);
+                          }}
+                          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-bold text-slate-355 transition-colors cursor-pointer"
+                        >
+                          Use Sample Floorplan Blueprint
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Blueprint photo displayed with scanning vector grid */}
+                    {(vectorizerStatus === "uploaded" || vectorizerStatus === "processing" || vectorizerStatus === "completed") && (
+                      <div className="absolute inset-0 z-0">
+                        {useSampleBlueprint ? (
+                          <div 
+                            className="w-full h-full bg-contain bg-no-repeat bg-center"
+                            style={{ 
+                              backgroundImage: "url('https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=400')",
+                              opacity: vectorizerStatus === "processing" ? 0.4 : 0.75
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs font-mono">
+                            Custom Floorplan Loaded
+                          </div>
+                        )}
+                        
+                        {/* Interactive overlay drawing blueprint walls */}
+                        {vectorizerStatus === "processing" && (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+                            {/* Tracing lines */}
+                            <line x1="20%" y1="20%" x2="80%" y2="20%" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="5,5" className="animate-pulse" />
+                            <line x1="20%" y1="20%" x2="20%" y2="80%" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="5,5" className="animate-pulse" />
+                            <line x1="80%" y1="20%" x2="80%" y2="80%" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="5,5" className="animate-pulse" />
+                            <line x1="20%" y1="80%" x2="80%" y2="80%" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="5,5" className="animate-pulse" />
+                            {/* Divider partitions */}
+                            <line x1="45%" y1="20%" x2="45%" y2="80%" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3,3" />
+                            <line x1="45%" y1="50%" x2="80%" y2="50%" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3,3" />
+                            {/* Horizontal laser scan */}
+                            <line x1="0" y1={`${vectorizerProgress}%`} x2="100%" y2={`${vectorizerProgress}%`} stroke="#3b82f6" strokeWidth="2" className="shadow-[0_0_10px_#3b82f6]" />
+                          </svg>
+                        )}
+
+                        {vectorizerStatus === "completed" && (
+                          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+                            {/* Static completed vector lines in bright emerald */}
+                            <rect x="20%" y="20%" width="60%" height="60%" fill="none" stroke="#10b981" strokeWidth="2.5" />
+                            <line x1="45%" y1="20%" x2="45%" y2="80%" stroke="#10b981" strokeWidth="2.5" />
+                            <line x1="45%" y1="50%" x2="80%" y2="50%" stroke="#10b981" strokeWidth="2.5" />
+                            
+                            {/* Mapped labels */}
+                            <text x="25%" y="30%" fill="#10b981" fontSize="9" fontWeight="bold" fontFamily="monospace">BEDROOM ZONE</text>
+                            <text x="50%" y="35%" fill="#10b981" fontSize="9" fontWeight="bold" fontFamily="monospace">STUDY ZONE</text>
+                            <text x="50%" y="65%" fill="#10b981" fontSize="9" fontWeight="bold" fontFamily="monospace">CLOSET ZONE</text>
+                          </svg>
+                        )}
+                      </div>
+                    )}
+
+                    {/* HUD / Progress details */}
+                    {vectorizerStatus !== "idle" && (
+                      <div className="absolute inset-0 p-4 flex flex-col justify-between z-20 pointer-events-none select-none">
+                        <div className="flex justify-between items-center text-[9px] text-slate-350 font-mono bg-slate-950/75 px-2 py-1 rounded border border-slate-800 backdrop-blur-sm self-start">
+                          <span>VECTORIZER STATUS: {vectorizerStatus.toUpperCase()}</span>
+                        </div>
+
+                        {vectorizerStatus === "processing" && (
+                          <div className="self-center bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 backdrop-blur-sm text-[10px] font-mono text-blue-400 font-bold animate-pulse">
+                            VECTORIZING PLAN... {vectorizerProgress}%
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-end gap-3 text-[8px] font-mono text-slate-350 bg-slate-950/75 p-2 rounded-xl border border-slate-800 backdrop-blur-sm">
+                          <div className="space-y-0.5">
+                            <p>ENGINE: HOMEVERSE-VECT-V2</p>
+                            <p>OUTER SHAPE: RECTANGULAR</p>
+                            <p>SCALE SNAP: 0.1M</p>
+                          </div>
+                          <div className="text-right space-y-0.5 max-h-[45px] overflow-hidden text-[7px] text-slate-400">
+                            {vectorizerLogs.slice(-3).map((log, idx) => (
+                              <p key={idx}>{log}</p>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Settings and controls */}
+                  {vectorizerStatus !== "idle" && (
+                    <div className="bg-slate-900/35 border border-slate-900/80 rounded-2xl p-4 space-y-3 flex flex-col">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                            Room Type
+                          </label>
+                          <select
+                            value={roomType}
+                            onChange={(e) => setRoomType(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
+                          >
+                            <option value="Living Room">Living Room</option>
+                            <option value="Bedroom">Bedroom</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono">
+                            Style Preset
+                          </label>
+                          <select
+                            value={selectedStyle}
+                            onChange={(e) => setSelectedStyle(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
+                          >
+                            <option value="Modern">Modern</option>
+                            <option value="Japandi">Japandi</option>
+                            <option value="Scandinavian">Scandinavian</option>
+                            <option value="Minimalist">Minimalist</option>
+                            <option value="Luxury">Luxury</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {vectorizerStatus === "uploaded" && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setVectorizerStatus("idle");
+                              setUseSampleBlueprint(false);
+                            }}
+                            className="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-350 hover:text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                          <button
+                            onClick={handleStartVectorizer}
+                            className="flex-2 bg-blue-650 hover:bg-blue-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <Sparkles className="w-4 h-4 animate-pulse" /> Vectorize Blueprint
+                          </button>
+                        </div>
+                      )}
+
+                      {vectorizerStatus === "processing" && (
+                        <button
+                          disabled
+                          className="w-full bg-slate-900 border border-slate-800 text-slate-500 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 select-none"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Auto-Tracing Walls ({vectorizerProgress}%)
+                        </button>
+                      )}
+
+                      {vectorizerStatus === "completed" && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setVectorizerStatus("idle");
+                              setUseSampleBlueprint(false);
+                            }}
+                            className="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-355 hover:text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                          >
+                            Re-upload
+                          </button>
+                          <button
+                            onClick={handleCreateFromBlueprint}
+                            className="flex-2 bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 animate-bounce"
+                          >
+                            <Check className="w-4 h-4" /> Construct 3D Walls
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
