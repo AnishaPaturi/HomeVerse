@@ -75,6 +75,7 @@ function StudioContent() {
   const [roomDepth, setRoomDepth] = useState(10);
   const [viewMode, setViewMode] = useState<"2D" | "3D">("3D");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [activeFloor, setActiveFloor] = useState<number>(0);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -428,7 +429,12 @@ function StudioContent() {
   };
 
   // Add object from asset catalog or recommender
-  const handleAddObject = async (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp", customMaterial?: string, customScale?: number) => {
+  const handleAddObject = async (
+    type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition",
+    customMaterial?: string,
+    customScale?: number,
+    customY?: number
+  ) => {
     const defaultMat = type === "sofa" 
       ? "#ec4899" 
       : type === "desk" 
@@ -439,12 +445,14 @@ function StudioContent() {
             ? "#475569" 
             : type === "bed" 
               ? "#1e3a8a" 
-              : "#eab308";
+              : type === "lamp"
+                ? "#eab308"
+                : "#e2e8f0";
     const newObjLocal: RoomObject = {
       id: `temp-${Date.now()}`,
       object_type: type,
       position_x: (Math.random() - 0.5) * 3,
-      position_y: 0,
+      position_y: customY ?? (activeFloor * 3.0),
       position_z: (Math.random() - 0.5) * 2 - 1.5,
       rotation: 0,
       scale: customScale ?? 1.0,
@@ -725,6 +733,19 @@ function StudioContent() {
                         <span className="text-[10px] text-slate-500 font-normal">Floor or desk lamp</span>
                       </div>
                     </button>
+
+                    <button
+                      onClick={() => handleAddObject("partition")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-emerald-950/20 border border-emerald-900/40 rounded-lg text-emerald-400">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Partition Wall</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Dividing partition wall</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -888,30 +909,69 @@ function StudioContent() {
         {/* Center: Dual Canvas view switcher */}
         <main className="flex-1 p-4 bg-slate-950 flex flex-col min-w-0 gap-3">
           {/* View mode toggle header */}
-          <div className="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Editor Perspective:</span>
-              <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
-                <button
-                  onClick={() => setViewMode("2D")}
-                  className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
-                    viewMode === "2D"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  2D Floor Plan
-                </button>
-                <button
-                  onClick={() => setViewMode("3D")}
-                  className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
-                    viewMode === "3D"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  3D Staging
-                </button>
+          <div className="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Perspective:</span>
+                <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
+                  <button
+                    onClick={() => setViewMode("2D")}
+                    className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                      viewMode === "2D"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    2D Floor Plan
+                  </button>
+                  <button
+                    onClick={() => setViewMode("3D")}
+                    className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                      viewMode === "3D"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    3D Staging
+                  </button>
+                </div>
+              </div>
+
+              {/* Floor Level Selector */}
+              <div className="flex items-center gap-1.5 border-l border-slate-800 pl-4">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Floor Level:</span>
+                <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
+                  <button
+                    onClick={() => setActiveFloor(0)}
+                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                      activeFloor === 0
+                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    Ground
+                  </button>
+                  <button
+                    onClick={() => setActiveFloor(1)}
+                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                      activeFloor === 1
+                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    Floor 1
+                  </button>
+                  <button
+                    onClick={() => setActiveFloor(2)}
+                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                      activeFloor === 2
+                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    Floor 2
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -932,6 +992,7 @@ function StudioContent() {
                 roomWidth={roomWidth}
                 roomDepth={roomDepth}
                 onUpdateRoomDimensions={handleUpdateRoomDimensions}
+                activeFloor={activeFloor}
               />
             ) : (
               <CanvasContainer
@@ -941,6 +1002,7 @@ function StudioContent() {
                 backgroundImageUrl={bgImageUrl}
                 roomWidth={roomWidth}
                 roomDepth={roomDepth}
+                activeFloor={activeFloor}
               />
             )}
           </div>

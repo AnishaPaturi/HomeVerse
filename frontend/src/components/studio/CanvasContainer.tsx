@@ -23,6 +23,25 @@ interface CanvasContainerProps {
   backgroundImageUrl?: string | null;
   roomWidth?: number;
   roomDepth?: number;
+  activeFloor?: number;
+}
+
+// Custom simple 3D Partition Wall component
+function PartitionWall3D({ material, scale, isSelected, onClick }: { material: string; scale: number; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#e2e8f0";
+  const length = 2.0 * scale;
+  return (
+    <mesh onClick={(e) => { e.stopPropagation(); onClick(); }} position={[0, 1.25, 0]}>
+      <boxGeometry args={[length, 2.5, 0.15]} />
+      <meshStandardMaterial color={color} roughness={0.7} />
+      {isSelected && (
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[length + 0.05, 2.55, 0.2]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </mesh>
+  );
 }
 
 // Scene background loader component
@@ -288,6 +307,7 @@ export default function CanvasContainer({
   backgroundImageUrl = null,
   roomWidth = 10,
   roomDepth = 10,
+  activeFloor = 0,
 }: CanvasContainerProps) {
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -311,18 +331,18 @@ export default function CanvasContainer({
   return (
     <div className="w-full h-full relative rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/80">
       <Canvas
-        camera={{ position: [5, 4, 6], fov: 50 }}
+        camera={{ position: [5, activeFloor * 3.0 + 4, 6], fov: 50 }}
         shadows
         onClick={() => onSelectObject(null)}
       >
         <ambientLight intensity={0.6} />
         <directionalLight
-          position={[5, 10, 5]}
+          position={[5, 10 + activeFloor * 3.0, 5]}
           intensity={1.2}
           castShadow
           shadow-mapSize={[1024, 1024]}
         />
-        <pointLight position={[-5, 5, -5]} intensity={0.5} />
+        <pointLight position={[-5, 5 + activeFloor * 3.0, -5]} intensity={0.5} />
 
         {/* Load background room photo asynchronously */}
         {backgroundImageUrl && (
@@ -331,83 +351,103 @@ export default function CanvasContainer({
           </Suspense>
         )}
 
-        {/* Floor */}
-        <mesh 
-          rotation={[-Math.PI / 2, 0, 0]} 
-          position={[0, 0, -2.5]} 
-          receiveShadow
-          onClick={(e) => {
-            e.stopPropagation();
-            if (floorObj) onSelectObject(floorObj.id);
-          }}
-        >
-          <planeGeometry args={[roomWidth, roomDepth]} />
-          {backgroundImageUrl ? (
-            <shadowMaterial transparent opacity={0.4} />
-          ) : (
-            <meshStandardMaterial 
-              color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
-              roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
-              metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
-            />
-          )}
-        </mesh>
+        {/* Render floor slabs and outer walls for all floors up to activeFloor */}
+        {Array.from({ length: activeFloor + 1 }).map((_, floorIdx) => {
+          const floorY = floorIdx * 3.0;
+          return (
+            <group key={floorIdx}>
+              {/* Floor Slab */}
+              <mesh 
+                rotation={[-Math.PI / 2, 0, 0]} 
+                position={[0, floorY, -2.5]} 
+                receiveShadow
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (floorObj) onSelectObject(floorObj.id);
+                }}
+              >
+                <planeGeometry args={[roomWidth, roomDepth]} />
+                {backgroundImageUrl ? (
+                  <shadowMaterial transparent opacity={0.4} />
+                ) : (
+                  <meshStandardMaterial 
+                    color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
+                    roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
+                    metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
+                  />
+                )}
+              </mesh>
 
-        {/* Hide walls and gridline helper if background photo is loaded for realism */}
+              {/* Hide walls if background photo is loaded for realism */}
+              {!backgroundImageUrl && (
+                <>
+                  {/* Back Wall */}
+                  <mesh 
+                    position={[0, floorY + 1.25, -roomDepth / 2 - 2.5]} 
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (wallObj) onSelectObject(wallObj.id);
+                    }}
+                  >
+                    <boxGeometry args={[roomWidth, 2.5, 0.1]} />
+                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+                  </mesh>
+
+                  {/* Left Wall */}
+                  <mesh 
+                    position={[-roomWidth / 2, floorY + 1.25, -2.5]} 
+                    rotation={[0, Math.PI / 2, 0]}
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (wallObj) onSelectObject(wallObj.id);
+                    }}
+                  >
+                    <boxGeometry args={[roomDepth, 2.5, 0.1]} />
+                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+                  </mesh>
+
+                  {/* Right Wall */}
+                  <mesh 
+                    position={[roomWidth / 2, floorY + 1.25, -2.5]} 
+                    rotation={[0, Math.PI / 2, 0]}
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (wallObj) onSelectObject(wallObj.id);
+                    }}
+                  >
+                    <boxGeometry args={[roomDepth, 2.5, 0.1]} />
+                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+                  </mesh>
+                </>
+              )}
+            </group>
+          );
+        })}
+
+        {/* Grid helper for architectural feel - rendered at the active floor level */}
         {!backgroundImageUrl && (
-          <>
-            {/* Back Wall */}
-            <mesh 
-              position={[0, 2.5, -roomDepth / 2 - 2.5]} 
-              receiveShadow
-              onClick={(e) => {
-                e.stopPropagation();
-                if (wallObj) onSelectObject(wallObj.id);
-              }}
-            >
-              <boxGeometry args={[roomWidth, 5, 0.1]} />
-              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-            </mesh>
-
-            {/* Left Wall */}
-            <mesh 
-              position={[-roomWidth / 2, 2.5, -2.5]} 
-              rotation={[0, Math.PI / 2, 0]}
-              receiveShadow
-              onClick={(e) => {
-                e.stopPropagation();
-                if (wallObj) onSelectObject(wallObj.id);
-              }}
-            >
-              <boxGeometry args={[roomDepth, 5, 0.1]} />
-              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-            </mesh>
-
-            {/* Right Wall */}
-            <mesh 
-              position={[roomWidth / 2, 2.5, -2.5]} 
-              rotation={[0, Math.PI / 2, 0]}
-              receiveShadow
-              onClick={(e) => {
-                e.stopPropagation();
-                if (wallObj) onSelectObject(wallObj.id);
-              }}
-            >
-              <boxGeometry args={[roomDepth, 5, 0.1]} />
-              <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-            </mesh>
-
-            {/* Grid helper for architectural feel */}
-            <Grid cellSize={0.5} sectionSize={1.5} fadeDistance={20} infiniteGrid />
-          </>
+          <Grid 
+            position={[0, activeFloor * 3.0, -2.5]} 
+            cellSize={0.5} 
+            sectionSize={1.5} 
+            fadeDistance={20} 
+            infiniteGrid 
+          />
         )}
 
-        {/* Render Editable Furniture Objects */}
+        {/* Render Editable Furniture & Partition Objects */}
         {objects
           .filter((o) => o.object_type !== "floor" && o.object_type !== "wall")
           .map((obj) => {
             const isSelected = selectedObjectId === obj.id;
             const clickHandler = () => onSelectObject(obj.id);
+            const objFloor = Math.floor(obj.position_y / 3.0);
+            
+            // Clip objects above the active floor so we can edit inside
+            if (objFloor > activeFloor) return null;
             
             return (
               <group
@@ -434,11 +474,20 @@ export default function CanvasContainer({
                 {obj.object_type === "lamp" && (
                   <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
                 )}
+                {obj.object_type === "partition" && (
+                  <PartitionWall3D material={obj.material} scale={obj.scale} isSelected={isSelected} onClick={clickHandler} />
+                )}
               </group>
             );
           })}
 
-        <OrbitControls makeDefault maxPolarAngle={Math.PI / 2 - 0.05} minDistance={2} maxDistance={15} />
+        <OrbitControls 
+          makeDefault 
+          target={[0, activeFloor * 3.0, -2.5]}
+          maxPolarAngle={Math.PI / 2 - 0.05} 
+          minDistance={2} 
+          maxDistance={20} 
+        />
       </Canvas>
 
       {/* Floating Instructions */}

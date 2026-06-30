@@ -20,10 +20,11 @@ interface BlueprintEditor2DProps {
   onSelectObject: (id: string | null) => void;
   onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
   onDeleteObject: (id: string) => void;
-  onAddObject: (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp", customMaterial?: string, customScale?: number) => void;
+  onAddObject: (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition", customMaterial?: string, customScale?: number) => void;
   roomWidth: number;
   roomDepth: number;
   onUpdateRoomDimensions: (width: number, depth: number) => void;
+  activeFloor: number;
 }
 
 export default function BlueprintEditor2D({
@@ -36,6 +37,7 @@ export default function BlueprintEditor2D({
   roomWidth,
   roomDepth,
   onUpdateRoomDimensions,
+  activeFloor,
 }: BlueprintEditor2DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1.0);
@@ -43,11 +45,10 @@ export default function BlueprintEditor2D({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   
-  // Drag states
   const [draggedObjectId, setDraggedObjectId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [objectStartCoords, setObjectStartCoords] = useState({ x: 0, z: 0 });
-  const [dragMode, setDragMode] = useState<"move" | "rotate" | "wall-width" | "wall-depth" | null>(null);
+  const [dragMode, setDragMode] = useState<"move" | "rotate" | "wall-width" | "wall-depth" | "partition-scale" | null>(null);
   const [rotateStartAngle, setRotateStartAngle] = useState(0);
   const [objectStartRotation, setObjectStartRotation] = useState(0);
 
@@ -208,6 +209,24 @@ export default function BlueprintEditor2D({
         rotation: rotDiff < 0.15 ? snappedRotation : newRotation,
       });
 
+    } else if (dragMode === "partition-scale") {
+      const obj = objects.find((o) => o.id === draggedObjectId);
+      if (!obj) return;
+
+      const objCenter2D = to2D(obj.position_x, obj.position_z);
+      const dx = mouseX - objCenter2D.x;
+      const dy = mouseY - objCenter2D.y;
+      const distPx = Math.sqrt(dx * dx + dy * dy);
+      const distMeters = distPx / scale;
+
+      let newScale = distMeters; // half-length represents the scale multiplier
+      newScale = Math.max(Math.round(newScale * 10) / 10, 0.2); // min 0.2 scale (0.4m wall)
+      newScale = Math.min(newScale, 6.0); // max 6.0 scale (12m wall)
+
+      onUpdateObject(draggedObjectId, {
+        scale: newScale,
+      });
+
     } else if (dragMode === "wall-width") {
       // Resize room width
       const coords = to3D(mouseX, mouseY);
@@ -273,6 +292,7 @@ export default function BlueprintEditor2D({
       case "chair": return { w: 0.6, d: 0.6 };
       case "bed": return { w: 1.6, d: 2.0 };
       case "lamp": return { w: 0.5, d: 0.5 };
+      case "partition": return { w: 2.0, d: 0.15 };
       default: return { w: 1.0, d: 1.0 };
     }
   };
@@ -344,6 +364,13 @@ export default function BlueprintEditor2D({
             {/* Desk grommet holes */}
             <circle cx={-widthPx/2 + 8} cy={-depthPx/2 + 8} r="3" fill="#1e293b" />
           </>
+        );
+      case "partition":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill="#475569" stroke="#1e293b" strokeWidth="1" rx="1" />
+            <line x1={-widthPx/2 + 2} y1={0} x2={widthPx/2 - 2} y2={0} stroke="#94a3b8" strokeWidth="1" strokeDasharray="2,2" />
+          </g>
         );
       case "chair":
         return (
@@ -534,9 +561,13 @@ export default function BlueprintEditor2D({
           );
         })()}
 
-        {/* 5. Render Furniture Objects */}
+        {/* 5. Render Furniture & Partition Objects on Active Floor */}
         {objects
-          .filter((o) => o.object_type !== "floor" && o.object_type !== "wall")
+          .filter((o) => {
+            if (o.object_type === "floor" || o.object_type === "wall") return false;
+            const objFloor = Math.floor(o.position_y / 3.0);
+            return objFloor === activeFloor;
+          })
           .map((obj) => {
             const isSelected = selectedObjectId === obj.id;
             const pos2D = to2D(obj.position_x, obj.position_z);
@@ -587,6 +618,23 @@ export default function BlueprintEditor2D({
                     {/* Handle dot */}
                     <circle cx="0" cy="0" r="7" fill="#3b82f6" opacity="0.3" />
                     <circle cx="0" cy="0" r="4.5" fill="#3b82f6" stroke="#ffffff" strokeWidth="1" />
+                  </g>
+                )}
+
+                {/* Wall Stretch Handle (Drawn only if partition and selected) */}
+                {isSelected && obj.object_type === "partition" && (
+                  <g
+                    transform={`translate(${widthPx / 2}, 0)`}
+                    className="cursor-ew-resize"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      setDraggedObjectId(obj.id);
+                      setDragMode("partition-scale");
+                      setDragStartPos({ x: e.clientX, y: e.clientY });
+                    }}
+                  >
+                    <circle cx="0" cy="0" r="7" fill="#10b981" opacity="0.3" />
+                    <circle cx="0" cy="0" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="1" />
                   </g>
                 )}
               </g>
