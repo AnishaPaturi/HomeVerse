@@ -258,6 +258,9 @@ function StudioContent() {
   const [detectedCategory, setDetectedCategory] = useState<"sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp">("chair");
   const [detectedMaterial, setDetectedMaterial] = useState<string>("#5c4033");
 
+  // Rendering style state (Mockup vs. Realistic glTF)
+  const [renderStyle, setRenderStyle] = useState<"mockup" | "realistic">("realistic");
+
   // Auto-apply starting style presets only if we haven't loaded objects from database
   useEffect(() => {
     if (initialStyle && !hasLoadedFromDb) {
@@ -631,6 +634,30 @@ function StudioContent() {
           >
             <FileText className="w-4 h-4" />
           </button>
+
+          {/* Rendering Style Switcher */}
+          <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-slate-350 mr-1.5">
+            <button
+              onClick={() => setRenderStyle("mockup")}
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer ${
+                renderStyle === "mockup"
+                  ? "bg-slate-800 text-white"
+                  : "hover:text-slate-200"
+              }`}
+            >
+              Mockups
+            </button>
+            <button
+              onClick={() => setRenderStyle("realistic")}
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer ${
+                renderStyle === "realistic"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "hover:text-slate-200"
+              }`}
+            >
+              glTF Models
+            </button>
+          </div>
 
           <button
             onClick={() => alert("High-fidelity 4K Realistic Render is generating in background... check back shortly!")}
@@ -1185,6 +1212,7 @@ function StudioContent() {
                 roomWidth={roomWidth}
                 roomDepth={roomDepth}
                 activeFloor={activeFloor}
+                renderStyle={renderStyle}
               />
             )}
           </div>

@@ -2,7 +2,7 @@
 
 import React, { useRef, Suspense } from "react";
 import { Canvas, useLoader } from "@react-three/fiber";
-import { OrbitControls, Grid } from "@react-three/drei";
+import { OrbitControls, Grid, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
 interface RoomObject {
@@ -24,6 +24,7 @@ interface CanvasContainerProps {
   roomWidth?: number;
   roomDepth?: number;
   activeFloor?: number;
+  renderStyle?: "mockup" | "realistic";
 }
 
 // Custom simple 3D Partition Wall component
@@ -300,6 +301,163 @@ function Lamp3D({ material, isSelected, onClick }: { material: string; isSelecte
   );
 }
 
+// Realistic 3D components loading local glTF assets
+function RealisticChair3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/chair.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[1.2, 1.2, 1.2]} position={[0, 0, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.45, 0]}>
+          <boxGeometry args={[0.8, 1.0, 0.8]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function RealisticSofa3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/chair.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[2.0, 1.1, 1.3]} position={[0, 0, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.45, 0]}>
+          <boxGeometry args={[1.8, 1.0, 1.1]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function RealisticTable3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/table.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[3.0, 3.0, 3.0]} position={[0, 0.2, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.24, 0]}>
+          <boxGeometry args={[1.3, 0.5, 0.8]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function RealisticDesk3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/table.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[4.5, 3.0, 2.5]} position={[0, 0.2, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.35, 0]}>
+          <boxGeometry args={[1.9, 0.8, 1.2]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function RealisticBed3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/chair.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[2.2, 0.6, 2.2]} position={[0, -0.1, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.4, 0]}>
+          <boxGeometry args={[2.3, 1.0, 2.3]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function RealisticLamp3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const { scene } = useGLTF("/models/lamp.glb");
+  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && material.startsWith("#")) {
+        child.material = child.material.clone();
+        child.material.color = new THREE.Color(material);
+      }
+    });
+  }, [clonedScene, material]);
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <primitive object={clonedScene} scale={[0.5, 0.5, 0.5]} position={[0, 0.8, 0]} />
+      {isSelected && (
+        <mesh position={[0, 0.8, 0]}>
+          <boxGeometry args={[0.5, 1.8, 0.5]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 export default function CanvasContainer({
   objects,
   selectedObjectId,
@@ -308,6 +466,7 @@ export default function CanvasContainer({
   roomWidth = 10,
   roomDepth = 10,
   activeFloor = 0,
+  renderStyle = "realistic",
 }: CanvasContainerProps) {
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -457,22 +616,46 @@ export default function CanvasContainer({
                 scale={[obj.scale, obj.scale, obj.scale]}
               >
                 {obj.object_type === "sofa" && (
-                  <Sofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticSofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <Sofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "coffee_table" && (
-                  <CoffeeTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <CoffeeTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "desk" && (
-                  <Desk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticDesk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <Desk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "chair" && (
-                  <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticChair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "bed" && (
-                  <Bed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticBed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <Bed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "lamp" && (
-                  <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  renderStyle === "realistic" ? (
+                    <RealisticLamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  ) : (
+                    <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                  )
                 )}
                 {obj.object_type === "partition" && (
                   <PartitionWall3D material={obj.material} scale={obj.scale} isSelected={isSelected} onClick={clickHandler} />
