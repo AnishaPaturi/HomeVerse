@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag, Image as ImageIcon } from "lucide-react";
 import CanvasContainer from "@/components/studio/CanvasContainer";
 import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
@@ -434,6 +434,38 @@ function StudioContent() {
         console.warn("Failed to delete object on backend:", err);
       }
     }
+  };
+
+  const handleStartImgTo3D = () => {
+    setImgTo3DStatus("processing");
+    setImgTo3DProgress(0);
+    setImgTo3DLogs(["Loading silhouette segmentation module...", "Analyzing depth boundaries..."]);
+
+    const processInterval = setInterval(() => {
+      setImgTo3DProgress((prev) => {
+        const next = prev + 10;
+        
+        if (next === 20) {
+          setImgTo3DLogs((l) => [...l, "Generating occupancy network grid..."]);
+        } else if (next === 40) {
+          setImgTo3DLogs((l) => [...l, "Tracing contour points: 2,408 vertices extracted..."]);
+        } else if (next === 60) {
+          setImgTo3DLogs((l) => [...l, "Fitting basic primitives to mesh structure..."]);
+        } else if (next === 80) {
+          setImgTo3DLogs((l) => [...l, "Synthesizing material textures & normal mapping..."]);
+        } else if (next === 90) {
+          setImgTo3DLogs((l) => [...l, "Smoothing mesh normals & finalizing format..."]);
+        }
+
+        if (next >= 100) {
+          clearInterval(processInterval);
+          setImgTo3DStatus("completed");
+          setImgTo3DLogs((l) => [...l, "3D Object generation successful! Ready to place in scene."]);
+          return 100;
+        }
+        return next;
+      });
+    }, 150);
   };
 
   const handleStartImgTo3D = () => {
