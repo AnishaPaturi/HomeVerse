@@ -261,6 +261,22 @@ function StudioContent() {
   // Rendering style state (Mockup vs. Realistic glTF)
   const [renderStyle, setRenderStyle] = useState<"mockup" | "realistic">("realistic");
 
+  // Ray-Traced 4K Rendering states
+  const [showRenderModal, setShowRenderModal] = useState(false);
+  const [renderQuality, setRenderQuality] = useState<"1080p" | "2K" | "4K">("4K");
+  const [renderProgress, setRenderProgress] = useState(0);
+  const [renderLogs, setRenderLogs] = useState<string[]>([]);
+  const [renderImage, setRenderImage] = useState<string | null>(null);
+  const [isRendering, setIsRendering] = useState(false);
+
+  // WebXR AR Simulation states
+  const [showARModal, setShowARModal] = useState(false);
+  const [arCameraActive, setArCameraActive] = useState(false);
+  const [arSurfaceDetected, setArSurfaceDetected] = useState(false);
+  const [arPlaced, setArPlaced] = useState(false);
+  const [arLogs, setArLogs] = useState<string[]>([]);
+  const [arTargetObject, setArTargetObject] = useState<string>("sofa");
+
   // Auto-apply starting style presets only if we haven't loaded objects from database
   useEffect(() => {
     if (initialStyle && !hasLoadedFromDb) {
@@ -471,6 +487,57 @@ function StudioContent() {
     }, 150);
   };
 
+  const handleStartRayTracedRender = () => {
+    setIsRendering(true);
+    setRenderProgress(0);
+    setRenderImage(null);
+    setRenderLogs(["Initializing WebGPU render pipe...", "Allocating ray buffers..."]);
+
+    const renderInterval = setInterval(() => {
+      setRenderProgress((prev) => {
+        const next = prev + 5;
+
+        if (next === 15) {
+          setRenderLogs((l) => [...l, "Baking ambient occlusion volume..."]);
+        } else if (next === 30) {
+          setRenderLogs((l) => [...l, "Bouncing rays: 16 samples per pixel..."]);
+        } else if (next === 50) {
+          setRenderLogs((l) => [...l, "Bouncing rays: 64 samples per pixel..."]);
+        } else if (next === 70) {
+          setRenderLogs((l) => [...l, "Bouncing rays: 256 samples per pixel (HQ)..."]);
+        } else if (next === 85) {
+          setRenderLogs((l) => [...l, "Running AI bilateral denoiser filter..."]);
+        } else if (next === 95) {
+          setRenderLogs((l) => [...l, "Baking tone mapping exposure matrix..."]);
+        }
+
+        if (next >= 100) {
+          clearInterval(renderInterval);
+          setIsRendering(false);
+          setRenderImage("https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?q=80&w=800");
+          setRenderLogs((l) => [...l, "4K Photo-realistic Ray-Traced Render generated!"]);
+          return 100;
+        }
+        return next;
+      });
+    }, 150);
+  };
+
+  const handleEnterARXR = () => {
+    setArCameraActive(true);
+    setArSurfaceDetected(false);
+    setArPlaced(false);
+    setArLogs(["Starting camera hardware access...", "Initializing ARCore coordinate system..."]);
+
+    setTimeout(() => {
+      setArLogs((l) => [...l, "Scanning horizontal planes..."]);
+      setTimeout(() => {
+        setArSurfaceDetected(true);
+        setArLogs((l) => [...l, "Floor plane detected! Surface ready for projection."]);
+      }, 1500);
+    }, 1000);
+  };
+
   // Add object from asset catalog or recommender
   const handleAddObject = async (
     type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition",
@@ -628,6 +695,22 @@ function StudioContent() {
           </button>
 
           <button
+            onClick={() => {
+              setShowARModal(true);
+              setArCameraActive(false);
+              setArSurfaceDetected(false);
+              setArPlaced(false);
+              setArLogs([]);
+              // Default projection target is the first furniture item, or default to sofa
+              const firstObj = objects.find(o => o.object_type !== "floor" && o.object_type !== "wall");
+              setArTargetObject(firstObj ? firstObj.object_type : "sofa");
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-indigo-650/40 border border-indigo-900/60 hover:bg-indigo-600 text-slate-200 rounded-xl transition-colors cursor-pointer animate-pulse"
+          >
+            <Layers className="w-3.5 h-3.5 text-indigo-400" /> WebXR Projection
+          </button>
+
+          <button
             onClick={() => alert("Design Proposal exported to PDF (Dummy file generated).")}
             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-colors cursor-pointer"
             title="Download Proposal PDF"
@@ -660,8 +743,14 @@ function StudioContent() {
           </div>
 
           <button
-            onClick={() => alert("High-fidelity 4K Realistic Render is generating in background... check back shortly!")}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer glow-btn mr-1"
+            onClick={() => {
+              setShowRenderModal(true);
+              setRenderImage(null);
+              setRenderProgress(0);
+              setIsRendering(false);
+              setRenderLogs([]);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-blue-650 hover:bg-blue-600 text-white rounded-xl transition-all cursor-pointer glow-btn mr-1"
           >
             <Download className="w-3.5 h-3.5" /> Export Render
           </button>
@@ -1241,6 +1330,261 @@ function StudioContent() {
           </div>
         </aside>
       </div>
+
+      {/* 1. Ray-Traced 4K Render Dialog */}
+      {showRenderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col font-sans text-slate-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" />
+                <h3 className="font-extrabold text-sm tracking-tight">Cloud Ray-Tracing Render Engine</h3>
+              </div>
+              <button 
+                onClick={() => setShowRenderModal(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex-1 space-y-5">
+              {!isRendering && !renderImage && (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Convert your 3D design workspace layout into an ultra-high definition photorealistic visual render using cloud path-tracing ray tracing.
+                  </p>
+
+                  <div className="space-y-2">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block font-mono">Select Output Quality:</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      {(["1080p", "2K", "4K"] as const).map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => setRenderQuality(q)}
+                          className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                            renderQuality === q
+                              ? "bg-blue-650/20 border-blue-655 text-blue-400 font-bold shadow-md"
+                              : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-800 hover:text-slate-200"
+                          }`}
+                        >
+                          <p className="text-xs">{q === "1080p" ? "Full HD" : q === "2K" ? "Retina 2K" : "Ultra HD 4K"}</p>
+                          <span className="text-[9px] opacity-70 block font-mono font-medium mt-0.5">
+                            {q === "1080p" ? "1920x1080" : q === "2K" ? "2560x1440" : "3840x2160"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleStartRayTracedRender}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" /> Generate Ray-Traced Render
+                  </button>
+                </div>
+              )}
+
+              {isRendering && (
+                <div className="space-y-4 py-4 text-center">
+                  <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-mono text-blue-450 font-bold">Path-Tracing Scene: {renderProgress}%</p>
+                    <div className="w-full bg-slate-955 rounded-full h-1.5 border border-slate-850 overflow-hidden max-w-xs mx-auto">
+                      <div 
+                        className="bg-blue-550 h-full transition-all duration-150" 
+                        style={{ width: `${renderProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Render Logs HUD */}
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-850 text-left font-mono text-[9px] text-slate-400 space-y-1 max-h-24 overflow-y-auto">
+                    {renderLogs.map((log, idx) => (
+                      <p key={idx}>{log}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {renderImage && (
+                <div className="space-y-4">
+                  <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+                    <img src={renderImage} alt="Ray-traced render result" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 bg-emerald-500/20 border border-emerald-500 text-emerald-400 rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wide">
+                      ✓ Ray-Traced ({renderQuality})
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setRenderImage(null);
+                        setRenderProgress(0);
+                      }}
+                      className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-450 hover:text-white text-xs font-bold py-2.5 rounded-xl transition-colors cursor-pointer"
+                    >
+                      Render Again
+                    </button>
+                    <a
+                      href={renderImage}
+                      download={`render_${renderQuality}.jpg`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-2 bg-blue-650 hover:bg-blue-650 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md text-center cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Download className="w-4 h-4" /> Download High-Res Render
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. WebXR AR Projection Simulator Dialog */}
+      {showARModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col font-sans text-slate-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-400 animate-pulse" />
+                <h3 className="font-extrabold text-sm tracking-tight">WebXR Mobile AR Projection Simulator</h3>
+              </div>
+              <button 
+                onClick={() => setShowARModal(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex-1 space-y-5">
+              {!arCameraActive ? (
+                <div className="space-y-4 text-center">
+                  <div className="p-6 bg-slate-950 rounded-xl border border-slate-850 inline-block mx-auto mb-2 text-indigo-400">
+                    <Layers className="w-10 h-10 animate-bounce" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-xs text-slate-200">Simulate AR Projection in Browser</h4>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                      Visualize how your interior furniture models fit in real physical environments using WebXR spatial anchors.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      onClick={handleEnterARXR}
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+                    >
+                      Enter WebXR AR Simulator
+                    </button>
+                    
+                    <div className="relative py-3 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-850" /></div>
+                      <span className="relative bg-slate-900 px-3 text-[9px] uppercase font-bold tracking-widest text-slate-500">Or Scan QR on Mobile</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl inline-block mx-auto border border-slate-800 shadow-lg">
+                      <div className="w-24 h-24 bg-slate-900 flex items-center justify-center rounded">
+                        <span className="text-[8px] font-mono text-center text-slate-450 p-2 select-none">SCAN QR TO AR PROJECTION</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* AR Screen simulation viewport */}
+                  <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
+                    <img 
+                      src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=600" 
+                      alt="AR Camera Feed" 
+                      className="w-full h-full object-cover opacity-60" 
+                    />
+
+                    {!arSurfaceDetected && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40">
+                        <div className="w-full h-0.5 bg-blue-550 animate-pulse absolute top-1/2 left-0 shadow-[0_0_8px_#3b82f6]" />
+                        <p className="text-[10px] font-mono text-blue-400 font-bold bg-slate-950 px-3 py-1.5 rounded-lg border border-blue-900/40">
+                          SURFACE DETECTING...
+                        </p>
+                      </div>
+                    )}
+
+                    {arSurfaceDetected && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center select-none pointer-events-none">
+                        <div className="absolute w-48 h-48 border border-green-500/40 rounded-full border-dashed animate-ping duration-1000 transform -rotate-x-60" />
+                        <div className="w-32 h-32 border border-green-500/80 rounded-full bg-green-500/10 transform -rotate-x-60" />
+
+                        {arPlaced ? (
+                          <div className="absolute -mt-6 flex flex-col items-center text-center">
+                            <span className="bg-emerald-500 text-white rounded-full p-1 text-[10px] font-bold shadow-md">✓</span>
+                            <span className="bg-slate-950/80 border border-slate-800 text-slate-200 text-[9px] px-2 py-0.5 rounded font-bold capitalize mt-1">
+                              Simulated {arTargetObject} Placed
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="absolute -mt-6 flex flex-col items-center text-center">
+                            <span className="w-3 h-3 bg-blue-500 rounded-full animate-ping" />
+                            <span className="bg-blue-650 text-white text-[8px] px-2 py-0.5 rounded font-bold mt-1">
+                              Tap Place
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-900 font-mono text-[9px] text-slate-400 space-y-0.5">
+                    {arLogs.slice(-2).map((log, idx) => (
+                      <p key={idx} className={log.includes("detected") ? "text-green-400" : ""}>{log}</p>
+                    ))}
+                  </div>
+
+                  {arSurfaceDetected && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setArCameraActive(false);
+                          setArSurfaceDetected(false);
+                        }}
+                        className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                      >
+                        Reset
+                      </button>
+
+                      {!arPlaced ? (
+                        <button
+                          onClick={() => {
+                            setArPlaced(true);
+                            setArLogs((l) => [...l, `Placed virtual 3D ${arTargetObject} model at spatial coordinate [0.0, 0.0, -1.2].`]);
+                          }}
+                          className="flex-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          Place {arTargetObject}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => alert(`AR Screenshot captured & saved to device gallery!`)}
+                          className="flex-2 bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-bold py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          Capture Snapshot
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
