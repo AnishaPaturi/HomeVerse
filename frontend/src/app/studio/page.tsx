@@ -101,6 +101,30 @@ function StudioContent() {
     }
   }, [router]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA" ||
+        document.activeElement?.tagName === "SELECT"
+      ) {
+        return;
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedObjectId) {
+        const obj = objects.find((o) => o.id === selectedObjectId);
+        if (obj && obj.object_type !== "floor" && obj.object_type !== "wall") {
+          handleDeleteObject(selectedObjectId);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedObjectId, objects]);
+
   const loadDesignObjects = async () => {
     if (!designId) return;
     try {
@@ -846,6 +870,39 @@ function StudioContent() {
       });
     } catch (err) {
       console.warn("Failed to sync room dimensions to backend:", err);
+    }
+  };
+
+  const handleUpdatePropertyType = async (newType: string) => {
+    setScratchPropertyType(newType);
+    const activeProjId = projectId || sessionStorage.getItem("homeverse_project_id");
+    if (!activeProjId) return;
+
+    try {
+      const projRes = await fetch(`http://localhost:8080/api/projects/${activeProjId}`);
+      let currentStruct: any = {};
+      if (projRes.ok) {
+        const projectData = await projRes.json();
+        if (projectData.structural_analysis) {
+          try {
+            currentStruct = JSON.parse(projectData.structural_analysis);
+          } catch (e) {}
+        }
+      }
+
+      currentStruct.property_type = newType;
+
+      await fetch(`http://localhost:8080/api/projects/${activeProjId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          structural_analysis: JSON.stringify(currentStruct)
+        })
+      });
+    } catch (err) {
+      console.warn("Failed to sync property type to backend:", err);
     }
   };
 
@@ -2181,40 +2238,66 @@ function StudioContent() {
                 </div>
               </div>
 
-              {/* Floor Level Selector */}
-              <div className="flex items-center gap-1.5 border-l border-slate-800 pl-4">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Floor Level:</span>
-                <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
-                  <button
-                    onClick={() => setActiveFloor(0)}
-                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
-                      activeFloor === 0
-                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
+              {/* Property Type & Floor Level Selector */}
+              <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Property:</span>
+                  <select
+                    value={scratchPropertyType}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleUpdatePropertyType(val);
+                      if (val === "apartment" || val === "flat") {
+                        setActiveFloor(0);
+                      }
+                    }}
+                    className="bg-slate-950 border border-slate-850 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold"
                   >
-                    Ground
-                  </button>
-                  <button
-                    onClick={() => setActiveFloor(1)}
-                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
-                      activeFloor === 1
-                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Floor 1
-                  </button>
-                  <button
-                    onClick={() => setActiveFloor(2)}
-                    className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
-                      activeFloor === 2
-                        ? "bg-indigo-650 text-white shadow-sm font-extrabold"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Floor 2
-                  </button>
+                    <option value="independent">🏡 Independent House</option>
+                    <option value="apartment">🏢 Apartment / Flat</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Floor Level:</span>
+                  {(scratchPropertyType === "apartment" || scratchPropertyType === "flat") ? (
+                    <span className="text-xs text-slate-450 bg-slate-950/60 border border-slate-850/40 px-3 py-1.5 rounded font-semibold font-mono">
+                      Single Flat Level
+                    </span>
+                  ) : (
+                    <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
+                      <button
+                        onClick={() => setActiveFloor(0)}
+                        className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                          activeFloor === 0
+                            ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Ground
+                      </button>
+                      <button
+                        onClick={() => setActiveFloor(1)}
+                        className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                          activeFloor === 1
+                            ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Floor 1
+                      </button>
+                      <button
+                        onClick={() => setActiveFloor(2)}
+                        className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                          activeFloor === 2
+                            ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Floor 2
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

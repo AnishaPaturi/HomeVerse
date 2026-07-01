@@ -871,6 +871,56 @@ function WalkthroughControls({
       // Check collision with objects
       let collision = false;
       for (const obj of objects) {
+        if (obj.object_type === "room") {
+          let rWidth = 4;
+          let rDepth = 4;
+          const mat = obj.material || "";
+          if (mat.includes(";")) {
+            const parts = mat.split(";");
+            for (const part of parts.slice(1)) {
+              if (part.startsWith("width=")) {
+                rWidth = parseFloat(part.split("=")[1]) || 4;
+              } else if (part.startsWith("depth=")) {
+                rDepth = parseFloat(part.split("=")[1]) || 4;
+              }
+            }
+          }
+          
+          const dx = nextPos.x - obj.position_x;
+          const dz = nextPos.z - obj.position_z;
+          const cos = Math.cos(-obj.rotation);
+          const sin = Math.sin(-obj.rotation);
+          const lx = dx * cos - dz * sin;
+          const lz = dx * sin + dz * cos;
+          
+          // Back Wall (-depth/2)
+          if (Math.abs(lz - (-rDepth / 2)) < 0.35 && Math.abs(lx) < rWidth / 2 + 0.3) {
+            collision = true;
+            break;
+          }
+          // Left Wall (-width/2)
+          if (Math.abs(lx - (-rWidth / 2)) < 0.35 && Math.abs(lz) < rDepth / 2 + 0.3) {
+            collision = true;
+            break;
+          }
+          // Right Wall (width/2)
+          if (Math.abs(lx - (rWidth / 2)) < 0.35 && Math.abs(lz) < rDepth / 2 + 0.3) {
+            collision = true;
+            break;
+          }
+          // Front Wall Left Segment (z = rDepth/2, x <= -0.8)
+          if (Math.abs(lz - (rDepth / 2)) < 0.35 && lx < -0.8 && lx > -rWidth / 2 - 0.3) {
+            collision = true;
+            break;
+          }
+          // Front Wall Right Segment (z = rDepth/2, x >= 0.8)
+          if (Math.abs(lz - (rDepth / 2)) < 0.35 && lx > 0.8 && lx < rWidth / 2 + 0.3) {
+            collision = true;
+            break;
+          }
+          continue;
+        }
+
         if (
           obj.object_type === "floor" ||
           obj.object_type === "wall" ||
@@ -1336,6 +1386,95 @@ function ConsoleTable3D({ material, isSelected, onClick }: { material: string; i
   );
 }
 
+// Custom 3D Room Extension (Floor + 4 Walls with doorway cutout)
+function Room3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const parseDimensions = (materialStr: string) => {
+    let mat = materialStr || "";
+    let width = 4;
+    let depth = 4;
+    if (mat.includes(";")) {
+      const parts = mat.split(";");
+      mat = parts[0];
+      for (const part of parts.slice(1)) {
+        if (part.startsWith("width=")) {
+          width = parseFloat(part.split("=")[1]) || 4;
+        } else if (part.startsWith("depth=")) {
+          depth = parseFloat(part.split("=")[1]) || 4;
+        }
+      }
+    }
+    return { material: mat, width, depth };
+  };
+
+  const getFloorColor = (mat: string) => {
+    switch (mat) {
+      case "wood_light": return "#d7ccc8";
+      case "wood_dark": return "#5c4033";
+      case "marble": return "#f5f5f5";
+      case "granite": return "#374151";
+      default: return mat.startsWith("#") ? mat : "#d7ccc8";
+    }
+  };
+
+  const { material: color, width, depth } = parseDimensions(material);
+  const floorColor = getFloorColor(color);
+  const wallColor = "#fafafa"; // clean light wall color
+
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Floor Slab */}
+      <mesh receiveShadow position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[width, depth]} />
+        <meshStandardMaterial color={floorColor} roughness={0.8} />
+      </mesh>
+
+      {/* Back Wall */}
+      <mesh position={[0, 1.25, -depth / 2]} receiveShadow>
+        <boxGeometry args={[width, 2.5, 0.1]} />
+        <meshStandardMaterial color={wallColor} />
+      </mesh>
+
+      {/* Front Wall with doorway */}
+      <group position={[0, 1.25, depth / 2]}>
+        {/* Left segment */}
+        <mesh position={[-width / 4 - 0.5, 0, 0]} receiveShadow>
+          <boxGeometry args={[Math.max(0.1, width / 2 - 1.0), 2.5, 0.1]} />
+          <meshStandardMaterial color={wallColor} />
+        </mesh>
+        {/* Right segment */}
+        <mesh position={[width / 4 + 0.5, 0, 0]} receiveShadow>
+          <boxGeometry args={[Math.max(0.1, width / 2 - 1.0), 2.5, 0.1]} />
+          <meshStandardMaterial color={wallColor} />
+        </mesh>
+        {/* Top segment */}
+        <mesh position={[0, 0.75, 0]} receiveShadow>
+          <boxGeometry args={[2.0, 1.0, 0.1]} />
+          <meshStandardMaterial color={wallColor} />
+        </mesh>
+      </group>
+
+      {/* Left Wall */}
+      <mesh position={[-width / 2, 1.25, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[depth, 2.5, 0.1]} />
+        <meshStandardMaterial color={wallColor} />
+      </mesh>
+
+      {/* Right Wall */}
+      <mesh position={[width / 2, 1.25, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[depth, 2.5, 0.1]} />
+        <meshStandardMaterial color={wallColor} />
+      </mesh>
+
+      {isSelected && (
+        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[width + 0.15, depth + 0.15]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 export default function CanvasContainer({
   objects,
   selectedObjectId,
@@ -1523,6 +1662,9 @@ export default function CanvasContainer({
                   ) : (
                     <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
                   )
+                )}
+                {obj.object_type === "room" && (
+                  <Room3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
                 )}
                 {obj.object_type === "bed" && (
                   renderStyle === "realistic" ? (

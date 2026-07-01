@@ -15,7 +15,7 @@ def get_style_image(style: str, room_type: str) -> str:
     # Curated library of premium room photos matching room_type and style
     curated = {
         "living room": {
-            "Modern": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=800",
+            "Modern": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
             "Luxury": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
             "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
             "Minimalist": "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800",
@@ -39,7 +39,7 @@ def get_style_image(style: str, room_type: str) -> str:
     
     # Fallback default images if room type is not matched
     fallbacks = {
-        "Modern": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=800",
+        "Modern": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
         "Luxury": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
         "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
         "Minimalist": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800",
@@ -659,11 +659,11 @@ class AIService:
            - "rotation" (float in radians)
            - "scale" (float)
         2. "add": Add a new object to the scene. Specify:
-           - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "shutters"
-           - "material": hex color or texture name
-           - "position_x" / "position_y" / "position_z" (floats, e.g. position_x=0.0, position_y=0.0, position_z=-1.5)
-           - "rotation" (float, default 0.0)
-           - "scale" (float, default 1.0)
+            - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "shutters", "bookshelf", "nightstand", "wardrobe", "rug", "armchair", "sideboard", "pouf", "mirror", "bench", "stool", "bar_stool", "plant_box", "console_table", "room"
+            - "material": hex color or texture name. Special case: If adding a "room", the material MUST specify dimensions in the format "#e2e8f0;width=X;depth=Y" (e.g., "#e2e8f0;width=5;depth=5").
+            - "position_x" / "position_y" / "position_z" (floats, e.g. position_x=0.0, position_y=0.0, position_z=-1.5)
+            - "rotation" (float, default 0.0)
+            - "scale" (float, default 1.0)
         3. "delete": Delete an existing object by its "id".
         
         Respond ONLY with a valid JSON object matching the following JSON Schema:
@@ -748,34 +748,77 @@ class AIService:
                     })
                     friendly_message = "I changed the sofa color to blue."
             elif "add" in message_lower or "place" in message_lower:
-                new_type = (
-                    "curtains" if "curtain" in message_lower
-                    else "blinds" if "blind" in message_lower
-                    else "balcony" if "balcony" in message_lower
-                    else "tv" if ("tv" in message_lower or "television" in message_lower)
-                    else "flower_pot" if ("flower" in message_lower or "pot" in message_lower or "plant" in message_lower)
-                    else "dining_table" if "dining" in message_lower
-                    else "shutters" if ("shutter" in message_lower or "divider" in message_lower)
-                    else "desk" if "desk" in message_lower
-                    else "chair" if "chair" in message_lower
-                    else "lamp" if "lamp" in message_lower
-                    else "bed" if "bed" in message_lower
-                    else "sofa" if "sofa" in message_lower
-                    else "coffee_table"
-                )
-                actions.append({
-                    "action_type": "add",
-                    "object": {
-                        "object_type": new_type,
-                        "material": "wood_light" if new_type in ["desk", "coffee_table"] else "#3b82f6",
-                        "position_x": 1.0,
-                        "position_y": 0.0,
-                        "position_z": -2.5,
-                        "rotation": 0.0,
-                        "scale": 1.0
-                    }
-                })
-                friendly_message = f"I added a {new_type} to the room."
+                import re
+                dimensions = re.findall(r"\b(\d+(?:\.\d+)?)\s*(?:x|by|metric|m|ft|feet|X|\*)\s*(\d+(?:\.\d+)?)\b", message)
+                if not dimensions:
+                    numbers = re.findall(r"\b(\d+(?:\.\d+)?)\b", message)
+                    if len(numbers) >= 2:
+                        dimensions = [(numbers[0], numbers[1])]
+                
+                # If room size is mentioned
+                if ("room" in message_lower or "bedroom" in message_lower or "kitchen" in message_lower or "living" in message_lower or "bathroom" in message_lower or "dining" in message_lower) and dimensions:
+                    width = float(dimensions[0][0])
+                    depth = float(dimensions[0][1])
+                    room_name = "room"
+                    for rm in ["bedroom", "kitchen", "living", "bathroom", "dining"]:
+                        if rm in message_lower:
+                            room_name = rm
+                            break
+                    actions.append({
+                        "action_type": "add",
+                        "object": {
+                            "object_type": "room",
+                            "material": f"#e2e8f0;width={width};depth={depth}",
+                            "position_x": 0.0,
+                            "position_y": 0.0,
+                            "position_z": 2.0,
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        }
+                    })
+                    friendly_message = f"I have added a new {room_name} with dimensions {width}m by {depth}m to the floor plan."
+                else:
+                    new_type = (
+                        "bookshelf" if "bookshelf" in message_lower or "bookcase" in message_lower
+                        else "nightstand" if "nightstand" in message_lower or "bedside" in message_lower
+                        else "wardrobe" if "wardrobe" in message_lower or "closet" in message_lower
+                        else "rug" if "rug" in message_lower or "carpet" in message_lower
+                        else "armchair" if "armchair" in message_lower
+                        else "sideboard" if "sideboard" in message_lower or "credenza" in message_lower
+                        else "pouf" if "pouf" in message_lower or "ottoman" in message_lower
+                        else "mirror" if "mirror" in message_lower
+                        else "bench" if "bench" in message_lower
+                        else "bar_stool" if "bar stool" in message_lower
+                        else "stool" if "stool" in message_lower
+                        else "plant_box" if "plant box" in message_lower or "planter" in message_lower
+                        else "console_table" if "console table" in message_lower
+                        else "curtains" if "curtain" in message_lower
+                        else "blinds" if "blind" in message_lower
+                        else "balcony" if "balcony" in message_lower
+                        else "tv" if ("tv" in message_lower or "television" in message_lower)
+                        else "flower_pot" if ("flower" in message_lower or "pot" in message_lower or "plant" in message_lower)
+                        else "dining_table" if "dining" in message_lower
+                        else "shutters" if ("shutter" in message_lower or "divider" in message_lower)
+                        else "desk" if "desk" in message_lower
+                        else "chair" if "chair" in message_lower
+                        else "lamp" if "lamp" in message_lower
+                        else "bed" if "bed" in message_lower
+                        else "sofa" if "sofa" in message_lower
+                        else "coffee_table"
+                    )
+                    actions.append({
+                        "action_type": "add",
+                        "object": {
+                            "object_type": new_type,
+                            "material": "wood_light" if new_type in ["desk", "coffee_table", "bookshelf", "console_table", "bench", "stool", "bar_stool", "sideboard"] else "#cbd5e1",
+                            "position_x": 1.0,
+                            "position_y": 0.0,
+                            "position_z": -2.5,
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        }
+                    })
+                    friendly_message = f"I added a {new_type.replace('_', ' ')} to the room."
             elif "delete" in message_lower or "remove" in message_lower:
                 # delete the last added object if possible, except walls/floors
                 deletable = [o for o in objects_list if o["object_type"] not in ["wall", "floor"]]

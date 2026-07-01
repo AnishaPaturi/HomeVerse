@@ -75,7 +75,7 @@ export default function ProfilePage() {
             id: "mock-proj-1",
             title: "Cozy Living Room Redesign",
             room_type: "Living Room",
-            thumbnail: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             created_at: new Date().toISOString(),
             designs: [
               { id: "mock-design-1", style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", selected: true },

@@ -267,7 +267,7 @@ export default function UploadPage() {
   };
 
   const styles = [
-    { name: "Modern", img: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350", desc: "Sleek lines, dark wood accents, metal fixtures" },
+    { name: "Modern", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350", desc: "Sleek lines, dark wood accents, metal fixtures" },
     { name: "Japandi", img: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", desc: "East meets West. Warm wood, clean canvas, low profile" },
     { name: "Scandinavian", img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350", desc: "Light oak, high contrast, hygge vibes" },
     { name: "Minimalist", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Maximum space, hidden storage, monochrome" },
@@ -354,7 +354,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             title: projTitle,
             room_type: "Living Room",
-            thumbnail: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             user_id: userId
           })
         });
@@ -399,7 +399,7 @@ export default function UploadPage() {
         }
         // Fallback mock designs (if server is offline/error but was not validation error)
         designsList = [
-          { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350" },
+          { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350" },
           { id: crypto.randomUUID(), style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350" },
           { id: crypto.randomUUID(), style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350" },
           { id: crypto.randomUUID(), style: "Minimalist", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350" },
@@ -459,7 +459,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             title: projTitle,
             room_type: roomType,
-            thumbnail: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             user_id: userId,
             structural_analysis: structAnalysisStr
           })
@@ -489,7 +489,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             project_id: activeProjId,
             style: selectedStyle,
-            image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350",
+            image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             selected: true
           })
         });
@@ -505,7 +505,7 @@ export default function UploadPage() {
       const localDesign = {
         id: activeDesignId,
         style: selectedStyle,
-        image_url: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=350"
+        image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350"
       };
 
       setGeneratedDesigns([localDesign]);
@@ -606,7 +606,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             title: projTitle,
             room_type: roomType,
-            thumbnail: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350",
+            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             user_id: userId,
             structural_analysis: JSON.stringify(struct)
           })
@@ -636,7 +636,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             project_id: activeProjId,
             style: selectedStyle,
-            image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350"
+            image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350"
           })
         });
         if (designRes.ok) {
@@ -736,7 +736,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             title: projTitle,
             room_type: roomType,
-            thumbnail: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350",
+            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             user_id: userId,
             structural_analysis: JSON.stringify(struct)
           })
@@ -766,7 +766,7 @@ export default function UploadPage() {
           body: JSON.stringify({
             project_id: activeProjId,
             style: selectedStyle,
-            image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350"
+            image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350"
           })
         });
         if (designRes.ok) {
@@ -1001,7 +1001,7 @@ export default function UploadPage() {
                     <div 
                       className="absolute inset-0 bg-cover bg-center opacity-60"
                       style={{ 
-                        backgroundImage: "url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600')" 
+                        backgroundImage: "url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600')" 
                       }}
                     />
 
