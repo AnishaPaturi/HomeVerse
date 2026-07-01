@@ -572,7 +572,7 @@ class AIService:
             # Construct a dynamic prompt that keeps the same room structure but changes style details
             full_prompt = f"Professional architectural photograph of interior design: {layout_desc} beautifully furnished in {style} style, featuring {gemini_desc}. High-end, realistic, 4k, photorealistic."
             encoded_prompt = urllib.parse.quote(full_prompt)
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true"
+            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux-schnell"
             
             design = DesignModel(
                 project_id=project_id,

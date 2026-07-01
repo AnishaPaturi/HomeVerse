@@ -1891,12 +1891,22 @@ export default function UploadPage() {
               </div>
 
               {uploadStep === "complete" && (
-                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 animate-fadeIn">
-                  <span className="text-[10px] font-bold text-blue-400 block mb-0.5">Style Profile: {selectedStyle}</span>
-                  <p className="text-[10px] text-slate-450 leading-relaxed">
-                    {styles.find((s) => s.name === selectedStyle)?.desc}
-                  </p>
-                </div>
+                <>
+                  <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 animate-fadeIn">
+                    <span className="text-[10px] font-bold text-blue-400 block mb-0.5">Style Profile: {selectedStyle}</span>
+                    <p className="text-[10px] text-slate-450 leading-relaxed">
+                      {styles.find((s) => s.name === selectedStyle)?.desc}
+                    </p>
+                  </div>
+                  {/* Background Image Prefetcher to load other styles in parallel */}
+                  <div className="hidden pointer-events-none w-0 h-0 overflow-hidden" aria-hidden="true">
+                    {generatedDesigns.map((d) => {
+                      const matchedStyle = styles.find((s) => s.name.toLowerCase() === d.style.toLowerCase());
+                      const imgUrl = d.image_url || matchedStyle?.img;
+                      return imgUrl ? <img key={d.id} src={imgUrl} alt="prefetch" /> : null;
+                    })}
+                  </div>
+                </>
               )}
 
               {/* Quick Bypass / Demo Trigger */}
