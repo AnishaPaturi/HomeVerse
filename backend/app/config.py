@@ -11,12 +11,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     CLAUDE_API_KEY: str = ""
     
-    # AWS/Cloudinary for Image Uploads
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_BUCKET_NAME: str = ""
-    AWS_REGION: str = ""
-    CLOUDINARY_URL: str = ""
+
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -529,76 +529,21 @@ class AIService:
 
         detected_room_type = result.get("detected_room_type", "Living Room")
         
-        # Save the uploaded file (Support Cloudinary or AWS S3, local storage is disabled)
+        # Save the uploaded file locally
         file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
         static_filename = f"{project_id}.{file_ext}"
-        mime_type = file.content_type or "image/jpeg"
-        uploaded_url = None
-
-        # 1. Cloudinary Integration
-        if settings.CLOUDINARY_URL:
-            try:
-                import cloudinary
-                import cloudinary.uploader
-                
-                cloudinary.config(cloudinary_url=settings.CLOUDINARY_URL)
-                response = cloudinary.uploader.upload(
-                    file_bytes,
-                    public_id=f"homeverse_uploads/{project_id}",
-                    overwrite=True,
-                    resource_type="auto"
-                )
-                uploaded_url = response.get("secure_url")
-                print(f"File uploaded successfully to Cloudinary: {uploaded_url}")
-            except Exception as e:
-                print(f"Cloudinary upload failed: {e}")
-                if not (settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY and settings.AWS_BUCKET_NAME):
-                    raise HTTPException(
-                        status_code=status.HTTP_502_BAD_GATEWAY,
-                        detail=f"Cloudinary upload failed: {e}. Local media storage is disabled."
-                    )
-
-        # 2. AWS S3 Integration (Fallback if Cloudinary is not configured or failed)
-        if not uploaded_url and settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY and settings.AWS_BUCKET_NAME:
-            try:
-                import boto3
-                import io
-                
-                s3_kwargs = {
-                    "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
-                    "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
-                }
-                if settings.AWS_REGION:
-                    s3_kwargs["region_name"] = settings.AWS_REGION
-
-                s3_client = boto3.client("s3", **s3_kwargs)
-                
-                file_stream = io.BytesIO(file_bytes)
-                s3_client.upload_fileobj(
-                    file_stream,
-                    settings.AWS_BUCKET_NAME,
-                    static_filename,
-                    ExtraArgs={"ContentType": mime_type, "ACL": "public-read"}
-                )
-                
-                if settings.AWS_REGION:
-                    uploaded_url = f"https://{settings.AWS_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{static_filename}"
-                else:
-                    uploaded_url = f"https://{settings.AWS_BUCKET_NAME}.s3.amazonaws.com/{static_filename}"
-                print(f"File uploaded successfully to AWS S3: {uploaded_url}")
-            except Exception as e:
-                print(f"AWS S3 upload failed: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"AWS S3 upload failed: {e}. Local media storage is disabled."
-                )
-
-        # Raise an exception if no cloud storage provider is configured or successfully uploaded to
-        if not uploaded_url:
+        try:
+            os.makedirs("static/uploads", exist_ok=True)
+            local_path = os.path.join("static", "uploads", static_filename)
+            with open(local_path, "wb") as f:
+                f.write(file_bytes)
+            uploaded_url = f"http://localhost:8080/static/uploads/{static_filename}"
+            print(f"File stored locally: {uploaded_url}")
+        except Exception as e:
+            print(f"Local storage save failed: {e}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cloud storage integration is not configured. Local media storage is disabled. "
-                       "Please configure CLOUDINARY_URL or AWS S3 credentials in the backend environment variables."
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save uploaded file locally: {e}"
             )
 
         thumbnail_url = uploaded_url
