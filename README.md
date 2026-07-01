@@ -2,6 +2,13 @@
 
 > **"Transform any room into a personalized, AI-powered living space."**
 
+[![Next.js](https://img.shields.github.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React Three Fiber](https://img.shields.github.io/badge/React_Three_Fiber-R3F-blue?style=flat-square&logo=three.js)](https://docs.pmnd.rs/react-three-fiber)
+[![FastAPI](https://img.shields.github.io/badge/FastAPI-v0.100+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![SQLite](https://img.shields.github.io/badge/SQLite-Database-003B57?style=flat-square&logo=sqlite)](https://sqlite.org/)
+[![Gemini AI](https://img.shields.github.io/badge/Gemini_AI-3.5_Flash-4285F4?style=flat-square&logo=google-gemini)](https://deepmind.google/technologies/gemini/)
+[![FLUX](https://img.shields.github.io/badge/FLUX-Schnell_1.4s-FF5A5F?style=flat-square)](https://pollinations.ai/)
+
 HomeVerse is an AI-powered interior design and room customization web application. It allows users to upload a photo of a room, receive multiple AI-generated redesigns in seconds, edit the room in an interactive 3D environment, and customize materials, furniture, and styling with the help of an AI Design Copilot.
 
 The platform is designed to be highly extensible, with future expansion pathways into architecture, renovation planning, furniture e-commerce, AR visualization, and smart home integration.
@@ -267,25 +274,42 @@ HomeVerse/
 
 ---
 
-## 🚀 Roadmap
+## 📅 Project Timeline
 
-### 📦 Phase 1: Core MVP - Completed
-* [x] Upload room images & generate styles.
-* [x] Segment physical structures and furniture items.
-* [x] 3D R3F editing canvas (drag/rotate/scale objects).
-* [x] Immersive 3D Walkthrough Mode (`WASD` + Mouse-look).
+Here is a chronological overview of the development lifecycle for **HomeVerse**:
 
-### 🌟 Phase 2: AI & Cloud Optimization - Completed
-* [x] Decoupled AWS S3/Cloudinary for direct cloud-free local storage saving.
-* [x] Parallel suggestion prefetching with Flux-Schnell speed optimization (~1.4s generation).
-* [x] Interactive AI Design Copilot powered by Gemini 3.5 Flash.
+### 📦 Phase 1: Core 3D Viewer & MVC (Week 1–2) — Completed
+* Established Next.js + TypeScript client repository and FastAPI python server framework.
+* Configured SQLite ORM databases to hold 3D objects, designs, and user project metadata.
+* Built basic React Three Fiber 3D studio viewport rendering simple furniture boxes.
+* Coded pointer lock WASD controls for the interactive walk-around simulation mode.
 
-### 🏠 Phase 3: Architectural Extensions - Completed
-* [x] Custom Room Addition by dimensions (e.g. 5x5 bedroom).
-* [x] Keyboard Delete/Backspace shortcut support.
-* [x] Flat vs. Independent House floor selection restrictions.
-* [x] Collection of 13 new minimal furniture types.
+### 🌟 Phase 2: Decoupling & Speed Optimizations (Week 3–4) — Completed
+* Decoupled AWS S3 and Cloudinary storage services, moving image processing directly to local server storage on disk.
+* Optimized Pollinations AI generation pipelines, transitioning from traditional diffusion models to **Flux-Schnell** to cut image generation to **~1.4 seconds**.
+* Implemented hidden background pre-loader hooks in the browser to pre-render redesign options instantly.
+* Scaled up the room scanner preview columns from standard box sizing to broad full-width frames.
 
-### 👥 Phase 4: Collaborative Design - Planned
-* [ ] Multi-user multiplayer design syncing.
-* [ ] Mobile AR placement previews.
+### 🏠 Phase 3: Architectural Additions & Custom Rooms (Week 5) — Completed
+* Created custom 3D Room entities dynamically rendering adjacent walls, floors, and doorway entrances.
+* Integrated regex room dimension parser in the Copilot engine to support commands like *"add a 4x4 room"*.
+* Introduced a property dropdown switching between Independent House and Flat, disabling multi-floor selection for apartments.
+* Implemented a collection of 13 new minimal furniture types.
+* Integrated keydown listeners for Backspace and Delete to remove selected objects on the fly.
+
+### 👥 Phase 4: Collaborative Design & Realism (Week 6+) — Planned
+* Immersive WebXR mobile AR viewer integrations.
+* Real-time co-designing multiplayer editor workspaces using WebSocket connections.
+* Automated invoice exports mapping furniture selections.
+
+---
+
+## 👥 About the Author
+
+HomeVerse was designed, developed, and optimized by:
+
+**Anisha Paturi**
+* **GitHub**: [@AnishaPaturi](https://github.com/AnishaPaturi)
+* **Project Repository**: [GitHub - AnishaPaturi/HomeVerse](https://github.com/AnishaPaturi/HomeVerse)
+
+Feel free to open an issue or submit a pull request if you want to collaborate!
