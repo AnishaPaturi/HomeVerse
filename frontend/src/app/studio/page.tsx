@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag, Image as ImageIcon, ShoppingCart, Trash2, ExternalLink } from "lucide-react";
 import CanvasContainer from "@/components/studio/CanvasContainer";
 import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
@@ -261,6 +261,388 @@ function StudioContent() {
   // Rendering style state (Mockup vs. Realistic glTF)
   const [renderStyle, setRenderStyle] = useState<"mockup" | "realistic">("realistic");
 
+  // Shopping Cart & Invoice states
+  const [cart, setCart] = useState<any[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const handleAddToCart = (product: any) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const handleRemoveFromCart = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== productId));
+  };
+
+  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      handleRemoveFromCart(productId);
+      return;
+    }
+    setCart((prev) =>
+      prev.map((item) => (item.id === productId ? { ...item, quantity } : item))
+    );
+  };
+
+  const parsePrice = (priceStr: string): number => {
+    return parseInt(priceStr.replace(/[^0-9]/g, ""), 10) || 0;
+  };
+
+  const calculateSubtotal = () => {
+    return cart.reduce((total, item) => total + parsePrice(item.price) * (item.quantity || 1), 0);
+  };
+
+  const calculateGST = () => {
+    return Math.round(calculateSubtotal() * 0.18);
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateGST();
+  };
+
+  const formatNumber = (num: number) => {
+    return num.toLocaleString("en-IN");
+  };
+
+  const getProductDimensions = (category: string) => {
+    switch (category.toLowerCase()) {
+      case "sofa": return "2.2m (W) × 0.9m (H) × 1.1m (D)";
+      case "table":
+      case "coffee_table": return "1.2m (W) × 0.45m (H) × 0.7m (D)";
+      case "bed": return "1.8m (W) × 0.9m (H) × 2.0m (D)";
+      case "desk": return "1.4m (W) × 0.75m (H) × 0.8m (D)";
+      case "chair": return "0.6m (W) × 0.85m (H) × 0.6m (D)";
+      case "lighting":
+      case "lamp": return "0.4m (W) × 1.4m (H) × 0.4m (D)";
+      default: return "Standard dimensions";
+    }
+  };
+
+  const handleGeneratePDFProposal = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Popup blocker prevented opening the proposal. Please allow popups for this site.");
+      return;
+    }
+
+    const subtotal = calculateSubtotal();
+    const gst = calculateGST();
+    const total = calculateTotal();
+    const dateStr = new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+
+    const itemsHtml = cart.map((item, index) => {
+      const itemPrice = parsePrice(item.price);
+      const rowTotal = itemPrice * (item.quantity || 1);
+      const dimensions = getProductDimensions(item.category);
+      
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+          <td>
+            <div style="font-weight: bold; color: #0f172a;">${item.name}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+              Style: ${item.style} | Dim: ${dimensions}
+            </div>
+          </td>
+          <td style="text-transform: capitalize;">${item.category}</td>
+          <td style="text-align: center;">${item.quantity || 1}</td>
+          <td style="font-family: monospace; text-align: right;">₹${formatNumber(itemPrice)}</td>
+          <td style="font-family: monospace; text-align: right; font-weight: 600;">₹${formatNumber(rowTotal)}</td>
+          <td style="text-align: center;">
+            ${item.product_url ? `<a href="${item.product_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 600;">Buy Link</a>` : "N/A"}
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>HomeVerse Interior Design Proposal</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+          body {
+            font-family: 'Outfit', sans-serif;
+            color: #334155;
+            padding: 40px;
+            margin: 0;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
+          }
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: -0.5px;
+          }
+          .logo span {
+            color: #0f172a;
+          }
+          .proposal-title {
+            text-align: right;
+          }
+          .proposal-title h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          .proposal-title p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            color: #64748b;
+          }
+          .meta-section {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 35px;
+            font-size: 13px;
+          }
+          .meta-box {
+            background-color: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 16px;
+          }
+          .meta-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+          }
+          .meta-grid {
+            display: grid;
+            grid-template-cols: 90px 1fr;
+            gap: 6px;
+          }
+          .meta-label {
+            color: #64748b;
+          }
+          .meta-value {
+            font-weight: 600;
+            color: #0f172a;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 35px;
+            font-size: 13px;
+          }
+          .items-table th {
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+          }
+          .items-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+          }
+          .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+          }
+          .summary-table {
+            width: 280px;
+            border-collapse: collapse;
+            font-size: 13px;
+          }
+          .summary-table td {
+            padding: 8px 10px;
+          }
+          .summary-table tr.total-row {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            border-top: 2px solid #e2e8f0;
+          }
+          .summary-table tr.total-row td {
+            padding-top: 12px;
+          }
+          .notes-section {
+            background-color: #eff6ff;
+            border: 1.5px dashed #bfdbfe;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1e3a8a;
+            margin-bottom: 40px;
+          }
+          .notes-section h4 {
+            margin: 0 0 6px 0;
+            font-weight: 600;
+          }
+          .footer {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+          }
+          .print-bar {
+            background-color: #0f172a;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+          }
+          .print-info {
+            color: #94a3b8;
+            font-size: 12px;
+          }
+          .btn-print {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          .btn-print:hover {
+            background-color: #1d4ed8;
+          }
+          @media print {
+            .print-bar {
+              display: none;
+            }
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="print-bar">
+            <span class="print-info">📄 HomeVerse Interior Design Proposal Draft</span>
+            <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+          </div>
+
+          <div class="header">
+            <div class="logo">Home<span>Verse</span></div>
+            <div class="proposal-title">
+              <h1>Design Proposal</h1>
+              <p>Date: ${dateStr}</p>
+            </div>
+          </div>
+
+          <div class="meta-section">
+            <div class="meta-box">
+              <h3>Client Information</h3>
+              <div class="meta-grid">
+                <div class="meta-label">Client:</div>
+                <div class="meta-value">Offline Designer</div>
+                <div class="meta-label">Email:</div>
+                <div class="meta-value">offline@homeverse.ai</div>
+                <div class="meta-label">Plan Tier:</div>
+                <div class="meta-value">Free Design Studio</div>
+              </div>
+            </div>
+            
+            <div class="meta-box">
+              <h3>Project Specifications</h3>
+              <div class="meta-grid">
+                <div class="meta-label">Room Type:</div>
+                <div class="meta-value" style="text-transform: capitalize;">${roomType || "Living Room"}</div>
+                <div class="meta-label">Dimensions:</div>
+                <div class="meta-value">${roomWidth.toFixed(1)}m × ${roomDepth.toFixed(1)}m</div>
+                <div class="meta-label">Active Style:</div>
+                <div class="meta-value">${initialStyle || "Modern"}</div>
+              </div>
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">#</th>
+                <th>Item Description</th>
+                <th style="width: 100px;">Category</th>
+                <th style="width: 60px; text-align: center;">Qty</th>
+                <th style="width: 100px; text-align: right;">Unit Price</th>
+                <th style="width: 100px; text-align: right;">Total Price</th>
+                <th style="width: 80px; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div class="summary-section">
+            <table class="summary-table">
+              <tr>
+                <td style="color: #64748b;">Subtotal:</td>
+                <td style="font-family: monospace; text-align: right; font-weight: 600; color: #0f172a;">₹${formatNumber(subtotal)}</td>
+              </tr>
+              <tr>
+                <td style="color: #64748b;">Estimated GST (18%):</td>
+                <td style="font-family: monospace; text-align: right; font-weight: 600; color: #0f172a;">₹${formatNumber(gst)}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Estimated Total:</td>
+                <td style="font-family: monospace; text-align: right; font-weight: 700; color: #2563eb;">₹${formatNumber(total)}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="notes-section">
+            <h4>💡 Important Proposal Information</h4>
+            <p style="margin: 0;">
+              This is an AI-assisted interior design proposal generated by HomeVerse. Bounding dimensions reflect standardized sizes matching typical 3D scene placements. Actual pricing may vary slightly based on retail stock availability, regional logistics, and specific customization requests directly on Pepperfry, IKEA, or Urban Ladder.
+            </p>
+          </div>
+
+          <div class="footer">
+            <p>HomeVerse Interior Customization Studio &copy; 2026. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   // Ray-Traced 4K Rendering states
   const [showRenderModal, setShowRenderModal] = useState(false);
   const [renderQuality, setRenderQuality] = useState<"1080p" | "2K" | "4K">("4K");
@@ -286,7 +668,7 @@ function StudioContent() {
   }, [initialStyle, hasLoadedFromDb]);
 
   // Fetch recommendations from backend
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = async (overrideQuery?: string) => {
     setLoadingRecommendations(true);
     setRecommendError(null);
     try {
@@ -296,7 +678,7 @@ function StudioContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: recommendQuery,
+          title: overrideQuery || recommendQuery,
           top_n: recommendLimit,
         }),
       });
@@ -320,6 +702,25 @@ function StudioContent() {
   useEffect(() => {
     fetchRecommendations();
   }, [initialStyle]);
+
+  // Sync recommendation query to selected object category + style
+  useEffect(() => {
+    if (selectedObjectId) {
+      const selectedObj = objects.find((o) => o.id === selectedObjectId);
+      if (selectedObj && selectedObj.object_type !== "floor" && selectedObj.object_type !== "wall") {
+        let categoryName = selectedObj.object_type;
+        if (categoryName === "coffee_table") categoryName = "Table";
+        else if (categoryName === "lamp") categoryName = "Lighting";
+        
+        const categoryFormatted = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
+        const stylePrefix = initialStyle || "Modern";
+        const newQuery = `${stylePrefix} ${categoryFormatted}`;
+        setRecommendQuery(newQuery);
+        setActiveLeftTab("recommendations");
+        fetchRecommendations(newQuery);
+      }
+    }
+  }, [selectedObjectId]);
 
   // Helpers to map recommendations to 3D representation
   const mapCategoryTo3DType = (category: string): "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" => {
@@ -938,7 +1339,7 @@ function StudioContent() {
                     </div>
                     
                     <button
-                      onClick={fetchRecommendations}
+                      onClick={() => fetchRecommendations()}
                       disabled={loadingRecommendations}
                       className="px-2.5 py-1.5 bg-blue-650 hover:bg-blue-600 disabled:bg-blue-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                     >
@@ -1017,8 +1418,8 @@ function StudioContent() {
                           {item.description}
                         </p>
 
-                        {/* Action: Add to scene & Shop link */}
-                        <div className="flex gap-1.5">
+                        {/* Action: Add to scene, Add to Cart & Shop link */}
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleAddObject(
                               mapCategoryTo3DType(item.category),
@@ -1026,17 +1427,26 @@ function StudioContent() {
                               item.category === "Chair" ? 0.65 : item.category === "Lighting" ? 0.8 : 1.0
                             )}
                             className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-blue-650 hover:bg-blue-600 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
+                            title="Add 3D model to canvas"
                           >
-                            <Plus className="w-3.5 h-3.5" /> Add
+                            <Plus className="w-3.5 h-3.5" /> 3D View
+                          </button>
+                          <button
+                            onClick={() => handleAddToCart(item)}
+                            className="px-2 py-1.5 bg-emerald-650 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            title="Add to shopping cart"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5" /> Cart
                           </button>
                           {item.product_url && (
                             <a
                               href={item.product_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 border border-slate-700/60"
+                              className="px-2 py-1.5 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1"
+                              title="Go to store website"
                             >
-                              <ShoppingBag className="w-3.5 h-3.5 text-blue-400" /> Shop
+                              <ShoppingBag className="w-3.5 h-3.5 text-blue-450" /> Shop
                             </a>
                           )}
                         </div>
@@ -1273,8 +1683,22 @@ function StudioContent() {
               </div>
             </div>
             
-            <div className="text-[10px] text-slate-500 font-medium">
-              Dimensions: <span className="font-mono text-slate-350 font-bold">{roomWidth.toFixed(1)}m × {roomDepth.toFixed(1)}m</span>
+            <div className="flex items-center gap-3">
+              <div className="text-[10px] text-slate-500 font-medium">
+                Dimensions: <span className="font-mono text-slate-350 font-bold">{roomWidth.toFixed(1)}m × {roomDepth.toFixed(1)}m</span>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="px-3.5 py-1.5 bg-slate-950 hover:bg-slate-900 border border-slate-850 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 relative cursor-pointer select-none"
+              >
+                <ShoppingCart className="w-3.5 h-3.5 text-blue-400" />
+                <span>Cart ({cart.length})</span>
+                {cart.length > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[9px] font-extrabold shadow-md border border-slate-950">
+                    {cart.length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -1583,6 +2007,99 @@ function StudioContent() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* Cart Slide-out Sidebar */}
+      {isCartOpen && (
+        <div className="fixed inset-y-0 right-0 w-96 bg-slate-950/95 border-l border-slate-800 shadow-2xl z-50 flex flex-col p-6 backdrop-blur-md">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-4">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-blue-400" />
+              <h3 className="text-white font-bold text-base">Shopping Cart</h3>
+            </div>
+            <button
+              onClick={() => setIsCartOpen(false)}
+              className="text-slate-450 hover:text-white text-xs font-bold px-2.5 py-1 rounded bg-slate-900 border border-slate-850 cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Cart Items List */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 py-12">
+                <ShoppingCart className="w-12 h-12 text-slate-700 mb-2" />
+                <p className="text-xs">Your cart is empty.</p>
+                <p className="text-[10px] text-slate-600 mt-1">Browse product recommendations and click "Cart" to collect items.</p>
+              </div>
+            ) : (
+              cart.map((item) => (
+                <div key={item.id} className="p-3 bg-slate-900/60 border border-slate-850 rounded-xl flex gap-3 items-start relative group">
+                  <img src={item.image_url} alt={item.name} className="w-14 h-14 object-cover rounded-lg border border-slate-800" />
+                  <div className="flex-1 space-y-1">
+                    <h4 className="text-slate-200 font-semibold text-xs leading-snug line-clamp-1">{item.name}</h4>
+                    <div className="text-[10px] text-slate-500">{item.category} • {item.style}</div>
+                    <div className="text-blue-400 font-mono font-bold text-[11px]">{item.price}</div>
+                    
+                    {/* Quantity controls */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={() => handleUpdateCartQuantity(item.id, (item.quantity || 1) - 1)}
+                        className="w-5 h-5 bg-slate-850 hover:bg-slate-800 text-white rounded flex items-center justify-center text-xs font-bold cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <span className="text-slate-200 text-xs font-mono w-4 text-center">{item.quantity || 1}</span>
+                      <button
+                        onClick={() => handleUpdateCartQuantity(item.id, (item.quantity || 1) + 1)}
+                        className="w-5 h-5 bg-slate-850 hover:bg-slate-800 text-white rounded flex items-center justify-center text-xs font-bold cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remove Button */}
+                  <button
+                    onClick={() => handleRemoveFromCart(item.id)}
+                    className="text-slate-500 hover:text-rose-450 p-1 rounded hover:bg-slate-850 absolute top-2 right-2 cursor-pointer transition-colors"
+                    title="Remove from cart"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Checkout / Invoice section */}
+          {cart.length > 0 && (
+            <div className="border-t border-slate-850 pt-4 mt-4 space-y-4">
+              <div className="space-y-1.5 text-xs text-slate-400">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span className="font-mono text-slate-200">₹{formatNumber(calculateSubtotal())}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Estimated GST (18%):</span>
+                  <span className="font-mono text-slate-200">₹{formatNumber(calculateGST())}</span>
+                </div>
+                <div className="flex justify-between font-bold text-sm text-white pt-2 border-t border-slate-900">
+                  <span>Estimated Total:</span>
+                  <span className="font-mono text-blue-400">₹{formatNumber(calculateTotal())}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleGeneratePDFProposal}
+                className="w-full py-2.5 bg-blue-650 hover:bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-bold border border-blue-500/40 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/10 cursor-pointer"
+              >
+                <FileText className="w-4 h-4" /> Generate PDF Proposal
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

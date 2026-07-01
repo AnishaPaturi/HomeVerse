@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, Suspense } from "react";
-import { Canvas, useLoader } from "@react-three/fiber";
-import { OrbitControls, Grid, useGLTF } from "@react-three/drei";
+import React, { useRef, Suspense, useState, useEffect } from "react";
+import { Canvas, useLoader, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Grid, useGLTF, PointerLockControls } from "@react-three/drei";
 import * as THREE from "three";
 
 interface RoomObject {
@@ -458,6 +458,186 @@ function RealisticLamp3D({ material, isSelected, onClick }: { material: string; 
   );
 }
 
+// Custom first-person controller for Walkthrough Mode
+function WalkthroughControls({
+  activeFloor,
+  objects,
+  roomWidth,
+  roomDepth,
+}: {
+  activeFloor: number;
+  objects: RoomObject[];
+  roomWidth: number;
+  roomDepth: number;
+}) {
+  const { camera } = useThree();
+  const keys = useRef({ forward: false, backward: false, left: false, right: false });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch ((e.key || "").toLowerCase()) {
+        case "w":
+        case "arrowup":
+          keys.current.forward = true;
+          break;
+        case "s":
+        case "arrowdown":
+          keys.current.backward = true;
+          break;
+        case "a":
+        case "arrowleft":
+          keys.current.left = true;
+          break;
+        case "d":
+        case "arrowright":
+          keys.current.right = true;
+          break;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      switch ((e.key || "").toLowerCase()) {
+        case "w":
+        case "arrowup":
+          keys.current.forward = false;
+          break;
+        case "s":
+        case "arrowdown":
+          keys.current.backward = false;
+          break;
+        case "a":
+        case "arrowleft":
+          keys.current.left = false;
+          break;
+        case "d":
+        case "arrowright":
+          keys.current.right = false;
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    // Initial eye-level camera placement
+    camera.position.set(0, activeFloor * 3.0 + 1.6, 2.0);
+    camera.lookAt(new THREE.Vector3(0, activeFloor * 3.0 + 1.6, -3.0));
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      // Reset camera to standard orbit view position
+      camera.position.set(5, activeFloor * 3.0 + 4, 6);
+    };
+  }, [camera, activeFloor]);
+
+  useFrame((state, delta) => {
+    const frontVector = new THREE.Vector3();
+    const sideVector = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+
+    // Get horizontal look direction
+    camera.getWorldDirection(frontVector);
+    frontVector.y = 0;
+    frontVector.normalize();
+
+    // Side vector points right
+    sideVector.crossVectors(frontVector, up).normalize();
+
+    // Move speed adjusted by frame delta
+    const speed = 4.0 * delta; // 4 meters per second
+    const move = new THREE.Vector3(0, 0, 0);
+
+    if (keys.current.forward) move.addScaledVector(frontVector, speed);
+    if (keys.current.backward) move.addScaledVector(frontVector, -speed);
+    if (keys.current.left) move.addScaledVector(sideVector, speed); // cross is left
+    if (keys.current.right) move.addScaledVector(sideVector, -speed);
+
+    if (move.lengthSq() > 0) {
+      const nextPos = camera.position.clone().add(move);
+
+      // Boundary detection constraints
+      const padding = 0.4;
+      const xMin = -roomWidth / 2 + padding;
+      const xMax = roomWidth / 2 - padding;
+      const zMin = -roomDepth / 2 - 2.5 + padding;
+      const zMax = roomDepth / 2 - 2.5 - padding;
+
+      if (nextPos.x < xMin) nextPos.x = xMin;
+      if (nextPos.x > xMax) nextPos.x = xMax;
+      if (nextPos.z < zMin) nextPos.z = zMin;
+      if (nextPos.z > zMax) nextPos.z = zMax;
+
+      // Check collision with objects
+      let collision = false;
+      for (const obj of objects) {
+        if (
+          obj.object_type === "floor" ||
+          obj.object_type === "wall" ||
+          obj.object_type === "partition"
+        ) {
+          continue;
+        }
+
+        let objWidth = 1.0;
+        let objDepth = 1.0;
+
+        switch (obj.object_type) {
+          case "sofa":
+            objWidth = 2.3;
+            objDepth = 1.1;
+            break;
+          case "bed":
+            objWidth = 1.8;
+            objDepth = 2.2;
+            break;
+          case "desk":
+            objWidth = 1.5;
+            objDepth = 0.9;
+            break;
+          case "coffee_table":
+            objWidth = 1.3;
+            objDepth = 0.8;
+            break;
+          case "chair":
+            objWidth = 0.7;
+            objDepth = 0.7;
+            break;
+          case "lamp":
+            objWidth = 0.5;
+            objDepth = 0.5;
+            break;
+        }
+
+        const dx = nextPos.x - obj.position_x;
+        const dz = nextPos.z - obj.position_z;
+
+        // Inverse transform by object rotation
+        const cos = Math.cos(-obj.rotation);
+        const sin = Math.sin(-obj.rotation);
+        const localX = dx * cos - dz * sin;
+        const localZ = dx * sin + dz * cos;
+
+        const halfWidth = (objWidth * obj.scale) / 2 + 0.3;
+        const halfDepth = (objDepth * obj.scale) / 2 + 0.3;
+
+        if (Math.abs(localX) < halfWidth && Math.abs(localZ) < halfDepth) {
+          collision = true;
+          break;
+        }
+      }
+
+      if (!collision) {
+        camera.position.copy(nextPos);
+      }
+    }
+
+    camera.position.y = activeFloor * 3.0 + 1.6;
+  });
+
+  return null;
+}
+
 export default function CanvasContainer({
   objects,
   selectedObjectId,
@@ -468,6 +648,9 @@ export default function CanvasContainer({
   activeFloor = 0,
   renderStyle = "realistic",
 }: CanvasContainerProps) {
+  const [isWalkthrough, setIsWalkthrough] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
   const wallObj = objects.find((o) => o.object_type === "wall");
@@ -664,19 +847,84 @@ export default function CanvasContainer({
             );
           })}
 
-        <OrbitControls 
-          makeDefault 
-          target={[0, activeFloor * 3.0, -2.5]}
-          maxPolarAngle={Math.PI / 2 - 0.05} 
-          minDistance={2} 
-          maxDistance={20} 
-        />
+        {isWalkthrough ? (
+          <>
+            <PointerLockControls 
+              makeDefault 
+              onLock={() => setIsLocked(true)} 
+              onUnlock={() => setIsLocked(false)} 
+            />
+            <WalkthroughControls 
+              activeFloor={activeFloor} 
+              objects={objects} 
+              roomWidth={roomWidth} 
+              roomDepth={roomDepth} 
+            />
+          </>
+        ) : (
+          <OrbitControls 
+            makeDefault 
+            target={[0, activeFloor * 3.0, -2.5]}
+            maxPolarAngle={Math.PI / 2 - 0.05} 
+            minDistance={2} 
+            maxDistance={20} 
+          />
+        )}
       </Canvas>
 
+      {/* Walkthrough Toggle Button */}
+      <button 
+        onClick={() => setIsWalkthrough(!isWalkthrough)}
+        className="absolute top-4 right-4 z-30 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-2 border border-slate-700/60 transition-colors backdrop-blur-md cursor-pointer select-none"
+      >
+        {isWalkthrough ? "🚶 Orbit Mode" : "🚶 Walkthrough Mode"}
+      </button>
+
       {/* Floating Instructions */}
-      <div className="absolute bottom-4 left-4 glass-card px-4 py-2 rounded-lg text-xs text-slate-400 select-none pointer-events-none">
-        🖱️ Left-Click + Drag: Rotate | 🖱️ Right-Click + Drag: Pan | 🖱️ Click object: Select to edit
-      </div>
+      {!isWalkthrough && (
+        <div className="absolute bottom-4 left-4 glass-card px-4 py-2 rounded-lg text-xs text-slate-400 select-none pointer-events-none z-10">
+          🖱️ Left-Click + Drag: Rotate | 🖱️ Right-Click + Drag: Pan | 🖱️ Click object: Select to edit
+        </div>
+      )}
+
+      {/* Walkthrough Locked Instructions */}
+      {isWalkthrough && isLocked && (
+        <div className="absolute bottom-4 left-4 glass-card px-4 py-2 rounded-lg text-xs text-slate-400 select-none pointer-events-none z-10">
+          ⌨️ WASD / Arrows: Move | 🖱️ Mouse: Look | <span className="text-white font-semibold">Esc</span>: Unlock Cursor
+        </div>
+      )}
+
+      {/* Walkthrough Instructions Modal */}
+      {isWalkthrough && !isLocked && (
+        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center p-4">
+          <div className="bg-slate-900/95 border border-slate-700/60 p-6 rounded-2xl max-w-sm shadow-2xl backdrop-blur-md">
+            <h3 className="text-white font-bold text-lg mb-2">Walkthrough Mode</h3>
+            <p className="text-slate-300 text-xs mb-6">
+              Click on the screen to lock your cursor and walk around. Press <kbd className="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-slate-200">Esc</kbd> to unlock the cursor.
+            </p>
+            <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-left text-slate-400 text-xs border-t border-slate-800 pt-4">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white">W / ↑</span> Move Forward
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white">S / ↓</span> Move Backward
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white">A / ←</span> Move Left
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white">D / →</span> Move Right
+              </div>
+            </div>
+            <button
+              onClick={() => setIsWalkthrough(false)}
+              className="mt-6 w-full px-4 py-2 bg-rose-600/80 hover:bg-rose-600 active:bg-rose-700 text-white rounded-lg text-xs font-semibold border border-rose-500/40 transition-colors cursor-pointer"
+            >
+              Exit Walkthrough
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

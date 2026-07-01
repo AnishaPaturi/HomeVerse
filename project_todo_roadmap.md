@@ -61,11 +61,11 @@ This document highlights the **Current Accomplishments** and details the **Futur
 ### 🏎️ Immediate Next Steps (Priority 1)
 
 #### 1. Immersive First-Person Walkthrough Mode
-* [ ] **Goal**: Enable users to click "Walkthrough Mode" and step inside their room, navigating via WASD and mouse-look.
-* [ ] **Details**:
-  * Implement R3F PointerLockControls inside [CanvasContainer.tsx](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/src/components/studio/CanvasContainer.tsx).
-  * Add a custom camera hook tracking WASD/Arrow keys to move the camera coordinates at eye-level height (~1.6 units).
-  * Add basic collision boundary boxes for walls, floors, and heavy furniture items (sofa, bed, desk) to prevent the user from walking through objects.
+* [x] **Goal**: Enable users to click "Walkthrough Mode" and step inside their room, navigating via WASD and mouse-look.
+* [x] **Details**:
+  * [x] Implement R3F PointerLockControls inside [CanvasContainer.tsx](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/src/components/studio/CanvasContainer.tsx).
+  * [x] Add a custom camera hook tracking WASD/Arrow keys to move the camera coordinates at eye-level height (~1.6 units).
+  * [x] Add basic collision boundary boxes for walls, floors, and heavy furniture items (sofa, bed, desk) to prevent the user from walking through objects.
 
 #### 2. Actual 3D Model Loading (glTF/GLB)
 * [x] **Goal**: Replace block placeholder shapes with realistic furniture models.
@@ -81,10 +81,10 @@ This document highlights the **Current Accomplishments** and details the **Futur
   * Upload scanned room photos/videos directly to secure buckets and return cloud CDN URLs instead of mapping to local `http://localhost:8080/static/uploads/`.
 
 #### 4. Cart Integration & Pricing Summaries
-* [ ] **Goal**: Let users collect recommended furniture items and compile an invoice.
-* [ ] **Details**:
-  * Create a "Shopping Cart" slide-out sidebar in the studio workspace.
-  * Provide a "Generate PDF Proposal" button, outputting a printable list of items, dimensions, estimated retail costs in INR, and purchase links.
+* [x] **Goal**: Let users collect recommended furniture items and compile an invoice.
+* [x] **Details**:
+  * [x] Create a "Shopping Cart" slide-out sidebar in the studio workspace.
+  * [x] Provide a "Generate PDF Proposal" button, outputting a printable list of items, dimensions, estimated retail costs in INR, and purchase links.
 
 ---
 
