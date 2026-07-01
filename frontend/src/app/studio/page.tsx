@@ -1379,6 +1379,176 @@ function StudioContent() {
                         <span className="text-[10px] text-slate-500 font-normal">Glass window with metal grills</span>
                       </div>
                     </button>
+
+                    {/* New Minimal Furniture Items */}
+                    <button
+                      onClick={() => handleAddObject("bookshelf")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-yellow-955/20 border border-yellow-900/40 rounded-lg text-yellow-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Bookshelf</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Vertical storage shelving unit</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("nightstand")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-indigo-950/20 border border-indigo-900/40 rounded-lg text-indigo-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Nightstand</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Sleek bedroom bedside cabinet</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("wardrobe")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-pink-955/20 border border-pink-900/40 rounded-lg text-pink-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Wardrobe</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Premium double door clothes closet</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("rug")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-teal-950/20 border border-teal-900/40 rounded-lg text-teal-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Floor Rug</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Flat woven floor rug</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("armchair")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-rose-950/20 border border-rose-900/40 rounded-lg text-rose-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Armchair</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Cozy single cushion armchair</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("sideboard")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-amber-955/20 border border-amber-900/40 rounded-lg text-amber-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Sideboard</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Low credenza storage cabinet</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("pouf")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-purple-950/20 border border-purple-900/40 rounded-lg text-purple-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Pouf Stool</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Comfy round ottoman cushion</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("mirror")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-cyan-950/20 border border-cyan-900/40 rounded-lg text-cyan-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Wall Mirror</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Circular metallic wall mirror</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("bench")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-orange-950/20 border border-orange-900/40 rounded-lg text-orange-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Bench</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Modern entryway wooden bench</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("stool")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-emerald-950/20 border border-emerald-900/40 rounded-lg text-emerald-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Accent Stool</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Three-legged accent stool</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("bar_stool")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-blue-955/20 border border-blue-900/40 rounded-lg text-blue-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Bar Stool</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Tall kitchen counter bar stool</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("plant_box")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-green-950/20 border border-green-900/40 rounded-lg text-green-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Planter Box</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Concrete planter with green foliage</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("console_table")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-violet-950/20 border border-violet-900/40 rounded-lg text-violet-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Console Table</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Sleek hallway console table</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
