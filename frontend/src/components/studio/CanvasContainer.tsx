@@ -329,7 +329,7 @@ function RealisticChair3D({ material, isSelected, onClick }: { material: string;
 }
 
 function RealisticSofa3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/chair.glb");
+  const { scene } = useGLTF("/models/sofa.glb");
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
 
   React.useEffect(() => {
@@ -343,10 +343,10 @@ function RealisticSofa3D({ material, isSelected, onClick }: { material: string; 
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[2.0, 1.1, 1.3]} position={[0, 0, 0]} />
+      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
       {isSelected && (
-        <mesh position={[0, 0.45, 0]}>
-          <boxGeometry args={[1.8, 1.0, 1.1]} />
+        <mesh position={[0, 0.475, 0]}>
+          <boxGeometry args={[2.3, 1.0, 1.1]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
       )}
@@ -381,7 +381,7 @@ function RealisticTable3D({ material, isSelected, onClick }: { material: string;
 }
 
 function RealisticDesk3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/table.glb");
+  const { scene } = useGLTF("/models/desk.glb");
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
 
   React.useEffect(() => {
@@ -395,10 +395,10 @@ function RealisticDesk3D({ material, isSelected, onClick }: { material: string; 
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[4.5, 3.0, 2.5]} position={[0, 0.2, 0]} />
+      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
       {isSelected && (
-        <mesh position={[0, 0.35, 0]}>
-          <boxGeometry args={[1.9, 0.8, 1.2]} />
+        <mesh position={[0, 0.39, 0]}>
+          <boxGeometry args={[1.5, 0.82, 0.9]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
       )}
@@ -407,7 +407,7 @@ function RealisticDesk3D({ material, isSelected, onClick }: { material: string; 
 }
 
 function RealisticBed3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/chair.glb");
+  const { scene } = useGLTF("/models/bed.glb");
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
 
   React.useEffect(() => {
@@ -421,10 +421,10 @@ function RealisticBed3D({ material, isSelected, onClick }: { material: string; i
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[2.2, 0.6, 2.2]} position={[0, -0.1, 0]} />
+      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
       {isSelected && (
-        <mesh position={[0, 0.4, 0]}>
-          <boxGeometry args={[2.3, 1.0, 2.3]} />
+        <mesh position={[0, 0.45, 0]}>
+          <boxGeometry args={[1.8, 1.1, 2.2]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
       )}

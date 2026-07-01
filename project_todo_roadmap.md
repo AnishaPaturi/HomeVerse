@@ -68,11 +68,11 @@ This document highlights the **Current Accomplishments** and details the **Futur
   * Add basic collision boundary boxes for walls, floors, and heavy furniture items (sofa, bed, desk) to prevent the user from walking through objects.
 
 #### 2. Actual 3D Model Loading (glTF/GLB)
-* [ ] **Goal**: Replace block placeholder shapes with realistic furniture models.
-* [ ] **Details**:
-  * Integrate R3F `@react-three/drei`'s `useGLTF` hook to dynamically fetch and display `.glb` assets.
-  * Set up a folder structure for free-to-use 3D models (e.g. sofas, desks, chairs) in the frontend public assets, or fetch them dynamically from an external CDN.
-  * Map database object categories (e.g., `object_type = "sofa"`) to load specific GLTF meshes.
+* [x] **Goal**: Replace block placeholder shapes with realistic furniture models.
+* [x] **Details**:
+  * [x] Integrate R3F `@react-three/drei`'s `useGLTF` hook to dynamically fetch and display `.glb` assets.
+  * [x] Set up a folder structure for free-to-use 3D models (e.g. sofas, desks, chairs) in the frontend public assets, or fetch them dynamically from an external CDN.
+  * [x] Map database object categories (e.g., `object_type = "sofa"`) to load specific GLTF meshes.
 
 #### 3. Cloud Media Storage Integration
 * [ ] **Goal**: Move local backend file storage to scalable cloud solutions.
