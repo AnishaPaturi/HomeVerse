@@ -101,30 +101,6 @@ function StudioContent() {
     }
   }, [router]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA" ||
-        document.activeElement?.tagName === "SELECT"
-      ) {
-        return;
-      }
-
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedObjectId) {
-        const obj = objects.find((o) => o.id === selectedObjectId);
-        if (obj && obj.object_type !== "floor" && obj.object_type !== "wall") {
-          handleDeleteObject(selectedObjectId);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedObjectId, objects]);
-
   const loadDesignObjects = async () => {
     if (!designId) return;
     try {
@@ -318,6 +294,30 @@ function StudioContent() {
   // Shopping Cart & Invoice states
   const [cart, setCart] = useState<any[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA" ||
+        document.activeElement?.tagName === "SELECT"
+      ) {
+        return;
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedObjectId) {
+        const obj = objects.find((o) => o.id === selectedObjectId);
+        if (obj && obj.object_type !== "floor" && obj.object_type !== "wall") {
+          handleDeleteObject(selectedObjectId);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedObjectId, objects]);
 
   const handleAddToCart = (product: any) => {
     setCart((prev) => {

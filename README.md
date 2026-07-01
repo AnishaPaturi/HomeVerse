@@ -68,14 +68,14 @@ Within seconds, the original room is transformed into 5 distinct styles:
 ### Step 4: Enter Design Studio
 By clicking **"Open in Design Studio"**, the user enters an interactive 3D environment powered by Three.js where objects are selectable and editable.
 
-#### Interactive Objects Context Menu:
-* **Furniture (e.g., Sofa, Table, Bed)**: Customize Color, Material, Size, Position, Rotation, Replace, or Delete.
+#### Interactive Objects Context Context:
+* **Furniture**: Customize Color, Material, Size, Position, Rotation, Replace, or Delete.
 * **Wall**: Paint Color, Wallpaper, Texture, Material.
 * **Floor**: Tiles, Wood, Marble, Granite.
 
 ---
 
-## 🤖 AI Design Copilot & Marketplace
+## 🤖 AI Design Copilot & Features
 
 ### AI Design Copilot
 A conversational sidebar allows users to modify the room using natural language:
@@ -85,6 +85,21 @@ A conversational sidebar allows users to modify the room using natural language:
   *AI Copilot*: *Updates the 3D scene with premium leather sofa and accents.*
 * *User*: "Make this suitable for a study room"  
   *AI Copilot*: *Inserts a wooden bookshelf, a minimalist desk, and an adjustable desk lamp.*
+* *User*: "Add a 4x5 bedroom extension"  
+  *AI Copilot*: *Adds a navigable custom room slab with built-in doorway opening.*
+
+### Direct Local Storage (Cloud-Free)
+To ensure maximum speed, data ownership, and seamless offline capability, HomeVerse saves uploaded photos and designs directly to the local disk at `static/uploads/`, eliminating high latency and dependencies on Cloudinary or AWS S3.
+
+### Dynamic 3D Room Additions
+Users can dynamically add new rooms to their active floor plan simply by telling the Copilot their desired dimensions (e.g., *"add a 5x4 kitchen"*). HomeVerse constructs a custom 3D Room entity with floor geometry and 4 walls containing an integrated front doorway cutout, allowing natural navigation during walkthroughs.
+
+### Expanded Minimalist Furniture Library
+The Studio features a wide collection of minimalist furniture assets:
+* **Seating**: Sofa, Armchair, Pouf/Ottoman, Dining Bench, Accent Stool, Bar Stool
+* **Tables**: Coffee Table, Desk, Console Table, Dining Table
+* **Storage**: Bookshelf, Nightstand, Wardrobe, Sideboard
+* **Decor**: Planter Box, Wall Mirror, Floor Rug, Lamp, Window, Door, Partition Wall
 
 ### Smart Furniture Marketplace
 Clicking any object in the 3D scene reveals a marketplace panel with:
@@ -92,18 +107,11 @@ Clicking any object in the 3D scene reveals a marketplace panel with:
 * Price comparison and direct purchase links
 * Exact dimensions for compatibility checks
 
-### Room Recreation (Viral Feature)
-Users upload inspiration images from Pinterest, Instagram, or hotels. HomeVerse extracts the style profile and applies it directly to the user's analyzed room footprint.
-
 ### 🎮 3D Walkthrough Mode
 Step inside the designed space with video game controls:
 * **Movement**: `WASD` / Arrow keys
 * **Camera**: Mouse-look / Touch drag
-
-### 📤 Export Options
-* 4K Realistic Renders (Images/Videos)
-* 360° Room Tours
-* PDF Design Proposals (including Furniture Lists & Cost Estimates)
+* **Collision Detection**: Real-time bounding box collision checks prevent walking through walls or placed furniture.
 
 ---
 
@@ -113,39 +121,36 @@ Step inside the designed space with video game controls:
 graph TD
     A[Frontend: Next.js + TS] --> B[3D Engine: R3F / Three.js]
     A --> C[Backend: FastAPI / Python]
-    C --> D[Database: PostgreSQL]
-    C --> E[Storage: S3 / Cloudinary]
+    C --> D[Database: SQLite / Local DB]
+    C --> E[Local Static Files Storage]
     C --> F[AI Layer]
-    F --> F1[YOLOv11: Object Detection]
-    F --> F2[SAM 2: Segmentation]
-    F --> F3[FLUX / SDXL: Style Gen]
-    F --> F4[LLMs: Gemini / Claude / GPT]
+    F --> F1[Furniture Detection]
+    F --> F2[Room Segmentation]
+    F --> F3[Flux-Schnell: Fast Style Gen]
+    F --> F4[LLMs: Gemini 3.5 Flash]
 ```
 
 ### Frontend
 * **Core Framework**: Next.js (TypeScript)
 * **Styling**: TailwindCSS, Shadcn UI
 * **State Management**: React Query
+* **Performance**: Prefetching preloader pre-fetches Pollinations AI redesign suggestions in parallel for instant style swapping.
 
 ### 3D Engine
 * Three.js, React Three Fiber (R3F), Drei
 
 ### Backend
 * **Core API**: FastAPI (Python)
-* **Database**: PostgreSQL (Prisma or SQLAlchemy ORM)
-* **Asset Storage**: AWS S3 / Cloudinary (for uploaded images & renders)
+* **Database**: SQLite (SQLAlchemy ORM)
+* **Asset Storage**: Direct Local disk storage
 
 ### AI Layer
-* **Object Detection**: YOLOv11 (Furniture identification)
-* **Segmentation**: Segment Anything Model 2 (SAM 2) (Object and boundary separation)
-* **Design Generation**: FLUX / Stable Diffusion XL (SDXL) (Generative redesigns)
-* **AI Copilot**: Gemini / Claude / GPT (Intent parsing and 3D scene updates)
+* **Design Generation**: Pollinations AI using **Flux-Schnell** model (generates variations in ~1.4 seconds)
+* **AI Copilot**: Gemini 3.5 Flash (intent parsing, object additions/updates/deletions, and structural room generation)
 
 ---
 
 ## 📂 Project Structure
-
-HomeVerse is structured as a monorepo with the frontend (Next.js client) and backend (FastAPI server) separated to simplify independent scaling, containerization, and deployment.
 
 ```
 HomeVerse/
@@ -162,205 +167,125 @@ HomeVerse/
 │   │   │       ├── CanvasContainer.tsx       # 3D R3F Room Viewport
 │   │   │       ├── ObjectPropertiesPanel.tsx # Object configurator sidepanel
 │   │   │       └── CopilotChat.tsx           # AI chat sidepanel
-│   │   ├── hooks/
-│   │   └── lib/
-│   ├── package.json
-│   └── tsconfig.json
+│   └── package.json
 │
 ├── backend/              # FastAPI Python server application
 │   ├── main.py           # Application entrypoint
 │   ├── requirements.txt  # Project Python dependencies
 │   └── app/
-│       ├── config.py     # Settings and secret key manager
+│       ├── config.py     # Settings manager
 │       ├── api/          # Route routers
 │       │   ├── auth.py
 │       │   ├── projects.py
 │       │   ├── designs.py
 │       │   └── ai.py
 │       ├── db/           # Connection sessions & ORM aggregation
-│       │   ├── base.py
-│       │   └── session.py
 │       ├── models/       # SQLAlchemy models
-│       │   ├── user.py
-│       │   ├── project.py
-│       │   ├── design.py
-│       │   └── object.py
 │       ├── schemas/      # Pydantic validation schemas
-│       │   ├── user.py
-│       │   ├── project.py
-│       │   ├── design.py
-│       │   └── object.py
-│       └── services/     # Mock & external AI service clients
-│           └── ai_service.py
+│       └── services/     # AI service clients
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-To run **HomeVerse** locally, you need to set up and run both the backend FastAPI server and the frontend Next.js application.
-
 ### Prerequisites
-
-Before starting, ensure you have the following installed:
 * **Python**: `v3.10` or higher
 * **Node.js**: `v18.0` or higher
-* **Package Manager**: `npm` (packaged with Node.js) or `yarn` / `pnpm` / `bun`
-* **PostgreSQL** (Optional): The application attempts to connect to PostgreSQL. If a database connection fails, it automatically falls back to a local SQLite database (`homeverse.db`) in the backend folder.
-
----
 
 ### 1. Backend Setup (FastAPI)
-
-The backend is built with FastAPI. Follow these steps to set it up:
-
 1. **Navigate to the Backend Directory**:
    ```bash
    cd backend
    ```
-
-2. **Create a Virtual Environment**:
-   A virtual environment prevents dependency conflicts. You can create one using:
-   ```bash
-   python -m venv venv
-   ```
-
-3. **Activate the Virtual Environment**:
+2. **Activate the Virtual Environment**:
    * **Windows (PowerShell)**:
      ```powershell
      .\venv\Scripts\Activate.ps1
-     ```
-   * **Windows (Command Prompt)**:
-     ```cmd
-     .\venv\Scripts\activate.bat
      ```
    * **macOS / Linux**:
      ```bash
      source venv/bin/activate
      ```
-
-4. **Install Dependencies**:
-   Install all required Python packages from [backend/requirements.txt](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/requirements.txt):
+3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-
-5. **Configuration (Optional)**:
-   Settings are managed in [backend/app/config.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/config.py). You can create a `.env` file in the `backend/` directory to customize configurations:
+4. **Configuration**:
+   Create a `.env` file in the `backend/` directory:
    ```env
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/homeverse
    GEMINI_API_KEY=your-api-key-here
    ```
-   *Note: If no PostgreSQL configuration is specified or the connection fails, SQLite will be automatically initialized at `backend/homeverse.db`.*
-
-6. **Run the Backend Server**:
-   Start the FastAPI development server by running [backend/main.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/main.py):
+5. **Run the Backend Server**:
    ```bash
    python main.py
    ```
-   Alternatively, you can run Uvicorn directly:
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8080 --reload
-   ```
-
-The backend server will run on [http://localhost:8080](http://localhost:8080). You can check its health at `/health` and view the auto-generated Swagger documentation at [http://localhost:8080/docs](http://localhost:8080/docs).
-
----
+   The backend server will run on [http://localhost:8080](http://localhost:8080).
 
 ### 2. Frontend Setup (Next.js)
-
-The frontend is a Next.js application using React Three Fiber. Follow these steps to start it:
-
 1. **Navigate to the Frontend Directory**:
    ```bash
    cd ../frontend
    ```
-
 2. **Install Node Modules**:
-   Install dependencies listed in [frontend/package.json](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/frontend/package.json):
    ```bash
    npm install
    ```
-
 3. **Start the Development Server**:
-   Run the Next.js development server:
    ```bash
    npm run dev
    ```
-
-The frontend application will be served at [http://localhost:3000](http://localhost:3000).
+   The frontend application will serve on [http://localhost:3000](http://localhost:3000).
 
 ---
 
 ## 🗄️ Database Schema Design
 
-### `Users`
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Unique identifier for each user |
-| `name` | VARCHAR | User's full name |
-| `email` | VARCHAR (Unique) | User's email address |
-| `plan` | VARCHAR | Subscription tier (e.g., Free, Premium) |
-| `created_at` | TIMESTAMP | Timestamp of account creation |
-
 ### `Projects`
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Unique identifier for the project |
-| `user_id` | UUID (FK) | Reference to `Users.id` |
-| `title` | VARCHAR | Project name |
-| `room_type` | VARCHAR | Type of room (e.g., Living Room, Office) |
-| `thumbnail` | VARCHAR | URL of the project's cover image |
-| `created_at` | TIMESTAMP | Timestamp of project creation |
+* `id` (UUID, PK)
+* `title` (VARCHAR)
+* `room_type` (VARCHAR)
+* `thumbnail` (VARCHAR)
+* `structural_analysis` (TEXT)
+* `created_at` (TIMESTAMP)
 
 ### `Designs`
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Unique identifier for the design variation |
-| `project_id` | UUID (FK) | Reference to `Projects.id` |
-| `style` | VARCHAR | Aesthetic style (e.g., Japandi, Scandinavian) |
-| `image_url` | VARCHAR | URL of the generated room redesign image |
-| `selected` | BOOLEAN | Flag indicating if this is the active design |
+* `id` (UUID, PK)
+* `project_id` (UUID, FK)
+* `style` (VARCHAR)
+* `image_url` (VARCHAR)
+* `selected` (BOOLEAN)
 
 ### `Objects`
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Unique identifier for the 3D entity |
-| `design_id` | UUID (FK) | Reference to `Designs.id` |
-| `object_type` | VARCHAR | Entity classification (e.g., sofa, floor, wall) |
-| `position_x` | FLOAT | X coordinate in the 3D viewport |
-| `position_y` | FLOAT | Y coordinate in the 3D viewport |
-| `position_z` | FLOAT | Z coordinate in the 3D viewport |
-| `rotation` | FLOAT | Rotation angle / vector representation |
-| `scale` | FLOAT | Scale factor of the object |
-| `material` | VARCHAR | Applied material name, color, or texture link |
+* `id` (UUID, PK)
+* `design_id` (UUID, FK)
+* `object_type` (VARCHAR)
+* `position_x` / `position_y` / `position_z` (FLOAT)
+* `rotation` (FLOAT)
+* `scale` (FLOAT)
+* `material` (VARCHAR)
 
 ---
 
 ## 🚀 Roadmap
 
-For a detailed breakdown of all accomplished features and future developer tasks, see [project_todo_roadmap.md](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/project_todo_roadmap.md).
+### 📦 Phase 1: Core MVP - Completed
+* [x] Upload room images & generate styles.
+* [x] Segment physical structures and furniture items.
+* [x] 3D R3F editing canvas (drag/rotate/scale objects).
+* [x] Immersive 3D Walkthrough Mode (`WASD` + Mouse-look).
 
-### 📦 MVP (Phase 1: Build First) - Completed
-Focus is strictly on proving the core concept.
-* [x] Upload room image & video walkthroughs.
-* [x] Generate 5 interior styles (Modern, Luxury, Scandinavian, Minimalist, Japandi) with structural detection.
-* [x] Select one design variation.
-* [x] Enter basic 3D editor viewport.
-* [x] Modify colors (walls) and swap/replace/move furniture objects in a 3D R3F canvas.
+### 🌟 Phase 2: AI & Cloud Optimization - Completed
+* [x] Decoupled AWS S3/Cloudinary for direct cloud-free local storage saving.
+* [x] Parallel suggestion prefetching with Flux-Schnell speed optimization (~1.4s generation).
+* [x] Interactive AI Design Copilot powered by Gemini 3.5 Flash.
 
-### 🌟 Phase 2: AI & Catalog (V2) - Completed
-* [x] Integrations with Gemini 3.5 Flash for the conversational AI Design Copilot.
-* [x] Expanded furniture asset recommendation engine linking to real e-commerce store listings and price points.
-* [x] Advanced object rotation, translation, scaling, and placement tools in a side configurator panel.
+### 🏠 Phase 3: Architectural Extensions - Completed
+* [x] Custom Room Addition by dimensions (e.g. 5x5 bedroom).
+* [x] Keyboard Delete/Backspace shortcut support.
+* [x] Flat vs. Independent House floor selection restrictions.
+* [x] Collection of 13 new minimal furniture types.
 
-### 👓 Phase 3: Realism & Walkthroughs (V3) - In Progress
-* [ ] Immersive walkthrough modes (First-person pointer lock WASD + mouse controls).
-* [ ] Real glTF/GLB 3D models loading.
-* [ ] Production-ready Cloud Storage integration (Cloudinary/AWS S3).
-* [ ] Shopping cart invoicing and cost estimations.
-
-### 🏠 Phase 4: Full-Scale Architecture (V4) - Planned
-* [ ] AR room placement preview on mobile devices (WebXR/AR).
-* [ ] Multi-room house generation and blueprint layout drafting modes.
-* [ ] Collaborative real-time multiplayer co-editing sessions.
+### 👥 Phase 4: Collaborative Design - Planned
+* [ ] Multi-user multiplayer design syncing.
+* [ ] Mobile AR placement previews.
