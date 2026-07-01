@@ -77,6 +77,21 @@ function StudioContent() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [activeFloor, setActiveFloor] = useState<number>(0);
 
+  // AI Design Advisor states
+  const [isScratchMode, setIsScratchMode] = useState(false);
+  const [scratchPropertyType, setScratchPropertyType] = useState<string>("independent");
+  const [scratchApartmentType, setScratchApartmentType] = useState<string>("single");
+  const [scratchCommunityBlock, setScratchCommunityBlock] = useState<string>("Block A");
+  const [scratchSqFt, setScratchSqFt] = useState<number>(1000);
+  const [occupantsCount, setOccupantsCount] = useState<number>(4);
+  const [hasBalcony, setHasBalcony] = useState<boolean>(false);
+  const [windowTreatment, setWindowTreatment] = useState<"curtains" | "blinds">("curtains");
+  const [hasGrills, setHasGrills] = useState<boolean>(true);
+  const [viewType, setViewType] = useState<string>("city");
+  const [wallPaintColor, setWallPaintColor] = useState<string>("#f8fafc");
+  const [sofaComplimentaryColor, setSofaComplimentaryColor] = useState<string>("#1e293b");
+
+
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
     if (userSession) {
@@ -121,6 +136,14 @@ function StudioContent() {
                   const struct = JSON.parse(projectData.structural_analysis);
                   if (struct.room_width) setRoomWidth(Number(struct.room_width));
                   if (struct.room_depth) setRoomDepth(Number(struct.room_depth));
+                  if (struct.source === "scratch") {
+                    setIsScratchMode(true);
+                    setActiveLeftTab("advisor");
+                  }
+                  if (struct.property_type) setScratchPropertyType(struct.property_type);
+                  if (struct.apartment_type) setScratchApartmentType(struct.apartment_type);
+                  if (struct.community_block) setScratchCommunityBlock(struct.community_block);
+                  if (struct.square_footage) setScratchSqFt(struct.square_footage);
                 } catch (e) {
                   console.warn("Failed to parse structural analysis dimensions:", e);
                 }
@@ -133,7 +156,14 @@ function StudioContent() {
               if (projectData && projectData.room_type) {
                 setRoomType(projectData.room_type);
                 if (currentObjects.length === 0) {
-                  const initialObjs = getInitialObjectsForRoomType(projectData.room_type, initialStyle);
+                  const struct = projectData.structural_analysis ? JSON.parse(projectData.structural_analysis) : {};
+                  const isScratch = struct.source === "scratch";
+                  const initialObjs = isScratch
+                    ? [
+                        { id: "floor-1", object_type: "floor", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0, material: initialStyle === "Luxury" ? "granite" : "wood_light" },
+                        { id: "wall-1", object_type: "wall", position_x: 0, position_y: 1.5, position_z: -(struct.room_depth ? Number(struct.room_depth)/2 : 5) - 2.5, rotation: 0, scale: 1.0, material: initialStyle === "Minimalist" ? "#ffffff" : "#f1f5f9" }
+                      ]
+                    : getInitialObjectsForRoomType(projectData.room_type, initialStyle);
                   setObjects(initialObjs);
                   
                   // Save them to database so they persist
@@ -243,7 +273,7 @@ function StudioContent() {
   const [walkthroughMode, setWalkthroughMode] = useState(false);
 
   // AI Recommendations tab states
-  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D">("library");
+  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D" | "advisor">("library");
   const [recommendQuery, setRecommendQuery] = useState(initialStyle);
   const [recommendLimit, setRecommendLimit] = useState(5);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -941,7 +971,7 @@ function StudioContent() {
 
   // Add object from asset catalog or recommender
   const handleAddObject = async (
-    type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition",
+    type: any,
     customMaterial?: string,
     customScale?: number,
     customY?: number
@@ -1184,10 +1214,10 @@ function StudioContent() {
         {/* Left Toolbar: Object catalog */}
         <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0 overflow-y-auto">
           {/* Sidebar Tabs */}
-          <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="grid grid-cols-4 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
             <button
               onClick={() => setActiveLeftTab("library")}
-              className={`flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "library"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1196,8 +1226,18 @@ function StudioContent() {
               Library
             </button>
             <button
+              onClick={() => setActiveLeftTab("advisor")}
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                activeLeftTab === "advisor"
+                  ? "bg-blue-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Advisor
+            </button>
+            <button
               onClick={() => setActiveLeftTab("recommendations")}
-              className={`flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "recommendations"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1207,13 +1247,13 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("imgTo3D")}
-              className={`flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "imgTo3D"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Img-to-3D
+              Img-3D
             </button>
           </div>
 
@@ -1341,6 +1381,306 @@ function StudioContent() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeLeftTab === "advisor" && (
+              <div className="space-y-4 flex flex-col h-full animate-fade-in text-xs text-slate-300">
+                <div className="flex items-center gap-1.5 pb-2 border-b border-slate-800">
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+                  <span className="font-bold text-slate-200">AI Design Advisor</span>
+                </div>
+
+                {isScratchMode ? (
+                  /* SCRATCH MODE ADVISOR */
+                  <div className="space-y-4 overflow-y-auto max-h-[480px] pr-1">
+                    <div className="p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl space-y-1">
+                      <p className="font-bold text-blue-400 font-sans">Custom House Plan (Scratch)</p>
+                      <p className="text-[10px] text-slate-405">
+                        Blank space: <span className="text-white font-semibold">{scratchSqFt} sq. ft.</span>
+                      </p>
+                      <p className="text-[10px] text-slate-405 capitalize">
+                        Property: <span className="text-white font-semibold">{scratchPropertyType}</span>
+                        {scratchPropertyType === "apartment" && ` (${scratchApartmentType} ${scratchCommunityBlock ? `- ${scratchCommunityBlock}` : ""})`}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 bg-slate-900/20 border border-slate-850 p-3 rounded-xl">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">1. Build Structural Plan</label>
+                      <p className="text-[9px] text-slate-400 mb-2 leading-relaxed">
+                        Use the 2D Blueprint editor to draw partition walls, set doors, and place windows.
+                      </p>
+                      
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          onClick={() => handleAddObject("partition")}
+                          className="py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-center font-bold text-[9px] text-slate-200 cursor-pointer"
+                        >
+                          🧱 Wall
+                        </button>
+                        <button
+                          onClick={() => handleAddObject("door")}
+                          className="py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-center font-bold text-[9px] text-slate-200 cursor-pointer"
+                        >
+                          🚪 Door
+                        </button>
+                        <button
+                          onClick={() => handleAddObject("window")}
+                          className="py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-center font-bold text-[9px] text-slate-200 cursor-pointer"
+                        >
+                          🪟 Window
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => setViewMode(viewMode === "2D" ? "3D" : "2D")}
+                        className="w-full mt-1.5 py-1.5 bg-blue-650 hover:bg-blue-600 font-bold rounded-lg text-center text-[10px] cursor-pointer text-white"
+                      >
+                        Switch to {viewMode === "2D" ? "3D Decor View" : "2D Floorplan"}
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5 pt-2 border-t border-slate-850">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">2. Occupant Planning</label>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">Adjust occupancy count to customize layout suitability.</p>
+                      
+                      <div className="flex gap-1.5 items-center">
+                        <span className="text-[10px] text-slate-400">Residents:</span>
+                        <select
+                          value={occupantsCount}
+                          onChange={(e) => setOccupantsCount(Number(e.target.value))}
+                          className="bg-slate-900 border border-slate-850 rounded px-1.5 py-1 text-[10px] text-slate-200 focus:outline-none"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                            <option key={n} value={n}>{n} Occupants</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {occupantsCount >= 6 ? (
+                        <div className="p-2.5 bg-amber-950/20 border border-amber-900/40 rounded-xl space-y-1.5">
+                          <p className="font-bold text-[10px] text-amber-400 flex items-center gap-1">🍽️ 6-Seater Dining Recommended</p>
+                          <p className="text-[9px] text-slate-400 leading-normal">With {occupantsCount} family members, we suggest placing a full-sized dining table set in your center layout.</p>
+                          <button
+                            onClick={() => handleAddObject("dining_table")}
+                            className="w-full py-1 bg-amber-600 hover:bg-amber-500 font-bold text-[9px] text-white rounded cursor-pointer transition-colors"
+                          >
+                            Add 6-Seater Dining Table
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 bg-blue-950/20 border border-blue-900/40 rounded-xl space-y-1.5">
+                          <p className="font-bold text-[10px] text-blue-400">💡 Standard Seating</p>
+                          <p className="text-[9px] text-slate-400 leading-normal">For {occupantsCount} people, a compact working desk or smaller dining desk fits beautifully.</p>
+                          <button
+                            onClick={() => handleAddObject("desk")}
+                            className="w-full py-1 bg-blue-600 hover:bg-blue-500 font-bold text-[9px] text-white rounded cursor-pointer transition-colors"
+                          >
+                            Add Small Study Desk
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-850">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">3. Zoning & Partitions</label>
+                      <p className="text-[9px] text-slate-400 leading-relaxed">Add sliding shutters or glass dividers to define areas.</p>
+                      <button
+                        onClick={() => handleAddObject("shutters")}
+                        className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 font-bold text-[9px] text-slate-300 rounded cursor-pointer transition-colors"
+                      >
+                        Place Room Divider Shutter
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* UPLOAD MODE ADVISOR */
+                  <div className="space-y-4 overflow-y-auto max-h-[480px] pr-1">
+                    <div className="p-3 bg-emerald-950/20 border border-emerald-900/30 rounded-xl space-y-1">
+                      <p className="font-bold text-emerald-400 font-sans">AI Scan Advisors</p>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">Suggestions processed from photo upload.</p>
+                    </div>
+
+                    {/* Paint Matching */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">🎨 Paint & Sofa Matching</label>
+                      <p className="text-[9px] text-slate-400 leading-relaxed">Match wall paints with complimentary sofa colors.</p>
+                      
+                      <div className="grid grid-cols-5 gap-1 py-1">
+                        {[
+                          { name: "White", hex: "#f8fafc", sofa: "#1e293b", sofaName: "Navy Blue" },
+                          { name: "Blue", hex: "#93c5fd", sofa: "#fafafa", sofaName: "Warm Ivory" },
+                          { name: "Green", hex: "#a7f3d0", sofa: "#7c2d12", sofaName: "Terracotta" },
+                          { name: "Tan", hex: "#fef3c7", sofa: "#1b2a47", sofaName: "Charcoal" },
+                          { name: "Grey", hex: "#64748b", sofa: "#f59e0b", sofaName: "Mustard Yellow" }
+                        ].map((c) => (
+                          <button
+                            key={c.hex}
+                            onClick={() => {
+                              setWallPaintColor(c.hex);
+                              setSofaComplimentaryColor(c.sofa);
+                              const wallObj = objects.find(o => o.object_type === "wall");
+                              if (wallObj) handleUpdateObject(wallObj.id, { material: c.hex });
+                            }}
+                            className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
+                              wallPaintColor === c.hex
+                                ? "bg-slate-900 border-blue-500 shadow-md text-white"
+                                : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-400"
+                            }`}
+                          >
+                            <div className="w-4 h-4 mx-auto rounded-full border border-slate-800" style={{ backgroundColor: c.hex }} />
+                            <span className="text-[8px] mt-1 block truncate">{c.name}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-1">
+                        <p className="text-[9px] text-slate-400 leading-normal">
+                          Complimentary Sofa: <span className="text-white font-semibold">
+                            {
+                              wallPaintColor === "#f8fafc" ? "Navy Blue" :
+                              wallPaintColor === "#93c5fd" ? "Warm Ivory" :
+                              wallPaintColor === "#a7f3d0" ? "Terracotta" :
+                              wallPaintColor === "#fef3c7" ? "Charcoal" : "Mustard Yellow"
+                            }
+                          </span>
+                        </p>
+                        <button
+                          onClick={() => handleAddObject("sofa", sofaComplimentaryColor)}
+                          className="w-full py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[9px] rounded cursor-pointer transition-colors"
+                        >
+                          Add Complementary Sofa
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Window Treatment */}
+                    <div className="space-y-2 pt-2 border-t border-slate-850">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">🪟 Windows & Balconies</label>
+                      
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 py-1">
+                        <span>Has an open balcony?</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setHasBalcony(true)}
+                            className={`px-2 py-0.5 rounded text-[9px] font-bold border transition-all cursor-pointer ${
+                              hasBalcony ? "bg-emerald-950 text-emerald-400 border-emerald-500" : "bg-slate-900 border-slate-800"
+                            }`}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setHasBalcony(false)}
+                            className={`px-2 py-0.5 rounded text-[9px] font-bold border transition-all cursor-pointer ${
+                              !hasBalcony ? "bg-slate-800 border-slate-700" : "bg-slate-900 border-slate-800"
+                            }`}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </div>
+
+                      {hasBalcony ? (
+                        <div className="p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl space-y-1.5">
+                          <p className="font-bold text-[10px] text-emerald-400">🌴 French Window & Balcony Design</p>
+                          <p className="text-[9px] text-slate-400 leading-normal">Place a wooden balcony deck outside with modern glass railings. You can also place sliding screen shutters.</p>
+                          <div className="grid grid-cols-2 gap-1 pt-0.5">
+                            <button
+                              onClick={() => handleAddObject("balcony")}
+                              className="py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[9px] rounded cursor-pointer transition-colors"
+                            >
+                              Add Balcony Deck
+                            </button>
+                            <button
+                              onClick={() => handleAddObject("shutters")}
+                              className="py-1 bg-slate-850 hover:bg-slate-800 text-slate-200 font-bold text-[9px] rounded cursor-pointer transition-colors"
+                            >
+                              Add Glass Shutters
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 bg-blue-950/20 border border-blue-900/40 rounded-xl space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="font-semibold text-slate-300">Outside View:</span>
+                            <select
+                              value={viewType}
+                              onChange={(e) => setViewType(e.target.value)}
+                              className="bg-slate-900 border border-slate-850 rounded px-1.5 py-0.5 text-[10px] text-slate-200"
+                            >
+                              <option value="scenic">Scenic View</option>
+                              <option value="city">City View</option>
+                              <option value="street">Street View</option>
+                            </select>
+                          </div>
+                          
+                          <p className="text-[9px] text-slate-400 leading-normal">
+                            {viewType === "scenic" && "Scenic views match translucent curtains to let light filter softly while showcasing the scenery."}
+                            {viewType === "city" && "City lights at night call for blackout curtains or roller blinds to cover windows fully."}
+                            {viewType === "street" && "High-traffic street views require safety window grills and privacy blinds."}
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-1 pt-1">
+                            <button
+                              onClick={() => handleAddObject("curtains", "#e2e8f0")}
+                              className="py-1 bg-blue-650 hover:bg-blue-600 text-white font-bold text-[9px] rounded cursor-pointer transition-colors"
+                            >
+                              Draw Curtains
+                            </button>
+                            <button
+                              onClick={() => handleAddObject("blinds", "#f1f5f9")}
+                              className="py-1 bg-slate-850 hover:bg-slate-800 text-slate-200 font-bold text-[9px] rounded cursor-pointer transition-colors"
+                            >
+                              Add Blinds
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                        <span>Window Safety Grills?</span>
+                        <input
+                          type="checkbox"
+                          checked={hasGrills}
+                          onChange={(e) => setHasGrills(e.target.checked)}
+                          className="rounded border-slate-800 bg-slate-900 text-blue-500 focus:ring-0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Placements */}
+                    <div className="space-y-2 pt-2 border-t border-slate-850">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">📺 TV & Seating Layout</label>
+                      <p className="text-[9px] text-slate-400 leading-normal">Add a TV console opposite the sofa to prevent screen glare. Place a center table to anchor the room.</p>
+                      <div className="grid grid-cols-2 gap-1 pt-0.5">
+                        <button
+                          onClick={() => handleAddObject("tv")}
+                          className="py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-[9px] rounded cursor-pointer transition-colors"
+                        >
+                          Add TV + Console
+                        </button>
+                        <button
+                          onClick={() => handleAddObject("coffee_table")}
+                          className="py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-[9px] rounded cursor-pointer transition-colors"
+                        >
+                          Add Center Table
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Accent plants */}
+                    <div className="space-y-2 pt-2 border-t border-slate-850">
+                      <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">🌿 Accent & Flower Pots</label>
+                      <p className="text-[9px] text-slate-400 leading-relaxed">Place decorative green planter pots in unused corners for fresh organic highlights.</p>
+                      <button
+                        onClick={() => handleAddObject("flower_pot")}
+                        className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-[9px] rounded cursor-pointer transition-colors"
+                      >
+                        Place Flower Pot in Corner
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -20,7 +20,7 @@ interface BlueprintEditor2DProps {
   onSelectObject: (id: string | null) => void;
   onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
   onDeleteObject: (id: string) => void;
-  onAddObject: (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition" | "door" | "window", customMaterial?: string, customScale?: number) => void;
+  onAddObject: (type: any, customMaterial?: string, customScale?: number) => void;
   roomWidth: number;
   roomDepth: number;
   onUpdateRoomDimensions: (width: number, depth: number) => void;
@@ -295,6 +295,13 @@ export default function BlueprintEditor2D({
       case "partition": return { w: 2.0, d: 0.15 };
       case "door": return { w: 0.9, d: 0.9 };
       case "window": return { w: 1.2, d: 0.15 };
+      case "curtains": return { w: 1.4, d: 0.15 };
+      case "blinds": return { w: 1.2, d: 0.15 };
+      case "balcony": return { w: 3.0, d: 1.5 };
+      case "tv": return { w: 1.5, d: 0.35 };
+      case "flower_pot": return { w: 0.5, d: 0.5 };
+      case "dining_table": return { w: 1.7, d: 0.95 };
+      case "shutters": return { w: 1.9, d: 0.15 };
       default: return { w: 1.0, d: 1.0 };
     }
   };
@@ -418,6 +425,66 @@ export default function BlueprintEditor2D({
             <circle cx="0" cy="0" r={widthPx/3} fill="#ffffff" opacity="0.85" />
             <circle cx="0" cy="0" r="3" fill="#fbbf24" />
           </>
+        );
+      case "curtains":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill={color} stroke="#1e293b" strokeWidth="1" rx="1" />
+            <path d={`M ${-widthPx/2} 0 Q ${-widthPx/4} ${depthPx/2} 0 0 Q ${widthPx/4} ${-depthPx/2} ${widthPx/2} 0`} fill="none" stroke="#1e293b" strokeWidth="0.8" />
+          </g>
+        );
+      case "blinds":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill={color} stroke="#1e293b" strokeWidth="1" />
+            <line x1={-widthPx/2} y1={-depthPx/4} x2={widthPx/2} y2={-depthPx/4} stroke="#475569" strokeWidth="0.5" />
+            <line x1={-widthPx/2} y1={0} x2={widthPx/2} y2={0} stroke="#475569" strokeWidth="0.5" />
+            <line x1={-widthPx/2} y1={depthPx/4} x2={widthPx/2} y2={depthPx/4} stroke="#475569" strokeWidth="0.5" />
+          </g>
+        );
+      case "balcony":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill="#b45309" stroke="#1e293b" strokeWidth="1.5" />
+            <line x1={-widthPx/3} y1={-depthPx/2} x2={-widthPx/3} y2={depthPx/2} stroke="#78350f" strokeWidth="0.8" />
+            <line x1={0} y1={-depthPx/2} x2={0} y2={depthPx/2} stroke="#78350f" strokeWidth="0.8" />
+            <line x1={widthPx/3} y1={-depthPx/2} x2={widthPx/3} y2={depthPx/2} stroke="#78350f" strokeWidth="0.8" />
+            <rect x={-widthPx/2 + 2} y={depthPx/2 - 4} width={widthPx - 4} height="3" fill="#475569" />
+          </g>
+        );
+      case "tv":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill={color} stroke="#1e293b" strokeWidth="1" rx="2" />
+            <rect x={-widthPx*0.4} y={-depthPx/6} width={widthPx*0.8} height={depthPx/3} fill="#0f172a" rx="1" />
+          </g>
+        );
+      case "flower_pot":
+        return (
+          <g>
+            <circle cx="0" cy="0" r={widthPx/2} fill={color} stroke="#1e293b" strokeWidth="1" />
+            <path d="M 0 0 C -10 -15 -15 -10 0 0 C 10 -15 15 -10 0 0 C -10 15 -15 10 0 0 C 10 15 15 10 0 0" fill="#22c55e" opacity="0.85" />
+          </g>
+        );
+      case "dining_table":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill={color} stroke="#1e293b" strokeWidth="1.5" rx="3" />
+            {[-widthPx/3 - 6, -6, widthPx/3 - 6].map((x, idx) => (
+              <g key={idx}>
+                <rect x={x} y={-depthPx/2 - 8} width="12" height="8" fill="#475569" rx="1" />
+                <rect x={x} y={depthPx/2} width="12" height="8" fill="#475569" rx="1" />
+              </g>
+            ))}
+          </g>
+        );
+      case "shutters":
+        return (
+          <g>
+            <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill="none" stroke="#475569" strokeWidth="1" />
+            <line x1={-widthPx/2} y1={-depthPx/4} x2={10} y2={-depthPx/4} stroke="#1e293b" strokeWidth="3.0" />
+            <line x1={-10} y1={depthPx/4} x2={widthPx/2} y2={depthPx/4} stroke="#1e293b" strokeWidth="3.0" />
+          </g>
         );
       default:
         return <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill={color} stroke="#1e293b" strokeWidth="1" />;

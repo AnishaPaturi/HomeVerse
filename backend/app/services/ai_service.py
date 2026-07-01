@@ -149,9 +149,9 @@ class AIService:
            You MUST include at least:
            - 1 floor object (object_type: "floor")
            - 1 wall object (object_type: "wall")
-           - 1-3 furniture or decor objects relevant to the room type (e.g. sofa, coffee_table, bed, desk, chair, lamp).
+           - 1-3 furniture or decor objects relevant to the room type (e.g. sofa, coffee_table, bed, desk, chair, lamp, curtains, blinds, balcony, tv, flower_pot, dining_table, shutters).
            For each object, specify:
-           - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor"
+           - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "shutters"
            - "position_x": float
            - "position_y": float
            - "position_z": float
@@ -714,7 +714,7 @@ class AIService:
            - "rotation" (float in radians)
            - "scale" (float)
         2. "add": Add a new object to the scene. Specify:
-           - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor"
+           - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "shutters"
            - "material": hex color or texture name
            - "position_x" / "position_y" / "position_z" (floats, e.g. position_x=0.0, position_y=0.0, position_z=-1.5)
            - "rotation" (float, default 0.0)
@@ -803,7 +803,21 @@ class AIService:
                     })
                     friendly_message = "I changed the sofa color to blue."
             elif "add" in message_lower or "place" in message_lower:
-                new_type = "desk" if "desk" in message_lower else "chair" if "chair" in message_lower else "lamp" if "lamp" in message_lower else "bed" if "bed" in message_lower else "sofa" if "sofa" in message_lower else "coffee_table"
+                new_type = (
+                    "curtains" if "curtain" in message_lower
+                    else "blinds" if "blind" in message_lower
+                    else "balcony" if "balcony" in message_lower
+                    else "tv" if ("tv" in message_lower or "television" in message_lower)
+                    else "flower_pot" if ("flower" in message_lower or "pot" in message_lower or "plant" in message_lower)
+                    else "dining_table" if "dining" in message_lower
+                    else "shutters" if ("shutter" in message_lower or "divider" in message_lower)
+                    else "desk" if "desk" in message_lower
+                    else "chair" if "chair" in message_lower
+                    else "lamp" if "lamp" in message_lower
+                    else "bed" if "bed" in message_lower
+                    else "sofa" if "sofa" in message_lower
+                    else "coffee_table"
+                )
                 actions.append({
                     "action_type": "add",
                     "object": {
