@@ -1313,6 +1313,32 @@ function StudioContent() {
                         <span className="text-[10px] text-slate-500 font-normal">Dividing partition wall</span>
                       </div>
                     </button>
+
+                    <button
+                      onClick={() => handleAddObject("door")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-amber-950/20 border border-amber-900/40 rounded-lg text-amber-500">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Door</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Wooden room door</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("window")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-blue-950/20 border border-blue-900/40 rounded-lg text-blue-400">
+                        <Box className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Window</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Glass window with metal grills</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>

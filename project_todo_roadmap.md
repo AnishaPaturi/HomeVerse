@@ -75,10 +75,10 @@ This document highlights the **Current Accomplishments** and details the **Futur
   * [x] Map database object categories (e.g., `object_type = "sofa"`) to load specific GLTF meshes.
 
 #### 3. Cloud Media Storage Integration
-* [ ] **Goal**: Move local backend file storage to scalable cloud solutions.
-* [ ] **Details**:
-  * Integrate AWS S3 or Cloudinary SDK inside [config.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/config.py) and [ai_service.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/services/ai_service.py).
-  * Upload scanned room photos/videos directly to secure buckets and return cloud CDN URLs instead of mapping to local `http://localhost:8080/static/uploads/`.
+* [x] **Goal**: Move local backend file storage to scalable cloud solutions.
+* [x] **Details**:
+  * [x] Integrate AWS S3 or Cloudinary SDK inside [config.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/config.py) and [ai_service.py](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/backend/app/services/ai_service.py).
+  * [x] Upload scanned room photos/videos directly to secure buckets and return cloud CDN URLs instead of mapping to local `http://localhost:8080/static/uploads/`.
 
 #### 4. Cart Integration & Pricing Summaries
 * [x] **Goal**: Let users collect recommended furniture items and compile an invoice.

@@ -45,6 +45,83 @@ function PartitionWall3D({ material, scale, isSelected, onClick }: { material: s
   );
 }
 
+// Custom 3D Door Component
+function Door3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#8b5a2b";
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Door Frame */}
+      <mesh position={[-0.45, 1.0, 0]}>
+        <boxGeometry args={[0.06, 2.0, 0.15]} />
+        <meshStandardMaterial color="#475569" roughness={0.4} />
+      </mesh>
+      <mesh position={[0.45, 1.0, 0]}>
+        <boxGeometry args={[0.06, 2.0, 0.15]} />
+        <meshStandardMaterial color="#475569" roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 2.0, 0]}>
+        <boxGeometry args={[0.96, 0.06, 0.15]} />
+        <meshStandardMaterial color="#475569" roughness={0.4} />
+      </mesh>
+      {/* Door Panel */}
+      <mesh position={[0.15, 1.0, -0.2]} rotation={[0, 0.6, 0]}>
+        <boxGeometry args={[0.84, 1.94, 0.04]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
+      </mesh>
+      {/* Handle */}
+      <mesh position={[0.48, 1.0, -0.2]} rotation={[0, 0.6, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 0.08]} />
+        <meshStandardMaterial color="#d4af37" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {isSelected && (
+        <mesh position={[0, 1.0, 0]}>
+          <boxGeometry args={[1.05, 2.1, 0.4]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom 3D Window Component
+function Window3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#cbd5e1";
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Frame */}
+      <mesh position={[0, 1.25, 0]}>
+        <boxGeometry args={[1.2, 1.0, 0.15]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      {/* Glass */}
+      <mesh position={[0, 1.25, 0]}>
+        <boxGeometry args={[1.1, 0.9, 0.04]} />
+        <meshStandardMaterial color="#93c5fd" transparent opacity={0.4} roughness={0.1} metalness={0.8} />
+      </mesh>
+      {/* Horizontal Grill Bar */}
+      <mesh position={[0, 1.25, 0]}>
+        <boxGeometry args={[1.1, 0.02, 0.06]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Vertical Grill Bars */}
+      <mesh position={[-0.3, 1.25, 0]}>
+        <boxGeometry args={[0.02, 0.9, 0.06]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.3, 1.25, 0]}>
+        <boxGeometry args={[0.02, 0.9, 0.06]} />
+        <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {isSelected && (
+        <mesh position={[0, 1.25, 0]}>
+          <boxGeometry args={[1.3, 1.1, 0.2]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 // Scene background loader component
 function SceneBackground({ url }: { url: string }) {
   const texture = useLoader(THREE.TextureLoader, url);
@@ -842,6 +919,12 @@ export default function CanvasContainer({
                 )}
                 {obj.object_type === "partition" && (
                   <PartitionWall3D material={obj.material} scale={obj.scale} isSelected={isSelected} onClick={clickHandler} />
+                )}
+                {obj.object_type === "door" && (
+                  <Door3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+                )}
+                {obj.object_type === "window" && (
+                  <Window3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
                 )}
               </group>
             );

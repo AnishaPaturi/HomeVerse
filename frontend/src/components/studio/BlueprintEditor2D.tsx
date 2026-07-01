@@ -20,7 +20,7 @@ interface BlueprintEditor2DProps {
   onSelectObject: (id: string | null) => void;
   onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
   onDeleteObject: (id: string) => void;
-  onAddObject: (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition", customMaterial?: string, customScale?: number) => void;
+  onAddObject: (type: "sofa" | "coffee_table" | "desk" | "chair" | "bed" | "lamp" | "partition" | "door" | "window", customMaterial?: string, customScale?: number) => void;
   roomWidth: number;
   roomDepth: number;
   onUpdateRoomDimensions: (width: number, depth: number) => void;
@@ -293,6 +293,8 @@ export default function BlueprintEditor2D({
       case "bed": return { w: 1.6, d: 2.0 };
       case "lamp": return { w: 0.5, d: 0.5 };
       case "partition": return { w: 2.0, d: 0.15 };
+      case "door": return { w: 0.9, d: 0.9 };
+      case "window": return { w: 1.2, d: 0.15 };
       default: return { w: 1.0, d: 1.0 };
     }
   };
@@ -370,6 +372,30 @@ export default function BlueprintEditor2D({
           <g>
             <rect x={-widthPx/2} y={-depthPx/2} width={widthPx} height={depthPx} fill="#475569" stroke="#1e293b" strokeWidth="1" rx="1" />
             <line x1={-widthPx/2 + 2} y1={0} x2={widthPx/2 - 2} y2={0} stroke="#94a3b8" strokeWidth="1" strokeDasharray="2,2" />
+          </g>
+        );
+      case "door":
+        return (
+          <g>
+            {/* Door Swing Arc */}
+            <path d={`M ${-widthPx/2} 0 A ${widthPx} ${widthPx} 0 0 1 ${widthPx/2} ${widthPx/2}`} fill="none" stroke="#3b82f6" strokeWidth="1" strokeDasharray="2,2" />
+            {/* Door Panel */}
+            <line x1={-widthPx/2} y1={0} x2={widthPx/2} y2={widthPx/2} stroke="#b45309" strokeWidth="2.5" />
+            {/* Door Frame */}
+            <rect x={-widthPx/2 - 2} y={-3} width="4" height="6" fill="#475569" />
+            <rect x={widthPx/2 - 2} y={-3} width="4" height="6" fill="#475569" />
+          </g>
+        );
+      case "window":
+        return (
+          <g>
+            {/* Window Frame */}
+            <rect x={-widthPx/2} y={-4} width={widthPx} height="8" fill="#cbd5e1" stroke="#475569" strokeWidth="1" />
+            {/* Window Glass Line */}
+            <line x1={-widthPx/2} y1={0} x2={widthPx/2} y2={0} stroke="#60a5fa" strokeWidth="2.5" />
+            {/* Grills indicator */}
+            <line x1={-widthPx/4} y1={-4} x2={-widthPx/4} y2={4} stroke="#475569" strokeWidth="1" />
+            <line x1={widthPx/4} y1={-4} x2={widthPx/4} y2={4} stroke="#475569" strokeWidth="1" />
           </g>
         );
       case "chair":
