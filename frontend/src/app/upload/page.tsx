@@ -906,7 +906,7 @@ export default function UploadPage() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-12 flex flex-col justify-center z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-12 flex flex-col justify-center z-10">
         
         {/* Intro */}
         <div className="text-center space-y-4 mb-10">
@@ -932,7 +932,7 @@ export default function UploadPage() {
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row gap-8 items-stretch max-w-4xl w-full mx-auto">
+        <div className="flex flex-col md:flex-row gap-8 items-stretch max-w-7xl w-full mx-auto">
           {/* Left Side: Upload console */}
           <div className="w-full md:w-1/2 flex">
             <div className="glass-panel p-6 rounded-3xl border-slate-800/80 flex flex-col justify-between w-full space-y-6 shadow-2xl">
@@ -996,7 +996,7 @@ export default function UploadPage() {
               {uploadStep === "idle" && activeMode === "lidar" && (
                 <div className="flex-1 flex flex-col gap-4">
                   {/* Smartphone scan viewport */}
-                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] max-w-xl mx-auto w-full shadow-2xl flex flex-col">
+                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] w-full shadow-2xl flex flex-col">
                     {/* Viewport Backdrop Image */}
                     <div 
                       className="absolute inset-0 bg-cover bg-center opacity-60"
@@ -1151,7 +1151,7 @@ export default function UploadPage() {
               {uploadStep === "idle" && activeMode === "vectorizer" && (
                 <div className="flex-1 flex flex-col gap-4 font-sans">
                   {/* Mock phone / tablet canvas blueprint vectorizer */}
-                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] max-w-xl mx-auto w-full shadow-2xl flex flex-col justify-center">
+                  <div className="relative border border-slate-800 bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] w-full shadow-2xl flex flex-col justify-center">
                     {/* If nothing is uploaded/selected */}
                     {vectorizerStatus === "idle" && (
                       <div className="p-6 text-center space-y-4 flex flex-col items-center justify-center">
