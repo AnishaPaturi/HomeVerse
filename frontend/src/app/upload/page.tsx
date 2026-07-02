@@ -1110,58 +1110,60 @@ export default function UploadPage() {
               
               <div className="flex items-center justify-between pb-3 border-b border-slate-900">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                  {activeMode === "upload" ? "Upload Console" : "Scratch Designer"}
+                  {activeMode === "upload" ? "Upload Console" : activeMode === "scratch" ? "Scratch Designer" : activeMode === "lidar" ? "LiDAR Scanner" : "Blueprint Tracing"}
                 </span>
                 <span className="text-[9px] text-blue-400 font-semibold px-2 py-0.5 bg-blue-950/40 border border-blue-900/40 rounded-full font-mono uppercase animate-pulse">
-                  {uploadStep}
+                  {activeMode === "upload" ? uploadStep : activeMode === "lidar" ? lidarStatus : activeMode === "vectorizer" ? vectorizerStatus : "Active"}
                 </span>
               </div>
 
               {/* Mode Toggle Tabs */}
-              {uploadStep === "idle" && (
-                <div className="grid grid-cols-4 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
-                  <button
-                    onClick={() => { setActiveMode("upload"); setError(null); }}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
-                      activeMode === "upload"
-                        ? "bg-blue-600 text-white shadow"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    <Upload className="w-3.5 h-3.5" /> Reconstruct Room
-                  </button>
-                  <button
-                    onClick={() => { setActiveMode("lidar"); setError(null); }}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
-                      activeMode === "lidar"
-                        ? "bg-blue-600 text-white shadow"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" /> LiDAR Scanner
-                  </button>
-                  <button
-                    onClick={() => { setActiveMode("vectorizer"); setError(null); }}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
-                      activeMode === "vectorizer"
-                        ? "bg-blue-600 text-white shadow"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" /> Blueprint
-                  </button>
-                  <button
-                    onClick={() => { setActiveMode("scratch"); setError(null); }}
-                    className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
-                      activeMode === "scratch"
-                        ? "bg-blue-600 text-white shadow"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" /> Start Scratch
-                  </button>
-                </div>
-              )}
+              <div className="grid grid-cols-4 gap-1 p-1 bg-slate-900 rounded-xl border border-slate-850">
+                <button
+                  type="button"
+                  onClick={() => { setActiveMode("upload"); setError(null); }}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                    activeMode === "upload"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5" /> Reconstruct Room
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActiveMode("lidar"); setError(null); }}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                    activeMode === "lidar"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> LiDAR Scanner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActiveMode("vectorizer"); setError(null); }}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                    activeMode === "vectorizer"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Blueprint
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActiveMode("scratch"); setError(null); }}
+                  className={`flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+                    activeMode === "scratch"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Start Scratch
+                </button>
+              </div>
 
               {/* LiDAR Scanner Viewport */}
               {uploadStep === "idle" && activeMode === "lidar" && (
@@ -1511,46 +1513,187 @@ export default function UploadPage() {
                     </div>
                   )}
                 </div>
-              )}
+              )}              {/* AI Reconstruct Room Mode Panel */}
+              {activeMode === "upload" && (
+                <div className="flex-1 flex flex-col justify-between h-full animate-fade-in">
+                  {uploadStep === "idle" && (
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer relative group flex-1 flex flex-col justify-center ${
+                        dragActive
+                          ? "border-blue-500 bg-blue-950/20"
+                          : "border-slate-800 bg-slate-900/10 hover:border-slate-700 hover:bg-slate-900/20"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="flex flex-col items-center justify-center space-y-4">
+                        <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 group-hover:border-blue-500/40 group-hover:bg-slate-900 transition-colors">
+                          <Upload className="w-7 h-7 text-blue-400 group-hover:scale-115 transition-transform" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-200">Click to upload or drag & drop</p>
+                          <p className="text-[10px] text-slate-500 mt-1">PNG, JPG, or MP4 (Video walkthrough)</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                          <span className="flex items-center gap-1.5"><ImageIcon className="w-3 h-3 text-slate-500" /> Room Photo</span>
+                          <span className="text-slate-800">|</span>
+                          <span className="flex items-center gap-1.5"><Video className="w-3 h-3 text-slate-500" /> Video Scan</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Upload Dropzone */}
-              {uploadStep === "idle" && activeMode === "upload" && (
-                <div
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer relative group flex-1 flex flex-col justify-center ${
-                    dragActive
-                      ? "border-blue-500 bg-blue-950/20"
-                      : "border-slate-800 bg-slate-900/10 hover:border-slate-700 hover:bg-slate-900/20"
-                  }`}
-                >
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 group-hover:border-blue-500/40 group-hover:bg-slate-900 transition-colors">
-                      <Upload className="w-7 h-7 text-blue-400 group-hover:scale-115 transition-transform" />
+                  {uploadStep === "uploading" && (
+                    <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-950/30 flex-1 flex flex-col justify-center items-center">
+                      <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div>
+                        <h3 className="font-bold text-xs text-slate-300">Uploading Assets...</h3>
+                        <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[200px]">File: {selectedFile?.name}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200">Click to upload or drag & drop</p>
-                      <p className="text-[10px] text-slate-500 mt-1">PNG, JPG, or MP4 (Video walkthrough)</p>
+                  )}
+
+                  {uploadStep === "analyzing" && (
+                    <div className="border border-slate-850/80 rounded-2xl p-5 space-y-4 bg-slate-950/40 flex-1 flex flex-col justify-center">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-xs flex items-center gap-1.5">
+                          <RefreshCw className="w-3 h-3 text-blue-400 animate-spin" /> AI Room Reconstruction
+                        </h3>
+                        <span className="text-[9px] text-blue-400 font-mono animate-pulse">Running Scan...</span>
+                      </div>
+                      <div className="space-y-2 text-[10px] text-slate-455 font-mono bg-slate-950 p-3.5 rounded-xl border border-slate-900 leading-relaxed">
+                        <div className="flex items-center justify-between text-green-400">
+                          <span>✔ Loaded {fileType} file metadata</span>
+                          <span>[OK]</span>
+                        </div>
+                        <div className="flex items-center justify-between text-green-400">
+                          <span>✔ Furniture Recognition (Sofa, Table, TV)</span>
+                          <span>[OK]</span>
+                        </div>
+                        <div className="flex items-center justify-between text-blue-400 animate-pulse">
+                          <span>🔄 Segmenting walls, doors, ceiling</span>
+                          <span>[RUNNING]</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-700">
+                          <span>☐ Creating 3D semantic layout coordinates</span>
+                          <span>[WAITING]</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1.5"><ImageIcon className="w-3 h-3 text-slate-500" /> Room Photo</span>
-                      <span className="text-slate-800">|</span>
-                      <span className="flex items-center gap-1.5"><Video className="w-3 h-3 text-slate-500" /> Video Scan</span>
+                  )}
+
+                  {uploadStep === "complete" && (
+                    <div className="space-y-4 flex-1 flex flex-col justify-between">
+                      <div className="flex items-center justify-between pb-2.5 border-b border-slate-900">
+                        <div>
+                          <h3 className="font-bold text-xs text-slate-200">AI Design Suggestions</h3>
+                          <p className="text-[9px] text-slate-450 mt-0.5">Select a style preset to open in 3D studio</p>
+                        </div>
+                        <span className="flex items-center gap-1 text-[9px] text-green-400 font-semibold bg-green-950/20 border border-green-900/40 px-2 py-0.5 rounded-full font-mono">
+                          <Check className="w-3 h-3" /> Ready
+                        </span>
+                      </div>
+
+                      {/* Name and Room Type inputs */}
+                      <div className="space-y-3 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                            Design Name / Title
+                          </label>
+                          <input
+                            type="text"
+                            value={projectTitle}
+                            onChange={(e) => {
+                              setProjectTitle(e.target.value);
+                              sessionStorage.setItem("homeverse_project_title", e.target.value);
+                            }}
+                            onBlur={() => handleUpdateProjectDetails(projectTitle, roomType)}
+                            placeholder="e.g. Master Bedroom design"
+                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                            Room / Space Type
+                          </label>
+                          <select
+                            value={roomType}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRoomType(val);
+                              sessionStorage.setItem("homeverse_room_type", val);
+                              handleUpdateProjectDetails(projectTitle, val);
+                            }}
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                          >
+                            <option value="Living Room" className="bg-slate-900 text-slate-200">Living Room</option>
+                            <option value="Bedroom" className="bg-slate-900 text-slate-200">Bedroom</option>
+                            <option value="Office" className="bg-slate-900 text-slate-200">Home Office</option>
+                            <option value="Kitchen" className="bg-slate-900 text-slate-200">Kitchen</option>
+                            <option value="Bathroom" className="bg-slate-900 text-slate-200">Bathroom</option>
+                            <option value="Dining Room" className="bg-slate-900 text-slate-200">Dining Room</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Grid of Styles */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 items-center py-2">
+                        {styles.map((style) => {
+                          return (
+                            <button
+                              key={style.name}
+                              onClick={() => {
+                                setSelectedStyle(style.name);
+                                setShowOriginal(false);
+                              }}
+                              className={`group relative rounded-xl overflow-hidden border text-left p-2 bg-slate-955 hover:bg-slate-900/80 transition-all cursor-pointer h-24 flex flex-col justify-between ${
+                                selectedStyle === style.name
+                                  ? "border-blue-500 ring-1 ring-blue-500/50"
+                                  : "border-slate-850"
+                              }`}
+                            >
+                              <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
+                                <img
+                                  src={style.img}
+                                  alt={style.name}
+                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                />
+                              </div>
+                              <span className="font-bold text-[10px] text-slate-300">{style.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+     
+                      {/* Enter Studio Trigger */}
+                      <button
+                        onClick={handleEnterStudio}
+                        className="w-full flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn mt-2 text-xs"
+                      >
+                        Open in Design Studio <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Informational badge for custom room rendering */}
+                      <div className="mt-3 p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2 animate-fadeIn">
+                        <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
+                        <span>
+                          <strong>Visual Studio Mode:</strong> Open the Design Studio to view the 3D furniture models arranged directly inside your uploaded room photo with realistic shadows!
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* Start from Scratch Form (Questionnaire Wizard) */}
-              {uploadStep === "idle" && activeMode === "scratch" && (
+              {activeMode === "scratch" && (
                 <div className="space-y-4 flex-1 flex flex-col justify-between animate-fade-in">
                   <div className="bg-slate-900/20 border border-slate-850/80 p-4 rounded-2xl space-y-4">
                     {/* Visual Progress Steps */}
@@ -1898,7 +2041,7 @@ export default function UploadPage() {
                       </button>
                     )}
                     
-                    {scratchStep < 5 ? (
+                    {scratchStep < 3 ? (
                       <button
                         type="button"
                         onClick={nextScratchStep}
@@ -1915,149 +2058,6 @@ export default function UploadPage() {
                         Open Studio Space <Sparkles className="w-3.5 h-3.5" />
                       </button>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* Uploading progress */}
-              {uploadStep === "uploading" && (
-                <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-950/30 flex-1 flex flex-col justify-center items-center">
-                  <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <div>
-                    <h3 className="font-bold text-xs text-slate-300">Uploading Assets...</h3>
-                    <p className="text-[10px] text-slate-500 mt-1 truncate max-w-[200px]">File: {selectedFile?.name}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* AI Analysis pipeline logs */}
-              {uploadStep === "analyzing" && (
-                <div className="border border-slate-850/80 rounded-2xl p-5 space-y-4 bg-slate-950/40 flex-1 flex flex-col justify-center">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-xs flex items-center gap-1.5">
-                      <RefreshCw className="w-3 h-3 text-blue-400 animate-spin" /> AI Room Reconstruction
-                    </h3>
-                    <span className="text-[9px] text-blue-400 font-mono animate-pulse">Running Scan...</span>
-                  </div>
-                  <div className="space-y-2 text-[10px] text-slate-450 font-mono bg-slate-950 p-3.5 rounded-xl border border-slate-900 leading-relaxed">
-                    <div className="flex items-center justify-between text-green-400">
-                      <span>✔ Loaded {fileType} file metadata</span>
-                      <span>[OK]</span>
-                    </div>
-                    <div className="flex items-center justify-between text-green-400">
-                      <span>✔ Furniture Recognition (Sofa, Table, TV)</span>
-                      <span>[OK]</span>
-                    </div>
-                    <div className="flex items-center justify-between text-blue-400 animate-pulse">
-                      <span>🔄 Segmenting walls, doors, ceiling</span>
-                      <span>[RUNNING]</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span>☐ Creating 3D semantic layout coordinates</span>
-                      <span>[WAITING]</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Style Presets selection after analysis */}
-              {uploadStep === "complete" && (
-                <div className="space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-900">
-                    <div>
-                      <h3 className="font-bold text-xs text-slate-200">AI Design Suggestions</h3>
-                      <p className="text-[9px] text-slate-450 mt-0.5">Select a style preset to open in 3D studio</p>
-                    </div>
-                    <span className="flex items-center gap-1 text-[9px] text-green-400 font-semibold bg-green-950/20 border border-green-900/40 px-2 py-0.5 rounded-full font-mono">
-                      <Check className="w-3 h-3" /> Ready
-                    </span>
-                  </div>
-
-                  {/* Name and Room Type inputs */}
-                  <div className="space-y-3 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
-                        Design Name / Title
-                      </label>
-                      <input
-                        type="text"
-                        value={projectTitle}
-                        onChange={(e) => {
-                          setProjectTitle(e.target.value);
-                          sessionStorage.setItem("homeverse_project_title", e.target.value);
-                        }}
-                        onBlur={() => handleUpdateProjectDetails(projectTitle, roomType)}
-                        placeholder="e.g. Master Bedroom design"
-                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-650 focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
-                        Room / Space Type
-                      </label>
-                      <select
-                        value={roomType}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setRoomType(val);
-                          sessionStorage.setItem("homeverse_room_type", val);
-                          handleUpdateProjectDetails(projectTitle, val);
-                        }}
-                        className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                      >
-                        <option value="Living Room">Living Room</option>
-                        <option value="Bedroom">Bedroom</option>
-                        <option value="Office">Home Office</option>
-                        <option value="Kitchen">Kitchen</option>
-                        <option value="Bathroom">Bathroom</option>
-                        <option value="Dining Room">Dining Room</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Grid of Styles */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 items-center py-2">
-                    {styles.map((style) => {
-                      return (
-                        <button
-                          key={style.name}
-                          onClick={() => {
-                            setSelectedStyle(style.name);
-                            setShowOriginal(false); // Switch preview to show redesign on click
-                          }}
-                          className={`group relative rounded-xl overflow-hidden border text-left p-2 bg-slate-950/50 hover:bg-slate-900/80 transition-all cursor-pointer h-24 flex flex-col justify-between ${
-                            selectedStyle === style.name
-                              ? "border-blue-500 ring-1 ring-blue-500/50"
-                              : "border-slate-850"
-                          }`}
-                        >
-                          <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
-                            <img
-                              src={style.img}
-                              alt={style.name}
-                              className="object-cover w-full h-full group-hover:scale-105 transition-transform"
-                            />
-                          </div>
-                          <span className="font-bold text-[10px] text-slate-300">{style.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
- 
-                  {/* Enter Studio Trigger */}
-                  <button
-                    onClick={handleEnterStudio}
-                    className="w-full flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn mt-2 text-xs"
-                  >
-                    Open in Design Studio <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  {/* Informational badge for custom room rendering */}
-                  <div className="mt-3 p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2 animate-fadeIn">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
-                    <span>
-                      <strong>Visual Studio Mode:</strong> Open the Design Studio to view the 3D furniture models arranged directly inside your uploaded room photo with realistic shadows!
-                    </span>
                   </div>
                 </div>
               )}
@@ -2098,122 +2098,220 @@ export default function UploadPage() {
               </div>
 
               <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center flex-1 min-h-[160px]">
-                {uploadStep === "complete" ? (
-                  showOriginal && uploadedFileUrl ? (
-                    fileType === "video" ? (
-                      <video
-                        src={uploadedFileUrl}
-                        className="w-full h-full object-cover animate-fadeIn"
-                        muted
-                        loop
-                        autoPlay
-                        playsInline
-                      />
+                {activeMode === "upload" ? (
+                  uploadStep === "complete" ? (
+                    showOriginal && uploadedFileUrl ? (
+                      fileType === "video" ? (
+                        <video
+                          src={uploadedFileUrl}
+                          className="w-full h-full object-cover animate-fadeIn"
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={uploadedFileUrl}
+                          alt="Original Room"
+                          className="w-full h-full object-cover animate-fadeIn"
+                        />
+                      )
                     ) : (
-                      <img
-                        src={uploadedFileUrl}
-                        alt="Original Room"
-                        className="w-full h-full object-cover animate-fadeIn"
-                      />
-                    )
-                  ) : (
-                    (() => {
-                      const matchedDesign = generatedDesigns.find(
-                        (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
-                      );
-                      const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
-                      return (
-                        <div className="relative w-full h-full">
-                          {imageLoading && (
-                            <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center space-y-3 z-10">
-                              <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                              <div className="text-center">
-                                <p className="text-xs font-semibold text-slate-350">Generating AI Redesign...</p>
-                                <p className="text-[10px] text-slate-500 mt-1">Applying {selectedStyle} style to your room layout</p>
+                      (() => {
+                        const matchedDesign = generatedDesigns.find(
+                          (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
+                        );
+                        const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
+                        return (
+                          <div className="relative w-full h-full">
+                            {imageLoading && (
+                              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center space-y-3 z-10">
+                                <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+                                <div className="text-center">
+                                  <p className="text-xs font-semibold text-slate-355">Generating AI Redesign...</p>
+                                  <p className="text-[10px] text-slate-500 mt-1">Applying {selectedStyle} style to your room layout</p>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          <img
-                            src={displayImg}
-                            onLoad={() => setImageLoading(false)}
-                            onError={() => {
-                              setImageLoading(false);
-                              setImageError(true);
-                            }}
-                            alt={selectedStyle}
-                            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? "opacity-0" : "opacity-100"}`}
-                          />
-                        </div>
-                      );
-                    })()
-                  )
-                ) : (
-                  activeMode === "scratch" ? (
-                    (() => {
-                      const displayImg =
-                        selectedLayoutTemplate === "layout-a"
-                          ? selectedStyle === "Modern"
-                            ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=600"
-                            : selectedStyle === "Luxury"
-                            ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600"
-                            : selectedStyle === "Japandi"
-                            ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=600"
-                            : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=600"
-                          : selectedStyle === "Modern"
-                          ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600"
-                          : selectedStyle === "Luxury"
-                          ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600"
-                          : selectedStyle === "Japandi"
-                          ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=600"
-                          : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600";
-
-                      return (
-                        <div className="relative w-full h-full animate-fadeIn group">
-                          <img
-                            src={displayImg}
-                            alt="Active Workspace Preview"
-                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
-                          />
-                          
-                          {/* Live Specs Overlay */}
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent p-4 pt-10">
-                            <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
-                              <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                                {roomType || "Living Room"}
-                              </span>
-                              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                                {selectedStyle} Theme
-                              </span>
-                              <span className="text-[8px] bg-amber-500/10 border border-amber-500/25 text-amber-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                                {houseFacing} Facing
-                              </span>
-                            </div>
-                            
-                            <h3 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                              {selectedLayoutTemplate === "layout-a" ? "Balanced Setup Preview" : "Cosy Corner Setup Preview"}
-                            </h3>
-                            
-                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                              Furnished template matching <span className="font-mono text-slate-300 font-semibold">{dimensionsInput || "standard dimensions"}</span>. Standard minimalist meshes will align automatically upon workspace load.
-                            </p>
+                            )}
+                            <img
+                              src={displayImg}
+                              onLoad={() => setImageLoading(false)}
+                              onError={() => {
+                                setImageLoading(false);
+                                setImageError(true);
+                              }}
+                              alt={selectedStyle}
+                              className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? "opacity-0" : "opacity-100"}`}
+                            />
                           </div>
-                        </div>
-                      );
-                    })()
+                        );
+                      })()
+                    )
+                  ) : uploadStep === "uploading" || uploadStep === "analyzing" ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 p-6 text-center animate-fadeIn">
+                      <div className="relative w-28 h-20 border border-slate-800 rounded-xl overflow-hidden bg-slate-900/30 flex items-center justify-center shadow-inner">
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:10px_10px]" />
+                        <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-500 shadow-[0_0_10px_#3b82f6] animate-bounce" />
+                        <Upload className="w-6 h-6 text-blue-500 animate-pulse relative z-10" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-200">Reconstructing Room Geometry</p>
+                        <p className="text-[9px] text-slate-500 max-w-[200px] mt-1 leading-relaxed">
+                          Our spatial mapping pipeline is extracting structural features and locating primary assets.
+                        </p>
+                      </div>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-650 p-4 text-center">
                       <Layers className="w-10 h-10 mb-2 text-slate-800" />
-                      <p className="text-xs font-semibold text-slate-400">3D Room View Empty</p>
+                      <p className="text-xs font-semibold text-slate-400">AI Reconstruct View Empty</p>
                       <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
-                        Please upload a room image to run the AI mapping pipeline.
+                        Please upload a room image/video to run the AI mapping pipeline.
+                      </p>
+                    </div>
+                  )
+                ) : activeMode === "scratch" ? (
+                  (() => {
+                    const displayImg =
+                      selectedLayoutTemplate === "layout-a"
+                        ? selectedStyle === "Modern"
+                          ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=600"
+                          : selectedStyle === "Luxury"
+                          ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600"
+                          : selectedStyle === "Japandi"
+                          ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=600"
+                          : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=600"
+                        : selectedStyle === "Modern"
+                        ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600"
+                        : selectedStyle === "Luxury"
+                        ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600"
+                        : selectedStyle === "Japandi"
+                        ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=600"
+                        : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600";
+
+                    return (
+                      <div className="relative w-full h-full animate-fadeIn group">
+                        <img
+                          src={displayImg}
+                          alt="Active Workspace Preview"
+                          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
+                        />
+                        
+                        {/* Live Specs Overlay */}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent p-4 pt-10">
+                          <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
+                            <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                              {roomType || "Living Room"}
+                            </span>
+                            <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                              {selectedStyle} Theme
+                            </span>
+                            <span className="text-[8px] bg-amber-500/10 border border-amber-500/25 text-amber-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                              {houseFacing} Facing
+                            </span>
+                          </div>
+                          
+                          <h3 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                            {selectedLayoutTemplate === "layout-a" ? "Balanced Setup Preview" : "Cosy Corner Setup Preview"}
+                          </h3>
+                          
+                          <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                            Furnished template matching <span className="font-mono text-slate-300 font-semibold">{dimensionsInput || "standard dimensions"}</span>. Standard minimalist meshes will align automatically upon workspace load.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : activeMode === "lidar" ? (
+                  lidarStatus === "scanning" || lidarStatus === "completed" ? (
+                    <div className="relative w-full h-full animate-fadeIn group">
+                      <img
+                        src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=600"
+                        alt="LiDAR Point Cloud"
+                        className="w-full h-full object-cover transition-all duration-500 opacity-60"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/40 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                        <div className="relative w-20 h-20 border border-green-500/40 rounded-full flex items-center justify-center bg-green-950/10 animate-pulse">
+                          <div className="absolute inset-2 border border-green-500/20 rounded-full animate-spin" style={{ animationDuration: "4s" }} />
+                          <Sparkles className="w-8 h-8 text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">
+                            {lidarStatus === "scanning" ? "Active Point Cloud Capture" : "Point Cloud Mesh Ready"}
+                          </p>
+                          <div className="flex gap-4 justify-center items-center mt-2.5">
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 block">Progress</span>
+                              <span className="text-xs font-bold font-mono text-green-400">{lidarProgress}%</span>
+                            </div>
+                            <div className="w-px h-6 bg-slate-800" />
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 block">Vertices</span>
+                              <span className="text-xs font-bold font-mono text-slate-200">{lidarPoints} pts</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-655 p-4 text-center">
+                      <Sparkles className="w-10 h-10 mb-2 text-slate-800" />
+                      <p className="text-xs font-semibold text-slate-450">LiDAR Feed Offline</p>
+                      <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
+                        Start scanning to view the spatial point cloud mesh generated in real time.
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  vectorizerStatus === "processing" || vectorizerStatus === "completed" ? (
+                    <div className="relative w-full h-full animate-fadeIn group">
+                      <img
+                        src={useSampleBlueprint ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600" : "https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=600"}
+                        alt="Blueprint Vectorizer"
+                        className="w-full h-full object-cover transition-all duration-500 opacity-40"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                        <div className="relative w-16 h-16 border border-blue-500/30 rounded-xl flex items-center justify-center bg-blue-950/10">
+                          {vectorizerStatus === "processing" && (
+                            <div className="absolute inset-0 border-t-2 border-blue-500 rounded-xl animate-spin" />
+                          )}
+                          <Layers className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">
+                            {vectorizerStatus === "processing" ? "Extracting Wall Vectors" : "Vector Floorplan Generated"}
+                          </p>
+                          <div className="flex gap-4 justify-center items-center mt-2.5">
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 block">Status</span>
+                              <span className="text-xs font-bold font-mono text-blue-400">
+                                {vectorizerStatus === "processing" ? `${vectorizerProgress}%` : "100% Extracted"}
+                              </span>
+                            </div>
+                            <div className="w-px h-6 bg-slate-850" />
+                            <div className="text-center">
+                              <span className="text-[10px] text-slate-500 block">Format</span>
+                              <span className="text-xs font-bold font-mono text-slate-350">ThreeJS JSON</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-655 p-4 text-center">
+                      <Layers className="w-10 h-10 mb-2 text-slate-800" />
+                      <p className="text-xs font-semibold text-slate-450">No Floorplan Selected</p>
+                      <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
+                        Attach a blueprint image to begin wall alignment extraction.
                       </p>
                     </div>
                   )
                 )}
               </div>
 
-              {uploadStep === "complete" && (
+              {activeMode === "upload" && uploadStep === "complete" && (
                 <>
                   <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 animate-fadeIn">
                     <span className="text-[10px] font-bold text-blue-400 block mb-0.5">Style Profile: {selectedStyle}</span>
