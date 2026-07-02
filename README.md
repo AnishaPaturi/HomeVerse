@@ -96,7 +96,7 @@ A conversational sidebar allows users to modify the room using natural language:
   *AI Copilot*: *Adds a navigable custom room slab with built-in doorway opening.*
 
 ### House Facing & Fully Furnished Templates
-At the final step of manual room construction, users choose the facing direction of their house (North, East, West, South) and pick between two dynamic fully-furnished layouts (e.g., Balanced Center Setup or Cosy Corner Concept). HomeVerse automatically pre-populates the workspace with coordinate-correct, style-synchronized furniture meshes that line up perfectly with design best practices.
+At Step 5 of manual room construction, users choose the facing direction of their house (North, East, West, South) and pick between two dynamic fully-furnished layouts (e.g., Balanced Center Setup or Cosy Corner Concept). HomeVerse automatically pre-populates the workspace with coordinate-correct, style-synchronized furniture meshes that line up perfectly with design best practices.
 
 ### Direct Local Storage (Cloud-Free)
 To ensure maximum speed, data ownership, and seamless offline capability, HomeVerse saves uploaded photos and designs directly to the local disk at `static/uploads/`, eliminating high latency and dependencies on Cloudinary or AWS S3.
@@ -299,7 +299,7 @@ Here is a chronological overview of the development lifecycle for **HomeVerse**:
 * Introduced a property dropdown switching between Independent House and Flat, disabling multi-floor selection for apartments.
 * Implemented a collection of 13 new minimal furniture types.
 * Integrated keydown listeners for Backspace and Delete to remove selected objects on the fly.
-* Added Step 6 layout templates and house facing direction selectors to pre-populate fully furnished rooms on client project setup.
+* Added Step 5 layout templates and house facing direction selectors to pre-populate fully furnished rooms on client project setup.
 
 ### 👥 Phase 4: Collaborative Design & Realism (Week 6+) — Planned
 * Immersive WebXR mobile AR viewer integrations.

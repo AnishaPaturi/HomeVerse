@@ -1568,10 +1568,10 @@ export default function UploadPage() {
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        Design Wizard: Step {scratchStep} of 6
+                        Design Wizard: Step {scratchStep} of 5
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5, 6].map((s) => (
+                        {[1, 2, 3, 4, 5].map((s) => (
                           <div
                             key={s}
                             className={`w-4 h-1.5 rounded-full transition-all ${
@@ -1817,79 +1817,72 @@ export default function UploadPage() {
                               className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
-                        )}
-
-                        {/* Starting Preset */}
-                        <div className="space-y-1">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
-                            Style Theme
-                          </label>
-                          <div className="grid grid-cols-5 gap-1 py-1">
-                            {styles.map((style) => (
-                              <button
-                                key={style.name}
-                                type="button"
-                                onClick={() => setSelectedStyle(style.name)}
-                                className={`rounded-lg py-1.5 text-center transition-all cursor-pointer border text-[9px] font-bold ${
-                                  selectedStyle === style.name
-                                    ? "bg-blue-600 border-blue-500 text-white shadow-md"
-                                    : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
-                                }`}
-                              >
-                                {style.name}
-                              </button>
-                            ))}
+                         {/* Starting Preset */}
+                        <div className="grid grid-cols-2 gap-3.5">
+                          {/* Style Theme */}
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              Style Theme
+                            </label>
+                            <div className="grid grid-cols-2 gap-1 py-1">
+                              {styles.map((style) => (
+                                <button
+                                  key={style.name}
+                                  type="button"
+                                  onClick={() => setSelectedStyle(style.name)}
+                                  className={`rounded-lg py-1 text-center transition-all cursor-pointer border text-[9px] font-bold ${
+                                    selectedStyle === style.name
+                                      ? "bg-blue-600 border-blue-500 text-white shadow-md"
+                                      : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
+                                  }`}
+                                >
+                                  {style.name}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
 
-                    {scratchStep === 6 && (
-                      <div className="space-y-4">
-                        {/* House Facing */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">
-                            House Facing Direction
-                          </label>
-                          <div className="grid grid-cols-4 gap-2">
-                            {["North", "East", "West", "South"].map((dir) => (
-                              <button
-                                key={dir}
-                                type="button"
-                                onClick={() => setHouseFacing(dir)}
-                                className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                                  houseFacing === dir
-                                    ? "bg-blue-600 border-blue-500 text-white shadow-md"
-                                    : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
-                                }`}
-                              >
-                                {dir}
-                              </button>
-                            ))}
+                          {/* House Facing */}
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              House Facing
+                            </label>
+                            <div className="grid grid-cols-2 gap-1 py-1">
+                              {["North", "East", "West", "South"].map((dir) => (
+                                <button
+                                  key={dir}
+                                  type="button"
+                                  onClick={() => setHouseFacing(dir)}
+                                  className={`rounded-lg py-1 text-center transition-all cursor-pointer border text-[9px] font-bold ${
+                                    houseFacing === dir
+                                      ? "bg-blue-600 border-blue-500 text-white shadow-md"
+                                      : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
+                                  }`}
+                                >
+                                  {dir}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
                         {/* Fully Furnished Templates */}
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                        <div className="space-y-1.5 pt-0.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono block">
                             Select Fully Furnished Template Option
                           </label>
-                          <p className="text-[10px] text-slate-500 font-sans">
-                            Populate your room automatically with layout models tailored to your facing direction.
-                          </p>
-
-                          <div className="grid grid-cols-2 gap-3.5 pt-1">
+                          <div className="grid grid-cols-2 gap-3">
                             {/* Option 1: Layout A */}
                             <button
                               type="button"
                               onClick={() => setSelectedLayoutTemplate("layout-a")}
-                              className={`p-3 rounded-2xl border text-left space-y-2.5 transition-all cursor-pointer flex flex-col h-56 group ${
+                              className={`p-2.5 rounded-xl border text-left space-y-1.5 transition-all cursor-pointer flex flex-col h-36 group ${
                                 selectedLayoutTemplate === "layout-a"
-                                  ? "bg-slate-900 border-blue-500 text-blue-400 shadow-xl"
+                                  ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-lg"
                                   : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                               }`}
                             >
-                              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-800/80">
+                              <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
                                 <img
                                   src={
                                     selectedStyle === "Modern"
@@ -1903,14 +1896,14 @@ export default function UploadPage() {
                                   alt="Layout A"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
-                                <span className="absolute bottom-1.5 left-1.5 text-[8px] bg-blue-950/90 text-blue-400 border border-blue-800/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                                <span className="absolute bottom-1 left-1 text-[7px] bg-blue-950/95 text-blue-400 border border-blue-800/40 px-1 py-0.2 rounded font-mono font-bold">
                                   Balanced Layout
                                 </span>
                               </div>
                               <div>
-                                <h4 className="font-extrabold text-[11px] text-slate-200">Balanced Center Setup</h4>
-                                <p className="text-[9px] text-slate-500 font-sans mt-0.5 leading-relaxed line-clamp-2">
-                                  Centered seating/bed alignment optimized for traffic flow and aesthetic symmetry.
+                                <h4 className="font-extrabold text-[10px] text-slate-200 leading-tight">Balanced Center Setup</h4>
+                                <p className="text-[8px] text-slate-500 font-sans mt-0.5 leading-snug line-clamp-1">
+                                  Centered seating/bed alignment optimized for traffic flow.
                                 </p>
                               </div>
                             </button>
@@ -1919,13 +1912,13 @@ export default function UploadPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedLayoutTemplate("layout-b")}
-                              className={`p-3 rounded-2xl border text-left space-y-2.5 transition-all cursor-pointer flex flex-col h-56 group ${
+                              className={`p-2.5 rounded-xl border text-left space-y-1.5 transition-all cursor-pointer flex flex-col h-36 group ${
                                 selectedLayoutTemplate === "layout-b"
-                                  ? "bg-slate-900 border-blue-500 text-blue-400 shadow-xl"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                  ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-lg"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                               }`}
                             >
-                              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-800/80">
+                              <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
                                 <img
                                   src={
                                     selectedStyle === "Modern"
@@ -1939,14 +1932,14 @@ export default function UploadPage() {
                                   alt="Layout B"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
-                                <span className="absolute bottom-1.5 left-1.5 text-[8px] bg-emerald-950/90 text-emerald-450 border border-emerald-800/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                                <span className="absolute bottom-1 left-1 text-[7px] bg-emerald-950/95 text-emerald-450 border border-emerald-800/40 px-1 py-0.2 rounded font-mono font-bold">
                                   Corner Accent Layout
                                 </span>
                               </div>
                               <div>
-                                <h4 className="font-extrabold text-[11px] text-slate-200">Cosy Corner Concept</h4>
-                                <p className="text-[9px] text-slate-500 font-sans mt-0.5 leading-relaxed line-clamp-2">
-                                  Maximizes visual space by placing focal furniture units along side walls.
+                                <h4 className="font-extrabold text-[10px] text-slate-200 leading-tight">Cosy Corner Concept</h4>
+                                <p className="text-[8px] text-slate-500 font-sans mt-0.5 leading-snug line-clamp-1">
+                                  Maximizes visual space by placing focal furniture along side walls.
                                 </p>
                               </div>
                             </button>
@@ -1968,7 +1961,7 @@ export default function UploadPage() {
                       </button>
                     )}
                     
-                    {scratchStep < 6 ? (
+                    {scratchStep < 5 ? (
                       <button
                         type="button"
                         onClick={nextScratchStep}
