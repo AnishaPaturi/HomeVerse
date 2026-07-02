@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag, Image as ImageIcon, ShoppingCart, Trash2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Play, FileText, Download, Plus, Sparkles, Layers, Box, Search, Sliders, ShoppingBag, Image as ImageIcon, ShoppingCart, Trash2, ExternalLink, Tv, Cpu } from "lucide-react";
 import CanvasContainer from "@/components/studio/CanvasContainer";
 import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
@@ -1617,6 +1617,63 @@ function StudioContent() {
                       <div>
                         <p>Insert Console Table</p>
                         <span className="text-[10px] text-slate-500 font-normal">Sleek hallway console table</span>
+                      </div>
+                    </button>
+
+                    {/* Smart Appliances Section */}
+                    <div className="pt-2 border-t border-slate-900 space-y-2">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block">🔌 Smart Appliances</span>
+                    </div>
+
+                    <button
+                      onClick={() => handleAddObject("tv")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-blue-950/20 border border-blue-900/40 rounded-lg text-blue-500">
+                        <Tv className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Smart TV + Console</p>
+                        <span className="text-[10px] text-slate-500 font-normal">LED screen with low stand</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("ac")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-cyan-950/20 border border-cyan-900/40 rounded-lg text-cyan-500">
+                        <Cpu className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Air Conditioner</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Wall-mounted inverter AC unit</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("refrigerator")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-[11px] font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-400">
+                        <Cpu className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Refrigerator</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Double door kitchen fridge</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddObject("washing_machine")}
+                      className="w-full flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/60 rounded-xl text-left text-[11px] font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-teal-950/20 border border-teal-900/40 rounded-lg text-teal-500">
+                        <Cpu className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p>Insert Washing Machine</p>
+                        <span className="text-[10px] text-slate-500 font-normal">Front-load washing washer</span>
                       </div>
                     </button>
                   </div>

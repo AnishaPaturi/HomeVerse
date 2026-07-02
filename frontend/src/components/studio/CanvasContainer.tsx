@@ -1714,6 +1714,15 @@ function TransformableObject({
       {obj.object_type === "console_table" && (
         <ConsoleTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
       )}
+      {obj.object_type === "ac" && (
+        <AC3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "refrigerator" && (
+        <Refrigerator3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "washing_machine" && (
+        <WashingMachine3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
     </>
   );
 
