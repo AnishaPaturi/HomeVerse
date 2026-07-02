@@ -23,11 +23,13 @@ Think of HomeVerse as:
 Unlike typical AI design apps that stop at static image generation, HomeVerse transitions the generated design into a **fully interactive, editable 3D design studio**.
 
 ```
-Original Room Photo
+Original Room Photo / Video Walkthrough
        ↓
-AI Room Segmentation & Style Generation (5 variations)
+AI Room Geometry Analysis (Lightweight structural/lighting reconstruction)
        ↓
-Select a Design
+Configure Design Choices (Dynamic Room Type, Style Theme, Colors, Notes)
+       ↓
+Generate Custom Design On-Demand (~1.5s fast CDN hand-off & background caching)
        ↓
 Interactive 3D Design Studio (Customize, Edit, chat with AI Copilot)
        ↓
@@ -39,40 +41,26 @@ High-quality Render, Walkthrough & Shopping Guide
 ## 🗺️ Core User Journey
 
 ### Step 1: Upload & Capture
-Users upload, capture a photo, or record/upload a video walkthrough of their space:
-* Living Room
-* Bedroom
-* Kitchen
-* Office
+Users upload, capture a photo, or record a video scan of any room or interior space:
+* Living Room, Bedroom, Office, Kitchen, Dining Room, Gym, or any custom space.
 
-### Step 2: AI Analysis
-Behind the scenes, HomeVerse executes:
-1. **Object Detection**: Identifies physical items like sofas, tables, TVs, beds, lights, cabinets, and decor.
-2. **Segmentation**: Isolates boundaries of walls, floor, ceiling, windows, and doors.
-3. **Room Understanding**: Constructs a semantic map of the 3D space.
-4. **Style Generation**: Generates 5 aesthetic variations.
+### Step 2: AI Structural Analysis
+Behind the scenes, HomeVerse executes a lightweight spatial reconstruct scan using **Gemini 3.5 Flash**:
+1. **Structural Segmentation**: Isolates coordinates of walls, floor, ceiling, windows, and doors.
+2. **Lighting Direction**: Pinpoints light sources to orient furniture for maximum natural lighting.
+3. **Room Type Inference**: Automatically infers the space type (e.g. "Bedroom") and pre-fills it in the editor options.
 
-### Step 3: Generate Designs
-Within seconds, the original room is transformed into 5 distinct styles:
-* **Modern**
-* **Luxury**
-* **Scandinavian**
-* **Minimalist**
-* **Japandi**
+### Step 3: Configure Design Choices
+Rather than forcing pre-generated styles, the dashboard provides a fully dynamic choices form:
+* **Space Type**: Keep the inferred room type or customize it to **literally any room type** (such as *"Loft Gym"*, *"Attic Studio"*, *"Home Theater"*).
+* **Style Theme**: Select a preset (Modern, Japandi, Scandinavian, Minimalist, Luxury) or type in a **Custom Style** (e.g. *"Industrial Loft"*, *"Bohemian"*).
+* **Color Palette & Materials**: Optional preference specification (e.g. *"Walnut wood and dark leather"*).
+* **Additional Design Notes**: Add custom requirements (e.g. *"Place a desk near the window and include green plants"*).
 
-```
-┌────────┐ ┌────────┐
-│Style 1 │ │Style 2 │
-└────────┘ └────────┘
+### Step 4: Generate Design On-Demand
+Clicking **"Generate AI Design"** calls the backend dynamic pipeline. Gemini builds a style-synchronized 3D coordinate layout for the chosen room type, and Pollinations AI renders a matching design image. The response returns in **~1.5 seconds** (using our async CDN hand-off), allowing users to create multiple distinct design variations on-demand.
 
-┌────────┐ ┌────────┐
-│Style 3 │ │Style 4 │
-└────────┘ └────────┘
-
-     Style 5 (Featured)
-```
-
-### Step 4: Enter Design Studio
+### Step 5: Enter Design Studio
 By clicking **"Open in Design Studio"**, the user enters an interactive 3D environment powered by Three.js where objects are selectable and editable.
 
 #### Interactive Objects Context Context:
@@ -134,17 +122,18 @@ graph TD
     C --> D[Database: SQLite / Local DB]
     C --> E[Local Static Files Storage]
     C --> F[AI Layer]
-    F --> F1[Furniture Detection]
-    F --> F2[Room Segmentation]
-    F --> F3[Flux-Schnell: Fast Style Gen]
+    F --> F1[Structural & Light Analysis]
+    F --> F2[On-Demand Dynamic Generation]
+    F --> F3[Flux: Fast Style Gen via CDN]
     F --> F4[LLMs: Gemini 3.5 Flash]
+    C -->|Async Cache Thread| E
 ```
 
 ### Frontend
 * **Core Framework**: Next.js (TypeScript)
 * **Styling**: TailwindCSS, Shadcn UI
-* **State Management**: React Query
-* **Performance**: Prefetching preloader pre-fetches Pollinations AI redesign suggestions in parallel for instant style swapping.
+* **State Management**: React Query / Session Storage
+* **Performance**: Immediate CDN hand-off renders generated designs in ~1.5s, avoiding any layout blocking. Carousel lists multiple customized generated models on-the-fly.
 
 ### 3D Engine
 * Three.js, React Three Fiber (R3F), Drei
@@ -152,11 +141,12 @@ graph TD
 ### Backend
 * **Core API**: FastAPI (Python)
 * **Database**: SQLite (SQLAlchemy ORM)
-* **Asset Storage**: Direct Local disk storage
+* **Asset Storage**: Direct Local disk storage (caching)
+* **Task Optimization**: A dedicated daemon background thread asynchronously handles downloading high-resolution images from Pollinations AI and updates references in the database, allowing backend requests to execute instantly.
 
 ### AI Layer
-* **Design Generation**: Pollinations AI using **Flux-Schnell** model (generates variations in ~1.4 seconds)
-* **AI Copilot**: Gemini 3.5 Flash (intent parsing, object additions/updates/deletions, and structural room generation)
+* **Design Generation**: Pollinations AI using **Flux** model (rendered instantly in browser, downloaded in background)
+* **AI Copilot & Structuring**: Gemini 3.5 Flash (room type/structure detection, 3D object layout generation, intent parsing, and room additions)
 
 ---
 
@@ -301,7 +291,14 @@ Here is a chronological overview of the development lifecycle for **HomeVerse**:
 * Integrated keydown listeners for Backspace and Delete to remove selected objects on the fly.
 * Added Step 5 layout templates and house facing direction selectors to pre-populate fully furnished rooms on client project setup.
 
-### 👥 Phase 4: Collaborative Design & Realism (Week 6+) — Planned
+### ⚡ Phase 4: Dynamic Custom Generation & Async Caching (Week 6) — Completed
+* Shifted from static pre-generation to on-demand generation based on user's exact customized options.
+* Created a dynamic design selections form allowing the user to select or input custom room types (such as Loft Gym or Attic Studio) and custom styles (such as Mid-Century Modern or Industrial).
+* Added optional color palettes, materials, and additional custom requirements/notes inputs to guide style outputs.
+* Cut layout/design generation response times to ~1.5s by handing off the image URL instantly to the browser and executing the download/caching block in a background thread.
+* Created a generated designs list carousel in the client to allow previewing and switching between multiple custom generated designs.
+
+### 👥 Phase 5: Collaborative Design & Realism (Week 7+) — Planned
 * Immersive WebXR mobile AR viewer integrations.
 * Real-time co-designing multiplayer editor workspaces using WebSocket connections.
 * Automated invoice exports mapping furniture selections.
