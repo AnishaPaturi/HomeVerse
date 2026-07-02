@@ -18,6 +18,117 @@ import {
   Home
 } from "lucide-react";
 
+const getFurnishedTemplateObjects = (
+  roomType: string,
+  style: string,
+  facing: string,
+  roomWidth: number,
+  roomDepth: number
+) => {
+  const objects: any[] = [];
+  const baseColor = style === "Luxury" ? "#1e293b" : style === "Minimalist" ? "#f8fafc" : "#cbd5e1";
+  const accentColor = style === "Luxury" ? "#b45309" : style === "Japandi" ? "#0f766e" : "#3b82f6";
+
+  // Center coordinates
+  const cx = 0;
+  const cz = 0;
+
+  // Let's place furniture based on room type
+  if (roomType === "Living Room") {
+    // Sofa, Coffee Table, TV Console, AC, Rug, Plant Box
+    if (facing === "North") {
+      objects.push(
+        { object_type: "sofa", material: accentColor, position_x: cx, position_y: 0, position_z: roomDepth / 2 - 0.8, rotation: 0, scale: 1.0 },
+        { object_type: "coffee_table", material: "#d97706", position_x: cx, position_y: 0, position_z: roomDepth / 2 - 1.8, rotation: 0, scale: 1.0 },
+        { object_type: "tv", material: "#1e293b", position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 0.3, rotation: Math.PI, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: cx, position_y: 2.2, position_z: -roomDepth / 2 + 0.1, rotation: Math.PI, scale: 1.0 },
+        { object_type: "rug", material: "#e2e8f0", position_x: cx, position_y: 0.01, position_z: roomDepth / 2 - 1.8, rotation: 0, scale: 1.2 },
+        { object_type: "flower_pot", material: "#10b981", position_x: -roomWidth / 2 + 0.6, position_y: 0, position_z: -roomDepth / 2 + 0.6, rotation: 0, scale: 1.0 }
+      );
+    } else if (facing === "East") {
+      objects.push(
+        { object_type: "sofa", material: accentColor, position_x: -roomWidth / 2 + 0.8, position_y: 0, position_z: cz, rotation: Math.PI / 2, scale: 1.0 },
+        { object_type: "coffee_table", material: "#d97706", position_x: -roomWidth / 2 + 1.8, position_y: 0, position_z: cz, rotation: Math.PI / 2, scale: 1.0 },
+        { object_type: "tv", material: "#1e293b", position_x: roomWidth / 2 - 0.3, position_y: 0, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: roomWidth / 2 - 0.1, position_y: 2.2, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 },
+        { object_type: "rug", material: "#e2e8f0", position_x: -roomWidth / 2 + 1.8, position_y: 0.01, position_z: cz, rotation: Math.PI / 2, scale: 1.2 },
+        { object_type: "flower_pot", material: "#10b981", position_x: -roomWidth / 2 + 0.6, position_y: 0, position_z: -roomDepth / 2 + 0.6, rotation: 0, scale: 1.0 }
+      );
+    } else if (facing === "West") {
+      objects.push(
+        { object_type: "sofa", material: accentColor, position_x: roomWidth / 2 - 0.8, position_y: 0, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 },
+        { object_type: "coffee_table", material: "#d97706", position_x: roomWidth / 2 - 1.8, position_y: 0, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 },
+        { object_type: "tv", material: "#1e293b", position_x: -roomWidth / 2 + 0.3, position_y: 0, position_z: cz, rotation: Math.PI / 2, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: -roomWidth / 2 + 0.1, position_y: 2.2, position_z: cz, rotation: Math.PI / 2, scale: 1.0 },
+        { object_type: "rug", material: "#e2e8f0", position_x: roomWidth / 2 - 1.8, position_y: 0.01, position_z: cz, rotation: -Math.PI / 2, scale: 1.2 },
+        { object_type: "flower_pot", material: "#10b981", position_x: roomWidth / 2 - 0.6, position_y: 0, position_z: roomDepth / 2 - 0.6, rotation: 0, scale: 1.0 }
+      );
+    } else { // South
+      objects.push(
+        { object_type: "sofa", material: accentColor, position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 0.8, rotation: Math.PI, scale: 1.0 },
+        { object_type: "coffee_table", material: "#d97706", position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 1.8, rotation: Math.PI, scale: 1.0 },
+        { object_type: "tv", material: "#1e293b", position_x: cx, position_y: 0, position_z: roomDepth / 2 - 0.3, rotation: 0, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: cx, position_y: 2.2, position_z: roomDepth / 2 - 0.1, rotation: 0, scale: 1.0 },
+        { object_type: "rug", material: "#e2e8f0", position_x: cx, position_y: 0.01, position_z: -roomDepth / 2 + 1.8, rotation: Math.PI, scale: 1.2 },
+        { object_type: "flower_pot", material: "#10b981", position_x: roomWidth / 2 - 0.6, position_y: 0, position_z: roomDepth / 2 - 0.6, rotation: 0, scale: 1.0 }
+      );
+    }
+  } else if (roomType === "Bedroom") {
+    // Bed, Nightstand, Wardrobe, AC, Armchair, Rug
+    if (facing === "North" || facing === "East") {
+      objects.push(
+        { object_type: "bed", material: baseColor, position_x: cx, position_y: 0, position_z: roomDepth / 2 - 1.1, rotation: 0, scale: 1.0 },
+        { object_type: "nightstand", material: "#78350f", position_x: -1.2, position_y: 0, position_z: roomDepth / 2 - 0.5, rotation: 0, scale: 1.0 },
+        { object_type: "nightstand", material: "#78350f", position_x: 1.2, position_y: 0, position_z: roomDepth / 2 - 0.5, rotation: 0, scale: 1.0 },
+        { object_type: "wardrobe", material: "#4b5563", position_x: -roomWidth / 2 + 0.6, position_y: 0, position_z: -roomDepth / 2 + 1.2, rotation: Math.PI / 2, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: cx, position_y: 2.2, position_z: -roomDepth / 2 + 0.1, rotation: Math.PI, scale: 1.0 },
+        { object_type: "armchair", material: accentColor, position_x: roomWidth / 2 - 0.8, position_y: 0, position_z: -roomDepth / 2 + 0.8, rotation: -Math.PI / 4, scale: 1.0 },
+        { object_type: "rug", material: "#f1f5f9", position_x: cx, position_y: 0.01, position_z: roomDepth / 2 - 2.2, rotation: 0, scale: 1.1 }
+      );
+    } else { // South / West
+      objects.push(
+        { object_type: "bed", material: baseColor, position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 1.1, rotation: Math.PI, scale: 1.0 },
+        { object_type: "nightstand", material: "#78350f", position_x: -1.2, position_y: 0, position_z: -roomDepth / 2 + 0.5, rotation: Math.PI, scale: 1.0 },
+        { object_type: "nightstand", material: "#78350f", position_x: 1.2, position_y: 0, position_z: -roomDepth / 2 + 0.5, rotation: Math.PI, scale: 1.0 },
+        { object_type: "wardrobe", material: "#4b5563", position_x: roomWidth / 2 - 0.6, position_y: 0, position_z: roomDepth / 2 - 1.2, rotation: -Math.PI / 2, scale: 1.0 },
+        { object_type: "ac", material: "#f1f5f9", position_x: cx, position_y: 2.2, position_z: roomDepth / 2 - 0.1, rotation: 0, scale: 1.0 },
+        { object_type: "armchair", material: accentColor, position_x: -roomWidth / 2 + 0.8, position_y: 0, position_z: roomDepth / 2 - 0.8, rotation: Math.PI * 0.75, scale: 1.0 },
+        { object_type: "rug", material: "#f1f5f9", position_x: cx, position_y: 0.01, position_z: -roomDepth / 2 + 2.2, rotation: Math.PI, scale: 1.1 }
+      );
+    }
+  } else if (roomType === "Office") {
+    // Desk, Chair, Bookshelf, AC, Rug, Lamp
+    objects.push(
+      { object_type: "desk", material: "#1e293b", position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 1.2, rotation: Math.PI, scale: 1.0 },
+      { object_type: "chair", material: accentColor, position_x: cx, position_y: 0, position_z: -roomDepth / 2 + 0.6, rotation: 0, scale: 1.0 },
+      { object_type: "bookshelf", material: "#78350f", position_x: -roomWidth / 2 + 0.6, position_y: 0, position_z: cz, rotation: Math.PI / 2, scale: 1.0 },
+      { object_type: "ac", material: "#f1f5f9", position_x: roomWidth / 2 - 0.1, position_y: 2.2, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 },
+      { object_type: "lamp", material: "#fbbf24", position_x: roomWidth / 2 - 0.6, position_y: 0, position_z: roomDepth / 2 - 0.6, rotation: 0, scale: 1.0 },
+      { object_type: "rug", material: "#cbd5e1", position_x: cx, position_y: 0.01, position_z: -roomDepth / 2 + 1.2, rotation: 0, scale: 1.0 }
+    );
+  } else if (roomType === "Kitchen") {
+    // Dining Table, Chairs, Refrigerator, AC
+    objects.push(
+      { object_type: "dining_table", material: baseColor, position_x: cx, position_y: 0, position_z: cz, rotation: 0, scale: 1.0 },
+      { object_type: "chair", material: accentColor, position_x: cx, position_y: 0, position_z: -0.8, rotation: 0, scale: 0.85 },
+      { object_type: "chair", material: accentColor, position_x: cx, position_y: 0, position_z: 0.8, rotation: Math.PI, scale: 0.85 },
+      { object_type: "refrigerator", material: "#cbd5e1", position_x: -roomWidth / 2 + 0.6, position_y: 0, position_z: -roomDepth / 2 + 0.6, rotation: Math.PI / 4, scale: 1.0 },
+      { object_type: "ac", material: "#f1f5f9", position_x: roomWidth / 2 - 0.1, position_y: 2.2, position_z: cz, rotation: -Math.PI / 2, scale: 1.0 }
+    );
+  } else {
+    // Other: Stool, Pouf, Mirror, Bench, AC
+    objects.push(
+      { object_type: "bench", material: baseColor, position_x: cx, position_y: 0, position_z: roomDepth / 2 - 0.6, rotation: 0, scale: 1.0 },
+      { object_type: "mirror", material: "#e2e8f0", position_x: cx, position_y: 1.2, position_z: roomDepth / 2 - 0.05, rotation: 0, scale: 1.0 },
+      { object_type: "pouf", material: accentColor, position_x: -roomWidth / 2 + 0.8, position_y: 0, position_z: cz, rotation: 0, scale: 1.0 },
+      { object_type: "stool", material: "#78350f", position_x: roomWidth / 2 - 0.8, position_y: 0, position_z: cz, rotation: 0, scale: 1.0 },
+      { object_type: "ac", material: "#f1f5f9", position_x: cx, position_y: 2.2, position_z: -roomDepth / 2 + 0.1, rotation: Math.PI, scale: 1.0 }
+    );
+  }
+
+  return objects;
+};
+
 export default function UploadPage() {
   const router = useRouter();
   
@@ -49,6 +160,8 @@ export default function UploadPage() {
   const [customRoomType, setCustomRoomType] = useState<string>("");
   const [bedroomNameType, setBedroomNameType] = useState<string>("Master Bedroom");
   const [customBedroomName, setCustomBedroomName] = useState<string>("");
+  const [houseFacing, setHouseFacing] = useState<string>("North");
+  const [selectedLayoutTemplate, setSelectedLayoutTemplate] = useState<string>("layout-a");
 
   // LiDAR scan states
   const [lidarStatus, setLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
@@ -549,6 +662,29 @@ export default function UploadPage() {
       }
 
       const activeDesignId = designIdFromBackend || crypto.randomUUID();
+
+      // 3. Pre-populate layout template objects on the backend database
+      const templateObjects = getFurnishedTemplateObjects(finalRoomType, selectedStyle, houseFacing, calculatedWidth, calculatedDepth);
+      const designObjectsToSave = [
+        { object_type: "floor", material: selectedStyle === "Luxury" ? "granite" : "wood_light", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0 },
+        { object_type: "wall", material: selectedStyle === "Minimalist" ? "#ffffff" : selectedStyle === "Luxury" ? "#1e293b" : "#f1f5f9", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0 },
+        ...templateObjects
+      ];
+
+      for (const obj of designObjectsToSave) {
+        try {
+          await fetch(`http://localhost:8080/api/designs/${activeDesignId}/objects`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(obj)
+          });
+        } catch (err) {
+          console.warn("Failed to pre-populate template object:", err);
+        }
+      }
+
       const localDesign = {
         id: activeDesignId,
         style: selectedStyle,
@@ -1432,10 +1568,10 @@ export default function UploadPage() {
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        Design Wizard: Step {scratchStep} of 5
+                        Design Wizard: Step {scratchStep} of 6
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
+                        {[1, 2, 3, 4, 5, 6].map((s) => (
                           <div
                             key={s}
                             className={`w-4 h-1.5 rounded-full transition-all ${
@@ -1531,7 +1667,7 @@ export default function UploadPage() {
                           value={communityBlock}
                           onChange={(e) => setCommunityBlock(e.target.value)}
                           placeholder="e.g. Tower C, Block A, Wing 2"
-                          className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
+                          className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
                         />
                       </div>
                     )}
@@ -1569,7 +1705,7 @@ export default function UploadPage() {
                           </button>
                         </div>
                         {hasFloorPlan === "yes" && (
-                          <div className="border border-dashed border-slate-800 rounded-xl p-3 bg-slate-955 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:border-slate-700">
+                          <div className="border border-dashed border-slate-800 rounded-xl p-3 bg-slate-950 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:border-slate-700">
                             📎 Attach Floorplan Image (PNG/JPG)
                           </div>
                         )}
@@ -1587,7 +1723,7 @@ export default function UploadPage() {
                             value={dimensionsInput}
                             onChange={(e) => setDimensionsInput(e.target.value)}
                             placeholder="e.g. 3.63 m * 3.94 m or 12 ft * 15 ft"
-                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                           />
                           <span className="text-[9px] text-slate-500 font-sans leading-relaxed">
                             Supports meters (m) or feet (ft) like <span className="font-mono text-slate-400 font-bold">3.63 m * 3.94 m</span> or <span className="font-mono text-slate-400 font-bold">12 ft * 15 ft</span>.
@@ -1601,13 +1737,13 @@ export default function UploadPage() {
                           <select
                             value={roomType}
                             onChange={(e) => setRoomType(e.target.value)}
-                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                           >
-                            <option value="Living Room">Living Room</option>
-                            <option value="Bedroom">Bedroom</option>
-                            <option value="Office">Home Office</option>
-                            <option value="Kitchen">Kitchen/Dining</option>
-                            <option value="Other">Other</option>
+                            <option value="Living Room" className="bg-slate-900 text-slate-200">Living Room</option>
+                            <option value="Bedroom" className="bg-slate-900 text-slate-200">Bedroom</option>
+                            <option value="Office" className="bg-slate-900 text-slate-200">Home Office</option>
+                            <option value="Kitchen" className="bg-slate-900 text-slate-200">Kitchen/Dining</option>
+                            <option value="Other" className="bg-slate-900 text-slate-200">Other</option>
                           </select>
                         </div>
 
@@ -1624,7 +1760,7 @@ export default function UploadPage() {
                                 setProjectTitle(e.target.value);
                               }}
                               placeholder="e.g. Home Gym, Media Room, Library"
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
                         )}
@@ -1638,13 +1774,13 @@ export default function UploadPage() {
                               <select
                                 value={bedroomNameType}
                                 onChange={(e) => setBedroomNameType(e.target.value)}
-                                className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                               >
-                                <option value="Master Bedroom">Master Bedroom</option>
-                                <option value="Kids Bedroom">Kids Bedroom</option>
-                                <option value="Guest Bedroom">Guest Bedroom</option>
-                                <option value="Teen Bedroom">Teen Bedroom</option>
-                                <option value="Custom">Custom Bedroom Name...</option>
+                                <option value="Master Bedroom" className="bg-slate-900 text-slate-200">Master Bedroom</option>
+                                <option value="Kids Bedroom" className="bg-slate-900 text-slate-200">Kids Bedroom</option>
+                                <option value="Guest Bedroom" className="bg-slate-900 text-slate-200">Guest Bedroom</option>
+                                <option value="Teen Bedroom" className="bg-slate-900 text-slate-200">Teen Bedroom</option>
+                                <option value="Custom" className="bg-slate-900 text-slate-200">Custom Bedroom Name...</option>
                               </select>
                             </div>
 
@@ -1661,7 +1797,7 @@ export default function UploadPage() {
                                     setProjectTitle(e.target.value);
                                   }}
                                   placeholder="e.g. Anisha's Bedroom"
-                                  className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                                  className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                                 />
                               </div>
                             )}
@@ -1678,7 +1814,7 @@ export default function UploadPage() {
                               value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
                               onChange={(e) => setProjectTitle(e.target.value)}
                               placeholder="e.g. Dream Living Room"
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
                         )}
@@ -1697,12 +1833,123 @@ export default function UploadPage() {
                                 className={`rounded-lg py-1.5 text-center transition-all cursor-pointer border text-[9px] font-bold ${
                                   selectedStyle === style.name
                                     ? "bg-blue-600 border-blue-500 text-white shadow-md"
-                                    : "bg-slate-955 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
+                                    : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
                                 }`}
                               >
                                 {style.name}
                               </button>
                             ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {scratchStep === 6 && (
+                      <div className="space-y-4">
+                        {/* House Facing */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            House Facing Direction
+                          </label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {["North", "East", "West", "South"].map((dir) => (
+                              <button
+                                key={dir}
+                                type="button"
+                                onClick={() => setHouseFacing(dir)}
+                                className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                  houseFacing === dir
+                                    ? "bg-blue-600 border-blue-500 text-white shadow-md"
+                                    : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
+                                }`}
+                              >
+                                {dir}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Fully Furnished Templates */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            Select Fully Furnished Template Option
+                          </label>
+                          <p className="text-[10px] text-slate-500 font-sans">
+                            Populate your room automatically with layout models tailored to your facing direction.
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-3.5 pt-1">
+                            {/* Option 1: Layout A */}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLayoutTemplate("layout-a")}
+                              className={`p-3 rounded-2xl border text-left space-y-2.5 transition-all cursor-pointer flex flex-col h-56 group ${
+                                selectedLayoutTemplate === "layout-a"
+                                  ? "bg-slate-900 border-blue-500 text-blue-400 shadow-xl"
+                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-800/80">
+                                <img
+                                  src={
+                                    selectedStyle === "Modern"
+                                      ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=300"
+                                      : selectedStyle === "Luxury"
+                                      ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=300"
+                                      : selectedStyle === "Japandi"
+                                      ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=300"
+                                      : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=300"
+                                  }
+                                  alt="Layout A"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <span className="absolute bottom-1.5 left-1.5 text-[8px] bg-blue-950/90 text-blue-400 border border-blue-800/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                                  Balanced Layout
+                                </span>
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-[11px] text-slate-200">Balanced Center Setup</h4>
+                                <p className="text-[9px] text-slate-500 font-sans mt-0.5 leading-relaxed line-clamp-2">
+                                  Centered seating/bed alignment optimized for traffic flow and aesthetic symmetry.
+                                </p>
+                              </div>
+                            </button>
+
+                            {/* Option 2: Layout B */}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLayoutTemplate("layout-b")}
+                              className={`p-3 rounded-2xl border text-left space-y-2.5 transition-all cursor-pointer flex flex-col h-56 group ${
+                                selectedLayoutTemplate === "layout-b"
+                                  ? "bg-slate-900 border-blue-500 text-blue-400 shadow-xl"
+                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-800/80">
+                                <img
+                                  src={
+                                    selectedStyle === "Modern"
+                                      ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=300"
+                                      : selectedStyle === "Luxury"
+                                      ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=300"
+                                      : selectedStyle === "Japandi"
+                                      ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=300"
+                                      : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=300"
+                                  }
+                                  alt="Layout B"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <span className="absolute bottom-1.5 left-1.5 text-[8px] bg-emerald-950/90 text-emerald-450 border border-emerald-800/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                                  Corner Accent Layout
+                                </span>
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-[11px] text-slate-200">Cosy Corner Concept</h4>
+                                <p className="text-[9px] text-slate-500 font-sans mt-0.5 leading-relaxed line-clamp-2">
+                                  Maximizes visual space by placing focal furniture units along side walls.
+                                </p>
+                              </div>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1715,13 +1962,13 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={prevScratchStep}
-                        className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-350 hover:text-white border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-355 hover:text-white border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
                       >
                         Back
                       </button>
                     )}
                     
-                    {scratchStep < 5 ? (
+                    {scratchStep < 6 ? (
                       <button
                         type="button"
                         onClick={nextScratchStep}
@@ -1733,7 +1980,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={handleCreateFromScratch}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce"
                       >
                         Open Studio Space <Sparkles className="w-3.5 h-3.5" />
                       </button>
