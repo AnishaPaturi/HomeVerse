@@ -584,8 +584,8 @@ export default function UploadPage() {
 
       const structAnalysisObj = {
         property_type: propertyType,
-        apartment_type: propertyType === "apartment" ? apartmentType : null,
-        community_block: (propertyType === "apartment" && apartmentType === "community") ? communityBlock : null,
+        apartment_type: null,
+        community_block: null,
         has_floor_plan: hasFloorPlan,
         square_footage: sqFtValue,
         room_width: calculatedWidth,
@@ -708,23 +708,11 @@ export default function UploadPage() {
   };
 
   const nextScratchStep = () => {
-    if (scratchStep === 1 && propertyType === "independent") {
-      setScratchStep(4); // Skip apartment questions
-    } else if (scratchStep === 2 && apartmentType === "single") {
-      setScratchStep(4); // Skip community details
-    } else {
-      setScratchStep((prev) => prev + 1);
-    }
+    setScratchStep((prev) => prev + 1);
   };
 
   const prevScratchStep = () => {
-    if (scratchStep === 4 && propertyType === "independent") {
-      setScratchStep(1);
-    } else if (scratchStep === 4 && apartmentType === "single") {
-      setScratchStep(2);
-    } else {
-      setScratchStep((prev) => prev - 1);
-    }
+    setScratchStep((prev) => prev - 1);
   };
 
   const handleStartLidarScan = () => {
@@ -1568,10 +1556,10 @@ export default function UploadPage() {
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        Design Wizard: Step {scratchStep} of 5
+                        Design Wizard: Step {scratchStep} of 3
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
+                        {[1, 2, 3].map((s) => (
                           <div
                             key={s}
                             className={`w-4 h-1.5 rounded-full transition-all ${
@@ -1620,60 +1608,8 @@ export default function UploadPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* STEP 2: Apartment Type (Apartment only) */}
+                                    {/* STEP 2: Floor Plan Share */}
                     {scratchStep === 2 && (
-                      <div className="space-y-3">
-                        <label className="text-xs font-semibold text-slate-355 block">
-                          Is this apartment in a community or a standalone building?
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setApartmentType("community")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              apartmentType === "community"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-855 text-slate-455 hover:text-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">🏘️ Gated Community</span>
-                            <span className="text-[10px] text-slate-500 font-normal">Part of a large residential township or society.</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setApartmentType("single")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              apartmentType === "single"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-855 text-slate-455 hover:text-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">🏙️ Standalone Apartment</span>
-                            <span className="text-[10px] text-slate-500 font-normal">A single residential building unit.</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* STEP 3: Community Details (Community only) */}
-                    {scratchStep === 3 && (
-                      <div className="space-y-3">
-                        <label className="text-xs font-semibold text-slate-355 block">
-                          Which block or tower is your apartment in?
-                        </label>
-                        <input
-                          type="text"
-                          value={communityBlock}
-                          onChange={(e) => setCommunityBlock(e.target.value)}
-                          placeholder="e.g. Tower C, Block A, Wing 2"
-                          className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
-                        />
-                      </div>
-                    )}
-
-                    {/* STEP 4: Floor Plan Share */}
-                    {scratchStep === 4 && (
                       <div className="space-y-3">
                         <label className="text-xs font-semibold text-slate-355 block">
                           Do you have a floor plan map that you can share?
@@ -1697,7 +1633,7 @@ export default function UploadPage() {
                             className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
                               hasFloorPlan === "yes"
                                 ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-855 text-slate-455 hover:text-slate-300"
+                                : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                             }`}
                           >
                             <span className="font-bold text-xs">📂 Share Floor Plan</span>
@@ -1712,7 +1648,7 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {scratchStep === 5 && (
+                    {scratchStep === 3 && (
                       <div className="space-y-3.5">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
@@ -2213,18 +2149,58 @@ export default function UploadPage() {
                   )
                 ) : (
                   activeMode === "scratch" ? (
-                    <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center space-y-4 animate-fadeIn">
-                      <div className="relative w-36 h-20 border border-slate-800 rounded-xl flex items-center justify-center bg-slate-900/30 overflow-hidden shadow-inner">
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:12px_12px] opacity-60" />
-                        <Sparkles className="w-6 h-6 text-blue-500 animate-pulse relative z-10" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-200">Empty Virtual Room Sandbox</p>
-                        <p className="text-[10px] max-w-[220px] mt-1 text-slate-500 leading-relaxed">
-                          Starting with an empty grid, walls, and flooring template matching your chosen room type and style.
-                        </p>
-                      </div>
-                    </div>
+                    (() => {
+                      const displayImg =
+                        selectedLayoutTemplate === "layout-a"
+                          ? selectedStyle === "Modern"
+                            ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=600"
+                            : selectedStyle === "Luxury"
+                            ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600"
+                            : selectedStyle === "Japandi"
+                            ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=600"
+                            : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=600"
+                          : selectedStyle === "Modern"
+                          ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600"
+                          : selectedStyle === "Luxury"
+                          ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600"
+                          : selectedStyle === "Japandi"
+                          ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=600"
+                          : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600";
+
+                      return (
+                        <div className="relative w-full h-full animate-fadeIn group">
+                          <img
+                            src={displayImg}
+                            alt="Active Workspace Preview"
+                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
+                          />
+                          
+                          {/* Live Specs Overlay */}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent p-4 pt-10">
+                            <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
+                              <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                                {roomType || "Living Room"}
+                              </span>
+                              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                                {selectedStyle} Theme
+                              </span>
+                              <span className="text-[8px] bg-amber-500/10 border border-amber-500/25 text-amber-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                                {houseFacing} Facing
+                              </span>
+                            </div>
+                            
+                            <h3 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                              {selectedLayoutTemplate === "layout-a" ? "Balanced Setup Preview" : "Cosy Corner Setup Preview"}
+                            </h3>
+                            
+                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                              Furnished template matching <span className="font-mono text-slate-300 font-semibold">{dimensionsInput || "standard dimensions"}</span>. Standard minimalist meshes will align automatically upon workspace load.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-650 p-4 text-center">
                       <Layers className="w-10 h-10 mb-2 text-slate-800" />
