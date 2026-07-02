@@ -1269,7 +1269,7 @@ function StudioContent() {
       {/* Main Workspace Frame */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Toolbar: Object catalog */}
-        <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0 overflow-y-auto">
+        <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0">
           {/* Sidebar Tabs */}
           <div className="grid grid-cols-4 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
             <button
@@ -1314,7 +1314,7 @@ function StudioContent() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
             {activeLeftTab === "library" && (
               <div className="space-y-4">
                 <div>
