@@ -606,24 +606,7 @@ export default function BlueprintEditor2D({
               {/* Front Boundary Line (Dashed) */}
               <line x1={bottomLeft.x} y1={bottomLeft.y} x2={bottomRight.x} y2={bottomRight.y} stroke="#475569" strokeWidth="2" strokeDasharray="4,4" />
 
-              {/* Dynamic Width Text Annotation on Back Wall */}
-              <text x={topLeft.x + (topRight.x - topLeft.x)/2} y={topLeft.y - 12} fill="#94a3b8" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
-                Width: {roomWidth.toFixed(1)}m
-              </text>
-              
-              {/* Dynamic Depth Text Annotation on Left Wall */}
-              <text
-                x={topLeft.x - 12}
-                y={topLeft.y + (bottomLeft.y - topLeft.y)/2}
-                fill="#94a3b8"
-                fontSize="11"
-                fontWeight="bold"
-                textAnchor="middle"
-                transform={`rotate(-90, ${topLeft.x - 12}, ${topLeft.y + (bottomLeft.y - topLeft.y)/2})`}
-                fontFamily="sans-serif"
-              >
-                Depth: {roomDepth.toFixed(1)}m
-              </text>
+
 
               {/* Right wall resize handle dot */}
               <g

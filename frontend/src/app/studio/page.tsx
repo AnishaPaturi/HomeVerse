@@ -2340,6 +2340,7 @@ function StudioContent() {
                 objects={objects}
                 selectedObjectId={selectedObjectId}
                 onSelectObject={setSelectedObjectId}
+                onUpdateObject={handleUpdateObject}
                 backgroundImageUrl={bgImageUrl}
                 roomWidth={roomWidth}
                 roomDepth={roomDepth}

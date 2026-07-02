@@ -41,6 +41,36 @@ export default function ObjectPropertiesPanel({
 
   const { id, object_type, position_x, position_y, position_z, rotation, scale, material } = selectedObject;
 
+  // Check if it's a room object
+  const isRoom = object_type === "room";
+  
+  // Parse room dimensions if applicable
+  let roomWidth = 4;
+  let roomDepth = 4;
+  let roomColor = "#e2e8f0";
+  if (isRoom) {
+    let mat = material || "";
+    if (mat.includes(";")) {
+      const parts = mat.split(";");
+      roomColor = parts[0];
+      for (const part of parts.slice(1)) {
+        if (part.startsWith("width=")) {
+          roomWidth = parseFloat(part.split("=")[1]) || 4;
+        } else if (part.startsWith("depth=")) {
+          roomDepth = parseFloat(part.split("=")[1]) || 4;
+        }
+      }
+    } else {
+      roomColor = mat;
+    }
+  }
+
+  const handleUpdateRoomSize = (newWidth: number, newDepth: number) => {
+    onUpdateObject(id, {
+      material: `${roomColor};width=${newWidth};depth=${newDepth}`
+    });
+  };
+
   // Preset Colors for Furniture or Walls
   const colorPresets = [
     { name: "Cream", value: "#f5f5dc" },
@@ -143,6 +173,47 @@ export default function ObjectPropertiesPanel({
       {/* Spatial Transforms (Disable for Wall/Floor since they are fixed) */}
       {!isWallOrFloor && (
         <div className="space-y-6">
+          {/* Room Dimensions Section */}
+          {isRoom && (
+            <div className="space-y-3">
+              <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                📐 Room Dimensions
+              </span>
+              <div className="space-y-2.5 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/40">
+                <div>
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>Room Width</span>
+                    <span className="font-mono">{roomWidth.toFixed(1)}m</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2.0"
+                    max="12.0"
+                    step="0.5"
+                    value={roomWidth}
+                    onChange={(e) => handleUpdateRoomSize(parseFloat(e.target.value), roomDepth)}
+                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>Room Depth</span>
+                    <span className="font-mono">{roomDepth.toFixed(1)}m</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2.0"
+                    max="12.0"
+                    step="0.5"
+                    value={roomDepth}
+                    onChange={(e) => handleUpdateRoomSize(roomWidth, parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Position Section */}
           <div className="space-y-3">
             <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">

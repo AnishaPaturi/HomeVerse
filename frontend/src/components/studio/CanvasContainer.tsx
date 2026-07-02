@@ -2,7 +2,7 @@
 
 import React, { useRef, Suspense, useState, useEffect } from "react";
 import { Canvas, useLoader, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, useGLTF, PointerLockControls } from "@react-three/drei";
+import { OrbitControls, Grid, useGLTF, PointerLockControls, TransformControls } from "@react-three/drei";
 import * as THREE from "three";
 
 interface RoomObject {
@@ -20,6 +20,7 @@ interface CanvasContainerProps {
   objects: RoomObject[];
   selectedObjectId: string | null;
   onSelectObject: (id: string | null) => void;
+  onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
   backgroundImageUrl?: string | null;
   roomWidth?: number;
   roomDepth?: number;
@@ -1475,10 +1476,191 @@ function Room3D({ material, isSelected, onClick }: { material: string; isSelecte
   );
 }
 
+interface TransformableObjectProps {
+  obj: RoomObject;
+  isSelected: boolean;
+  isWalkthrough: boolean;
+  transformMode: "translate" | "rotate";
+  renderStyle: "mockup" | "realistic";
+  onSelectObject: (id: string | null) => void;
+  onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
+}
+
+function TransformableObject({
+  obj,
+  isSelected,
+  isWalkthrough,
+  transformMode,
+  renderStyle,
+  onSelectObject,
+  onUpdateObject
+}: TransformableObjectProps) {
+  const groupRef = useRef<any>(null);
+  const clickHandler = () => onSelectObject(obj.id);
+
+  const groupContent = (
+    <>
+      {obj.object_type === "sofa" && (
+        renderStyle === "realistic" ? (
+          <RealisticSofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <Sofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "coffee_table" && (
+        renderStyle === "realistic" ? (
+          <RealisticTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <CoffeeTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "desk" && (
+        renderStyle === "realistic" ? (
+          <RealisticDesk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <Desk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "chair" && (
+        renderStyle === "realistic" ? (
+          <RealisticChair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "room" && (
+        <Room3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "bed" && (
+        renderStyle === "realistic" ? (
+          <RealisticBed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <Bed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "lamp" && (
+        renderStyle === "realistic" ? (
+          <RealisticLamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        ) : (
+          <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+        )
+      )}
+      {obj.object_type === "partition" && (
+        <PartitionWall3D material={obj.material} scale={obj.scale} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "door" && (
+        <Door3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "window" && (
+        <Window3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "curtains" && (
+        <Curtains3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "blinds" && (
+        <Blinds3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "balcony" && (
+        <Balcony3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "tv" && (
+        <TV3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "flower_pot" && (
+        <FlowerPot3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "dining_table" && (
+        <DiningTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "shutters" && (
+        <Shutters3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "bookshelf" && (
+        <Bookshelf3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "nightstand" && (
+        <Nightstand3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "wardrobe" && (
+        <Wardrobe3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "rug" && (
+        <Rug3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "armchair" && (
+        <Armchair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "sideboard" && (
+        <Sideboard3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "pouf" && (
+        <Pouf3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "mirror" && (
+        <Mirror3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "bench" && (
+        <Bench3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "stool" && (
+        <Stool3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "bar_stool" && (
+        <BarStool3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "plant_box" && (
+        <PlantBox3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+      {obj.object_type === "console_table" && (
+        <ConsoleTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
+      )}
+    </>
+  );
+
+  if (isSelected && !isWalkthrough) {
+    return (
+      <TransformControls
+        mode={transformMode}
+        object={groupRef}
+        onMouseUp={() => {
+          if (groupRef.current && onUpdateObject) {
+            onUpdateObject(obj.id, {
+              position_x: groupRef.current.position.x,
+              position_y: groupRef.current.position.y,
+              position_z: groupRef.current.position.z,
+              rotation: groupRef.current.rotation.y
+            });
+          }
+        }}
+      >
+        <group
+          ref={groupRef}
+          position={[obj.position_x, obj.position_y, obj.position_z]}
+          rotation={[0, obj.rotation, 0]}
+          scale={[obj.scale, obj.scale, obj.scale]}
+        >
+          {groupContent}
+        </group>
+      </TransformControls>
+    );
+  }
+
+  return (
+    <group
+      position={[obj.position_x, obj.position_y, obj.position_z]}
+      rotation={[0, obj.rotation, 0]}
+      scale={[obj.scale, obj.scale, obj.scale]}
+    >
+      {groupContent}
+    </group>
+  );
+}
+
 export default function CanvasContainer({
   objects,
   selectedObjectId,
   onSelectObject,
+  onUpdateObject,
   backgroundImageUrl = null,
   roomWidth = 10,
   roomDepth = 10,
@@ -1487,6 +1669,7 @@ export default function CanvasContainer({
 }: CanvasContainerProps) {
   const [isWalkthrough, setIsWalkthrough] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [transformMode, setTransformMode] = useState<"translate" | "rotate">("translate");
 
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -1622,134 +1805,22 @@ export default function CanvasContainer({
           .filter((o) => o.object_type !== "floor" && o.object_type !== "wall")
           .map((obj) => {
             const isSelected = selectedObjectId === obj.id;
-            const clickHandler = () => onSelectObject(obj.id);
             const objFloor = Math.floor(obj.position_y / 3.0);
             
             // Clip objects above the active floor so we can edit inside
             if (objFloor > activeFloor) return null;
             
             return (
-              <group
+              <TransformableObject
                 key={obj.id}
-                position={[obj.position_x, obj.position_y, obj.position_z]}
-                rotation={[0, obj.rotation, 0]}
-                scale={[obj.scale, obj.scale, obj.scale]}
-              >
-                {obj.object_type === "sofa" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticSofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <Sofa3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "coffee_table" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <CoffeeTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "desk" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticDesk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <Desk3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "chair" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticChair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <Chair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "room" && (
-                  <Room3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "bed" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticBed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <Bed3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "lamp" && (
-                  renderStyle === "realistic" ? (
-                    <RealisticLamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  ) : (
-                    <Lamp3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                  )
-                )}
-                {obj.object_type === "partition" && (
-                  <PartitionWall3D material={obj.material} scale={obj.scale} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "door" && (
-                  <Door3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "window" && (
-                  <Window3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "curtains" && (
-                  <Curtains3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "blinds" && (
-                  <Blinds3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "balcony" && (
-                  <Balcony3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "tv" && (
-                  <TV3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "flower_pot" && (
-                  <FlowerPot3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "dining_table" && (
-                  <DiningTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "shutters" && (
-                  <Shutters3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "bookshelf" && (
-                  <Bookshelf3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "nightstand" && (
-                  <Nightstand3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "wardrobe" && (
-                  <Wardrobe3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "rug" && (
-                  <Rug3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "armchair" && (
-                  <Armchair3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "sideboard" && (
-                  <Sideboard3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "pouf" && (
-                  <Pouf3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "mirror" && (
-                  <Mirror3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "bench" && (
-                  <Bench3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "stool" && (
-                  <Stool3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "bar_stool" && (
-                  <BarStool3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "plant_box" && (
-                  <PlantBox3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-                {obj.object_type === "console_table" && (
-                  <ConsoleTable3D material={obj.material} isSelected={isSelected} onClick={clickHandler} />
-                )}
-              </group>
+                obj={obj}
+                isSelected={isSelected}
+                isWalkthrough={isWalkthrough}
+                transformMode={transformMode}
+                renderStyle={renderStyle}
+                onSelectObject={onSelectObject}
+                onUpdateObject={onUpdateObject}
+              />
             );
           })}
 
@@ -1785,6 +1856,32 @@ export default function CanvasContainer({
       >
         {isWalkthrough ? "🚶 Orbit Mode" : "🚶 Walkthrough Mode"}
       </button>
+
+      {/* Floating 3D Transform Mode controls */}
+      {selectedObjectId && !isWalkthrough && (
+        <div className="absolute top-4 left-4 z-30 flex bg-slate-900/90 border border-slate-700/60 p-1 rounded-lg shadow-xl gap-1 backdrop-blur-md">
+          <button
+            onClick={() => setTransformMode("translate")}
+            className={`px-3 py-1.5 rounded text-xs font-bold transition-all cursor-pointer ${
+              transformMode === "translate"
+                ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            ↔️ Move
+          </button>
+          <button
+            onClick={() => setTransformMode("rotate")}
+            className={`px-3 py-1.5 rounded text-xs font-bold transition-all cursor-pointer ${
+              transformMode === "rotate"
+                ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            🔄 Rotate
+          </button>
+        </div>
+      )}
 
       {/* Floating Instructions */}
       {!isWalkthrough && (
