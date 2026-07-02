@@ -3,6 +3,7 @@ import json
 import os
 import time
 import tempfile
+import urllib.parse
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.project import Project as ProjectModel
@@ -11,46 +12,20 @@ from app.models.object import Object as ObjectModel
 from app.config import settings
 import google.generativeai as genai
 
-def get_style_image(style: str, room_type: str) -> str:
-    # Curated library of premium room photos matching room_type and style
-    curated = {
-        "living room": {
-            "Modern": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
-            "Luxury": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
-            "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
-            "Minimalist": "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800",
-            "Japandi": "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=800"
-        },
-        "bedroom": {
-            "Modern": "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?q=80&w=800",
-            "Luxury": "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=800",
-            "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
-            "Minimalist": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=800",
-            "Japandi": "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=800"
-        },
-        "office": {
-            "Modern": "https://images.unsplash.com/photo-1493934558415-9d19f0b2b4d2?q=80&w=800",
-            "Luxury": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
-            "Scandinavian": "https://images.unsplash.com/photo-1505797149-43b0069ec26b?q=80&w=800",
-            "Minimalist": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=800",
-            "Japandi": "https://images.unsplash.com/photo-1616486029423-aaa4789e8c9a?q=80&w=800"
-        }
-    }
+def build_dynamic_image_prompt(style: str, room_type: str, structural_analysis: dict, gemini_desc: str) -> str:
+    door_direction = "unknown"
+    doors = structural_analysis.get("doors", [])
+    if doors and len(doors) > 0:
+        door_direction = doors[0].get("wall", "unknown")
     
-    # Fallback default images if room type is not matched
-    fallbacks = {
-        "Modern": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
-        "Luxury": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
-        "Scandinavian": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
-        "Minimalist": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800",
-        "Japandi": "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=800"
-    }
+    window_info = ""
+    windows = structural_analysis.get("windows", [])
+    if windows:
+        window_walls = [w.get("wall", "") for w in windows]
+        window_info = f" with windows on the {', '.join(window_walls)} wall(s)"
     
-    room_lower = room_type.lower()
-    for k in curated:
-        if k in room_lower:
-            return curated[k].get(style, fallbacks[style])
-    return fallbacks.get(style, fallbacks["Modern"])
+    full_prompt = f"generate an image of a {room_type} with {door_direction} facing door{window_info} and a look of a {style} room which is fully furnished, {gemini_desc}. High-end, realistic, 4k, photorealistic, professional architectural photograph."
+    return full_prompt
 
 class AIService:
     async def analyze_and_generate_styles(self, project_id: uuid.UUID, file: UploadFile, db: Session):
@@ -561,16 +536,13 @@ class AIService:
         generated_designs = []
         styles = ["Modern", "Luxury", "Scandinavian", "Minimalist", "Japandi"]
 
-        import urllib.parse
         structural_analysis = result.get("structural_analysis", {})
-        layout_desc = structural_analysis.get("layout_description", f"A spacious {detected_room_type}.")
 
         for style in styles:
             style_data = result.get("styles", {}).get(style, {})
             gemini_desc = style_data.get("description", "")
             
-            # Construct a dynamic prompt that keeps the same room structure but changes style details
-            full_prompt = f"Professional architectural photograph of interior design: {layout_desc} beautifully furnished in {style} style, featuring {gemini_desc}. High-end, realistic, 4k, photorealistic."
+            full_prompt = build_dynamic_image_prompt(style, detected_room_type, structural_analysis, gemini_desc)
             encoded_prompt = urllib.parse.quote(full_prompt)
             image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux-schnell"
             
