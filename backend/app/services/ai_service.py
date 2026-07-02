@@ -37,6 +37,418 @@ def build_dynamic_image_prompt(style: str, room_type: str, structural_analysis: 
     return full_prompt
 
 class AIService:
+    async def analyze_room_upload(self, project_id: uuid.UUID, file: UploadFile, db: Session):
+        """
+        Accepts the uploaded file, saves it locally,
+        runs Gemini to extract the structural & lighting layout AND detect the room type,
+        saves the analysis to the project, and returns the analysis.
+        Does NOT pre-generate styles.
+        """
+        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        room_type_hint = project.room_type if project and project.room_type else "Living Room"
+
+        api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GEMINI_API_KEY is not set. Please open the backend/.env file and fill in your actual Gemini API key to enable the real AI models."
+            )
+
+        genai.configure(api_key=api_key)
+        
+        # Read the file bytes
+        file_bytes = await file.read()
+        await file.seek(0)
+        
+        mime_type = file.content_type or "image/jpeg"
+        contents = []
+
+        if "video" in mime_type:
+            suffix = "." + file.filename.split(".")[-1] if "." in file.filename else ".mp4"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                tmp.write(file_bytes)
+                tmp_path = tmp.name
+                
+            try:
+                video_file = genai.upload_file(path=tmp_path)
+                while video_file.state.name == "PROCESSING":
+                    time.sleep(1)
+                    video_file = genai.get_file(video_file.name)
+                
+                if video_file.state.name == "FAILED":
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to upload and process video in Gemini API."
+                    )
+                contents.append(video_file)
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+        else:
+            # Handle images
+            contents.append({
+                "mime_type": mime_type,
+                "data": file_bytes
+            })
+
+        prompt = """
+        You are an AI Interior Designer and Architect.
+        Analyze this room photo or video scan to perform a detailed structural layout and lighting analysis.
+        Identify the room type. It could be any interior area (e.g., Living Room, Bedroom, Kitchen, Office, Bathroom, Gym, Playroom, Hallway, Dining Room, Attic, etc.). Be specific!
+
+        Respond ONLY with a valid JSON object matching the following JSON Schema:
+        {
+          "detected_room_type": "string",
+          "structural_analysis": {
+            "layout_description": "A clear, descriptive summary of the room layout, walls, and lighting direction.",
+            "windows": [
+              {
+                "wall": "left" | "right" | "back" | "front",
+                "size": "large" | "medium" | "small"
+              }
+            ],
+            "light_sources": [
+              {
+                "direction": "left" | "right" | "back" | "front",
+                "type": "natural" | "artificial"
+              }
+            ],
+            "doors": [
+              {
+                "wall": "left" | "right" | "back" | "front"
+              }
+            ],
+            "room_shape": "string"
+          }
+        }
+        Do not include any markdown styling like ```json. Return only the raw JSON.
+        """
+        contents.append(prompt)
+
+        try:
+            model = genai.GenerativeModel("gemini-3.5-flash")
+            response = model.generate_content(
+                contents,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            result = json.loads(response.text)
+        except Exception as e:
+            print(f"Gemini API analysis failed: {e}. Falling back to default structural analysis.")
+            # Heuristics based on filename or default
+            filename_lower = file.filename.lower()
+            detected_room_type = "Living Room"
+            for rm in ["bed", "kitchen", "office", "study", "work", "bath", "dining", "gym"]:
+                if rm in filename_lower:
+                    if rm == "bed": detected_room_type = "Bedroom"
+                    elif rm == "kitchen": detected_room_type = "Kitchen"
+                    elif rm in ["office", "study", "work"]: detected_room_type = "Home Office"
+                    elif rm == "bath": detected_room_type = "Bathroom"
+                    elif rm == "dining": detected_room_type = "Dining Room"
+                    elif rm == "gym": detected_room_type = "Gym"
+                    break
+            
+            result = {
+                "detected_room_type": detected_room_type,
+                "structural_analysis": {
+                    "layout_description": f"A default {detected_room_type} layout.",
+                    "windows": [{"wall": "left", "size": "medium"}],
+                    "light_sources": [{"direction": "left", "type": "natural"}],
+                    "doors": [{"wall": "back"}],
+                    "room_shape": "rectangular"
+                }
+            }
+
+        detected_room_type = result.get("detected_room_type", "Living Room")
+        
+        # Save the uploaded file locally
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+        static_filename = f"{project_id}.{file_ext}"
+        try:
+            os.makedirs("static/uploads", exist_ok=True)
+            local_path = os.path.join("static", "uploads", static_filename)
+            with open(local_path, "wb") as f:
+                f.write(file_bytes)
+            uploaded_url = f"http://localhost:8080/static/uploads/{static_filename}"
+            print(f"File stored locally: {uploaded_url}")
+        except Exception as e:
+            print(f"Local storage save failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save uploaded file locally: {e}"
+            )
+
+        thumbnail_url = uploaded_url
+
+        # Update the project's room type, thumbnail, and structural analysis if it exists
+        if project:
+            project.room_type = detected_room_type
+            project.thumbnail = thumbnail_url
+            structural_analysis = result.get("structural_analysis", {})
+            project.structural_analysis = json.dumps(structural_analysis)
+            db.add(project)
+            db.commit()
+            db.refresh(project)
+
+        return {
+            "project_id": str(project_id),
+            "detected_room_type": detected_room_type,
+            "structural_analysis": result.get("structural_analysis", {})
+        }
+
+    async def generate_dynamic_design(
+        self,
+        project_id: uuid.UUID,
+        room_type: str,
+        style: str,
+        color_palette: str = None,
+        custom_prompt: str = None,
+        db: Session = None
+    ):
+        """
+        Generates a specific design variation dynamically based on the user's choices (room type, style, color palette, custom requirements).
+        Constructs a prompt, calls Gemini with the uploaded room image/video,
+        obtains custom 3D object locations, and requests Pollinations AI to render the stylized photo.
+        """
+        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GEMINI_API_KEY is not set. Please set the Gemini API key."
+            )
+
+        genai.configure(api_key=api_key)
+
+        # Retrieve the original uploaded image file
+        original_file_path = None
+        os.makedirs("static/uploads", exist_ok=True)
+        for f in os.listdir("static/uploads"):
+            if f.startswith(str(project_id)):
+                original_file_path = os.path.join("static/uploads", f)
+                break
+        
+        contents = []
+        if original_file_path and os.path.exists(original_file_path):
+            try:
+                with open(original_file_path, "rb") as f:
+                    file_bytes = f.read()
+                mime_type = "image/jpeg"
+                if original_file_path.endswith(".png"):
+                    mime_type = "image/png"
+                elif original_file_path.endswith(".webp"):
+                    mime_type = "image/webp"
+                
+                # Check if it was a video walkthrough
+                if original_file_path.endswith((".mp4", ".mov", ".avi", ".mkv")):
+                    video_file = genai.upload_file(path=original_file_path)
+                    while video_file.state.name == "PROCESSING":
+                        time.sleep(1)
+                        video_file = genai.get_file(video_file.name)
+                    if video_file.state.name != "FAILED":
+                        contents.append(video_file)
+                else:
+                    contents.append({
+                        "mime_type": mime_type,
+                        "data": file_bytes
+                    })
+            except Exception as e:
+                print(f"Error loading original file for Gemini: {e}")
+
+        prompt = f"""
+        You are an AI Interior Designer and Architect.
+        Analyze this room photo or video scan, and generate a customized interior design 3D layout for this space.
+
+        The user has specified these design requirements:
+        - **Room / Space Type**: "{room_type}"
+        - **Interior Style**: "{style}"
+        - **Color Palette & Materials**: "{color_palette or "Not specified (use standard style colors)"}"
+        - **Custom Instructions / Notes**: "{custom_prompt or "None"}"
+
+        Based on these choices, formulate a custom 3D layout. The layout MUST consist of objects relevant to a {room_type} in the style of {style}.
+        
+        3D Coordinate System Rules:
+        - The center of the room is (0.0, 0.0, -3.0).
+        - Positive X-axis points to the RIGHT wall (X > 0).
+        - Negative X-axis points to the LEFT wall (X < 0).
+        - Positive Y-axis points UP (height, 0.0 for floor/furniture, 1.5 for walls).
+        - Negative Z-axis points deeper into the room towards the BACK wall (Z < 0).
+        - Positive Z-axis points towards the front wall / camera (Z > 0).
+        
+        Rotation Rules (in Radians):
+        - rotation = 0.0: Object faces towards the CAMERA (front / positive Z).
+        - rotation = 3.14: Object faces away from the camera (BACK wall / negative Z).
+        - rotation = -1.57: Object faces towards the RIGHT wall (positive X).
+        - rotation = 1.57: Object faces towards the LEFT wall (negative X).
+
+        Requirements:
+        - You MUST include a floor object (object_type: "floor") and a wall object (object_type: "wall").
+        - You MUST include 3 to 7 furniture or decoration objects that match a {room_type} (e.g. if Bedroom: bed, nightstand, lamp, wardrobe; if Gym: mirror, bench, rack, plant; if Office: desk, chair, bookshelf, lamp; if Living Room: sofa, coffee_table, chair, lamp, tv, rug, plants).
+        - Choose materials and colors matching: {color_palette or style}.
+        
+        For each object specify:
+        - "object_type": must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "shutters", "bookshelf", "nightstand", "wardrobe", "rug", "armchair", "sideboard", "pouf", "mirror", "bench", "stool", "bar_stool", "plant_box", "console_table", "room"
+        - "position_x": float
+        - "position_y": float
+        - "position_z": float
+        - "rotation": float
+        - "scale": float
+        - "material": string (hex color code like "#fafafa" or a texture name like "wood_light", "wood_dark", "marble", "granite", "leather_brown", "leather_black")
+
+        Respond ONLY with a valid JSON object matching the following JSON Schema:
+        {{
+          "description": "A detailed multi-sentence description summarizing the redesign, detailing why these materials and colors were chosen for a {room_type} in {style} style.",
+          "objects": [
+            {{
+              "object_type": "string",
+              "position_x": float,
+              "position_y": float,
+              "position_z": float,
+              "rotation": float,
+              "scale": float,
+              "material": "string"
+            }}
+          ]
+        }}
+        Do not include any markdown styling like ```json. Return only the raw JSON.
+        """
+        contents.append(prompt)
+
+        try:
+            model = genai.GenerativeModel("gemini-3.5-flash")
+            response = model.generate_content(
+                contents,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            result = json.loads(response.text)
+        except Exception as e:
+            print(f"Gemini API dynamic design generation failed: {e}. Falling back to default layout.")
+            # Fallback based on room type
+            default_objects = [
+                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
+                {"object_type": "wall", "position_x": 0.0, "position_y": 1.5, "position_z": -5.0, "rotation": 0.0, "scale": 1.0, "material": "#f3f4f6"}
+            ]
+            
+            room_lower = room_type.lower()
+            if "bed" in room_lower:
+                default_objects.extend([
+                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 1.0, "material": "leather_brown"},
+                    {"object_type": "nightstand", "position_x": -1.5, "position_y": 0.0, "position_z": -3.5, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "lamp", "position_x": -1.5, "position_y": 0.6, "position_z": -3.5, "rotation": 0.0, "scale": 1.0, "material": "#fbbf24"}
+                ])
+            elif "office" in room_lower or "study" in room_lower:
+                default_objects.extend([
+                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 3.14, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "chair", "position_x": 0.0, "position_y": 0.0, "position_z": -2.2, "rotation": 0.0, "scale": 1.0, "material": "leather_black"},
+                    {"object_type": "lamp", "position_x": -0.8, "position_y": 0.75, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#fafafa"}
+                ])
+            elif "kitchen" in room_lower or "dining" in room_lower:
+                default_objects.extend([
+                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "marble"},
+                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"}
+                ])
+            elif "gym" in room_lower:
+                default_objects.extend([
+                    {"object_type": "mirror", "position_x": 0.0, "position_y": 1.0, "position_z": -4.9, "rotation": 0.0, "scale": 1.5, "material": "marble"},
+                    {"object_type": "bench", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "leather_black"},
+                    {"object_type": "flower_pot", "position_x": -1.5, "position_y": 0.0, "position_z": -4.0, "rotation": 0.0, "scale": 1.0, "material": "#16a34a"}
+                ])
+            else: # Living room and everything else
+                default_objects.extend([
+                    {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#9ca3af"},
+                    {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": -2.0, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "lamp", "position_x": -1.5, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#f59e0b"}
+                ])
+
+            result = {
+                "description": f"A beautiful, custom {style} {room_type} designed dynamically based on user choices.",
+                "objects": default_objects
+            }
+
+        # Create design entry in database
+        design = DesignModel(
+            project_id=project_id,
+            style=style,
+            image_url=""
+        )
+        db.add(design)
+        db.commit()
+        db.refresh(design)
+
+        # Generate Pollinations AI Image dynamically
+        description = result.get("description", "")
+        door_direction = "North"
+        if project.structural_analysis:
+            try:
+                struct_data = json.loads(project.structural_analysis)
+                doors = struct_data.get("doors", [])
+                if doors and len(doors) > 0:
+                    door_direction = map_wall_to_direction(doors[0].get("wall", "back"))
+            except:
+                pass
+
+        image_prompt = f"Generate a high-quality interior design photo of a {room_type} designed in {style} style. Details: {description}."
+        if color_palette:
+            image_prompt += f" Color palette and materials: {color_palette}."
+        if custom_prompt:
+            image_prompt += f" Additional design notes: {custom_prompt}."
+        image_prompt += f" Looking from the entrance door facing {door_direction}."
+
+        os.makedirs("static/generated", exist_ok=True)
+        local_filename = f"{design.id}.jpg"
+        local_path = os.path.join("static/generated", local_filename)
+
+        encoded_prompt = urllib.parse.quote(image_prompt)
+        pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux"
+
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(pollinations_url)
+                if response.status_code == 200:
+                    with open(local_path, "wb") as f:
+                        f.write(response.content)
+                    design.image_url = f"/static/generated/{local_filename}"
+                else:
+                    design.image_url = pollinations_url
+        except Exception as e:
+            print(f"Error downloading design image: {e}")
+            design.image_url = pollinations_url
+
+        db.add(design)
+        db.commit()
+        db.refresh(design)
+
+        # Save 3D objects
+        objects = result.get("objects", [])
+        for obj_info in objects:
+            obj = ObjectModel(
+                design_id=design.id,
+                object_type=obj_info.get("object_type", "sofa"),
+                position_x=obj_info.get("position_x", 0.0),
+                position_y=obj_info.get("position_y", 0.0),
+                position_z=obj_info.get("position_z", 0.0),
+                rotation=obj_info.get("rotation", 0.0),
+                scale=obj_info.get("scale", 1.0),
+                material=obj_info.get("material", "#a78bfa")
+            )
+            db.add(obj)
+        db.commit()
+        db.refresh(design)
+
+        # Update the project's room type if changed
+        if project.room_type != room_type:
+            project.room_type = room_type
+            db.add(project)
+            db.commit()
+
+        return design
+
     async def analyze_and_generate_styles(self, project_id: uuid.UUID, file: UploadFile, db: Session):
         """
         Multimodal AI generation service.

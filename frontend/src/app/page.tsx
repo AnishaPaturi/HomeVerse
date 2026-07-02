@@ -181,16 +181,11 @@ export default function HomePage() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
-    }
+    router.push(user ? "/upload" : "/login");
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
+    router.push(user ? "/upload" : "/login");
   };
 
   const processFile = async (file: File) => {

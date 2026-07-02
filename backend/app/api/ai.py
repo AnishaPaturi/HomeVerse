@@ -6,13 +6,14 @@ from typing import List
 import os
 import urllib.parse
 import httpx
+import asyncio
 from app.db.session import get_db
 from app.services.ai_service import ai_service
 from app.schemas.design import Design as DesignSchema
 
 router = APIRouter()
 
-@router.post("/analyze-upload", response_model=List[DesignSchema])
+@router.post("/analyze-upload")
 async def upload_and_analyze_room(
     project_id: UUID = Form(...),
     file: UploadFile = File(...),
@@ -20,8 +21,8 @@ async def upload_and_analyze_room(
 ):
     """
     Accepts a photo or video scan upload of a room,
-    performs object detection and segmentation,
-    and returns 5 generated design variations.
+    performs structural & layout analysis, and saves the file locally.
+    Does NOT pre-generate styles.
     """
     if file.content_type.split("/")[0] not in ["image", "video"]:
         raise HTTPException(
@@ -50,12 +51,34 @@ async def upload_and_analyze_room(
         )
     
     # Process the file using the AI service wrapper
-    designs = await ai_service.analyze_and_generate_styles(
+    result = await ai_service.analyze_room_upload(
         project_id=project_id,
         file=file,
         db=db
     )
-    return designs
+    return result
+
+@router.post("/generate-dynamic-design", response_model=DesignSchema)
+async def generate_dynamic_design_endpoint(
+    project_id: UUID = Form(...),
+    room_type: str = Form(...),
+    style: str = Form(...),
+    color_palette: str = Form(None),
+    custom_prompt: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Generates a single design variation dynamically based on the user's choices.
+    """
+    design = await ai_service.generate_dynamic_design(
+        project_id=project_id,
+        room_type=room_type,
+        style=style,
+        color_palette=color_palette,
+        custom_prompt=custom_prompt,
+        db=db
+    )
+    return design
 
 @router.post("/copilot-chat")
 async def copilot_chat(

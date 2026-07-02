@@ -190,6 +190,13 @@ export default function UploadPage() {
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Dynamic Generation states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [customStyleInput, setCustomStyleInput] = useState("");
+  const [colorPalette, setColorPalette] = useState("");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [activeDesignId, setActiveDesignId] = useState<string | null>(null);
+
   // Persistence and custom design naming states
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("My Interior Design");
@@ -514,35 +521,43 @@ export default function UploadPage() {
       formData.append("project_id", activeProjId);
       formData.append("file", file);
 
-      let designsList = [];
+      let resultData = null;
       try {
         const analyzeRes = await fetch("http://localhost:8080/api/ai/analyze-upload", {
           method: "POST",
           body: formData
         });
         if (analyzeRes.ok) {
-          designsList = await analyzeRes.json();
+          resultData = await analyzeRes.json();
         } else {
           const errData = await analyzeRes.json();
           throw new Error(errData.detail || "Backend analysis failed");
         }
       } catch (err: any) {
         console.warn("Backend analysis failed:", err.message);
-        // If it's a validation error raised from backend, throw it to the outer catch
         if (err.message.includes("Not appropriate data")) {
           throw err;
         }
-        // Fallback mock designs (if server is offline/error but was not validation error)
-        designsList = [
-          { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Minimalist", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350" }
-        ];
+        // Fallback mock result
+        resultData = {
+          project_id: activeProjId,
+          detected_room_type: "Living Room",
+          structural_analysis: {
+            layout_description: "A rectangular room layout with a window on the left.",
+            windows: [{ wall: "left", size: "medium" }],
+            light_sources: [{ direction: "left", type: "natural" }],
+            doors: [{ wall: "back" }],
+            room_shape: "rectangular"
+          }
+        };
       }
 
-      setGeneratedDesigns(designsList);
+      if (resultData && resultData.detected_room_type) {
+        setRoomType(resultData.detected_room_type);
+        sessionStorage.setItem("homeverse_room_type", resultData.detected_room_type);
+      }
+      setGeneratedDesigns([]);
+      setActiveDesignId(null);
       
       // Delay completion step for smoother UX animation
       setTimeout(() => {
@@ -554,6 +569,55 @@ export default function UploadPage() {
       setError(err.message || "An error occurred during room analysis. Please try again.");
       setUploadStep("idle");
       setSelectedFile(null);
+    }
+  };
+
+  const handleGenerateDynamicDesign = async () => {
+    if (!projectId) {
+      setError("Project ID is missing. Please re-upload your space.");
+      return;
+    }
+    
+    setIsGenerating(true);
+    setError(null);
+    setImageLoading(true);
+
+    try {
+      const finalRoom = roomType === "Other" ? (customRoomType.trim() || "Custom Room") : roomType;
+      const finalStyle = selectedStyle === "Custom" ? (customStyleInput.trim() || "Custom Style") : selectedStyle;
+      
+      const formData = new FormData();
+      formData.append("project_id", projectId);
+      formData.append("room_type", finalRoom);
+      formData.append("style", finalStyle);
+      if (colorPalette) {
+        formData.append("color_palette", colorPalette);
+      }
+      if (customPrompt) {
+        formData.append("custom_prompt", customPrompt);
+      }
+
+      const res = await fetch("http://localhost:8080/api/ai/generate-dynamic-design", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Failed to generate design.");
+      }
+
+      const newDesign = await res.json();
+      
+      // Update designs list
+      setGeneratedDesigns((prev) => [...prev, newDesign]);
+      setActiveDesignId(newDesign.id);
+      setSelectedStyle(newDesign.style);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to generate dynamic design. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -1021,17 +1085,19 @@ export default function UploadPage() {
   const handleEnterStudio = async () => {
     // Sync final project details before entering studio
     if (projectId) {
-      await handleUpdateProjectDetails(projectTitle, roomType);
+      const finalRoom = roomType === "Other" ? (customRoomType.trim() || "Custom Room") : roomType;
+      await handleUpdateProjectDetails(projectTitle, finalRoom);
     }
 
-    // Find design matching the selected style
-    const matchedDesign = generatedDesigns.find(
-      (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
-    );
-    if (matchedDesign) {
-      router.push(`/studio?style=${selectedStyle}&designId=${matchedDesign.id}`);
+    // Find active design or design matching the selected style
+    const activeDesign = generatedDesigns.find((d) => d.id === activeDesignId) || 
+                          generatedDesigns.find((d) => d.style.toLowerCase() === selectedStyle.toLowerCase()) ||
+                          generatedDesigns[0];
+                          
+    if (activeDesign) {
+      router.push(`/studio?style=${encodeURIComponent(activeDesign.style)}&designId=${activeDesign.id}`);
     } else {
-      router.push(`/studio?style=${selectedStyle}`);
+      router.push(`/studio?style=${encodeURIComponent(selectedStyle)}`);
     }
   };
 
@@ -1609,21 +1675,22 @@ export default function UploadPage() {
                   )}
 
                   {uploadStep === "complete" && (
-                    <div className="space-y-4 flex-1 flex flex-col justify-between">
-                      <div className="flex items-center justify-between pb-2.5 border-b border-slate-900">
+                    <div className="space-y-4 flex-1 flex flex-col justify-between overflow-y-auto max-h-[600px] pr-1">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-900">
                         <div>
-                          <h3 className="font-bold text-xs text-slate-200">AI Design Suggestions</h3>
-                          <p className="text-[9px] text-slate-450 mt-0.5">Select a style preset to open in 3D studio</p>
+                          <h3 className="font-bold text-xs text-slate-200">Design Options</h3>
+                          <p className="text-[9px] text-slate-450 mt-0.5">Customize your room details and style requirements</p>
                         </div>
-                        <span className="flex items-center gap-1 text-[9px] text-green-400 font-semibold bg-green-950/20 border border-green-900/40 px-2 py-0.5 rounded-full font-mono">
-                          <Check className="w-3 h-3" /> Ready
+                        <span className="flex items-center gap-1 text-[9px] text-blue-400 font-semibold bg-blue-950/20 border border-blue-900/40 px-2 py-0.5 rounded-full font-mono">
+                          ⚡ Custom Generator
                         </span>
                       </div>
 
-                      {/* Name and Room Type inputs */}
+                      {/* Options form */}
                       <div className="space-y-3 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
+                        {/* Name Input */}
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
                             Design Name / Title
                           </label>
                           <input
@@ -1634,10 +1701,12 @@ export default function UploadPage() {
                               sessionStorage.setItem("homeverse_project_title", e.target.value);
                             }}
                             onBlur={() => handleUpdateProjectDetails(projectTitle, roomType)}
-                            placeholder="e.g. Master Bedroom design"
+                            placeholder="e.g. Guest Bedroom, Loft Gym"
                             className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
                           />
                         </div>
+
+                        {/* Room Type Select */}
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                             Room / Space Type
@@ -1650,60 +1719,173 @@ export default function UploadPage() {
                               sessionStorage.setItem("homeverse_room_type", val);
                               handleUpdateProjectDetails(projectTitle, val);
                             }}
-                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                           >
-                            <option value="Living Room" className="bg-slate-900 text-slate-200">Living Room</option>
-                            <option value="Bedroom" className="bg-slate-900 text-slate-200">Bedroom</option>
-                            <option value="Office" className="bg-slate-900 text-slate-200">Home Office</option>
-                            <option value="Kitchen" className="bg-slate-900 text-slate-200">Kitchen</option>
-                            <option value="Bathroom" className="bg-slate-900 text-slate-200">Bathroom</option>
-                            <option value="Dining Room" className="bg-slate-900 text-slate-200">Dining Room</option>
+                            <option value="Living Room">Living Room</option>
+                            <option value="Bedroom">Bedroom</option>
+                            <option value="Office">Home Office</option>
+                            <option value="Kitchen">Kitchen</option>
+                            <option value="Bathroom">Bathroom</option>
+                            <option value="Dining Room">Dining Room</option>
+                            <option value="Gym">Home Gym</option>
+                            <option value="Playroom">Kids Playroom</option>
+                            <option value="Library">Library / Study</option>
+                            <option value="Other">Other (Custom Type...)</option>
                           </select>
+                        </div>
+
+                        {/* Custom Room Type input if "Other" is chosen */}
+                        {roomType === "Other" && (
+                          <div className="flex flex-col gap-1 animate-fadeIn">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              Custom Room Type Name
+                            </label>
+                            <input
+                              type="text"
+                              value={customRoomType}
+                              onChange={(e) => setCustomRoomType(e.target.value)}
+                              placeholder="e.g., Attic Studio, Conservatory, Home Theater"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+
+                        {/* Style Select */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                            Design Style Theme
+                          </label>
+                          <select
+                            value={selectedStyle}
+                            onChange={(e) => setSelectedStyle(e.target.value)}
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
+                          >
+                            <option value="Modern">Modern</option>
+                            <option value="Japandi">Japandi</option>
+                            <option value="Scandinavian">Scandinavian</option>
+                            <option value="Minimalist">Minimalist</option>
+                            <option value="Luxury">Luxury</option>
+                            <option value="Custom">Custom Style...</option>
+                          </select>
+                        </div>
+
+                        {/* Custom Style input if "Custom" is chosen */}
+                        {selectedStyle === "Custom" && (
+                          <div className="flex flex-col gap-1 animate-fadeIn">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              Custom Style Name
+                            </label>
+                            <input
+                              type="text"
+                              value={customStyleInput}
+                              onChange={(e) => setCustomStyleInput(e.target.value)}
+                              placeholder="e.g., Industrial Loft, Bohemian, Mid-Century Modern"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+
+                        {/* Color Palette Input */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                            Color Palette & Materials (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={colorPalette}
+                            onChange={(e) => setColorPalette(e.target.value)}
+                            placeholder="e.g. Emerald green and brass, Light oak wood"
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                          />
+                        </div>
+
+                        {/* Custom Requirements Prompt */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                            Additional Design Notes (Optional)
+                          </label>
+                          <textarea
+                            value={customPrompt}
+                            onChange={(e) => setCustomPrompt(e.target.value)}
+                            placeholder="e.g., Add plants, place a compact workspace near the window"
+                            rows={2}
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors resize-none"
+                          />
                         </div>
                       </div>
 
-                      {/* Grid of Styles */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 items-center py-2">
-                        {styles.map((style) => {
-                          return (
-                            <button
-                              key={style.name}
-                              onClick={() => {
-                                setSelectedStyle(style.name);
-                                setShowOriginal(false);
-                              }}
-                              className={`group relative rounded-xl overflow-hidden border text-left p-2 bg-slate-955 hover:bg-slate-900/80 transition-all cursor-pointer h-24 flex flex-col justify-between ${
-                                selectedStyle === style.name
-                                  ? "border-blue-500 ring-1 ring-blue-500/50"
-                                  : "border-slate-850"
-                              }`}
-                            >
-                              <div className="relative h-12 w-full rounded-lg overflow-hidden bg-slate-900 flex items-center justify-center">
+                      {/* Generate Button */}
+                      <button
+                        onClick={handleGenerateDynamicDesign}
+                        disabled={isGenerating}
+                        className={`w-full flex items-center justify-center gap-1.5 py-3 text-white font-bold rounded-xl transition-all cursor-pointer text-xs ${
+                          isGenerating 
+                            ? "bg-slate-800 border border-slate-750 text-slate-500 cursor-not-allowed" 
+                            : "bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-550 glow-btn"
+                        }`}
+                      >
+                        {isGenerating ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Generating AI Redesign...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" /> Generate AI Design
+                          </>
+                        )}
+                      </button>
+
+                      {/* Generated Designs Selection Carousel / Grid */}
+                      {generatedDesigns.length > 0 && (
+                        <div className="space-y-2 border-t border-slate-900 pt-3">
+                          <span className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">
+                            Your Generated Designs ({generatedDesigns.length})
+                          </span>
+                          <div className="flex gap-2 overflow-x-auto pb-1 max-w-full">
+                            {generatedDesigns.map((d) => (
+                              <button
+                                key={d.id}
+                                onClick={() => {
+                                  setActiveDesignId(d.id);
+                                  setSelectedStyle(d.style);
+                                  setShowOriginal(false);
+                                }}
+                                className={`flex-shrink-0 group relative rounded-lg overflow-hidden border text-left p-1 bg-slate-955 hover:bg-slate-900 transition-all cursor-pointer h-16 w-24 flex flex-col justify-between ${
+                                  activeDesignId === d.id
+                                    ? "border-blue-500 ring-1 ring-blue-500/50"
+                                    : "border-slate-850"
+                                }`}
+                              >
                                 <img
-                                  src={style.img}
-                                  alt={style.name}
-                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                  src={d.image_url}
+                                  alt={d.style}
+                                  className="object-cover w-full h-8 rounded"
                                 />
-                              </div>
-                              <span className="font-bold text-[10px] text-slate-300">{style.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-     
+                                <span className="font-bold text-[8px] text-slate-350 truncate block mt-0.5">{d.style}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Enter Studio Trigger */}
                       <button
                         onClick={handleEnterStudio}
-                        className="w-full flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn mt-2 text-xs"
+                        disabled={generatedDesigns.length === 0}
+                        className={`w-full flex items-center justify-center gap-1.5 py-3 font-bold rounded-xl transition-all cursor-pointer text-xs ${
+                          generatedDesigns.length === 0
+                            ? "bg-slate-850 border border-slate-800 text-slate-550 cursor-not-allowed"
+                            : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/20"
+                        }`}
                       >
                         Open in Design Studio <ArrowRight className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* Informational badge for custom room rendering */}
-                      <div className="mt-3 p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2 animate-fadeIn">
+                      {/* Informational badge */}
+                      <div className="p-3 bg-blue-950/20 border border-blue-900/30 rounded-xl text-[10px] text-blue-400 leading-relaxed flex items-start gap-2">
                         <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
                         <span>
-                          <strong>Visual Studio Mode:</strong> Open the Design Studio to view the 3D furniture models arranged directly inside your uploaded room photo with realistic shadows!
+                          <strong>Dynamic Design:</strong> Design any room type you want. Fill out your custom options, generate the design, then open in studio to interact with the 3D items!
                         </span>
                       </div>
                     </div>
@@ -2102,29 +2284,37 @@ export default function UploadPage() {
               <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center flex-1 min-h-[160px]">
                 {activeMode === "upload" ? (
                   uploadStep === "complete" ? (
-                    showOriginal && uploadedFileUrl ? (
-                      fileType === "video" ? (
-                        <video
-                          src={uploadedFileUrl}
-                          className="w-full h-full object-cover animate-fadeIn"
-                          muted
-                          loop
-                          autoPlay
-                          playsInline
-                        />
+                    showOriginal || generatedDesigns.length === 0 ? (
+                      uploadedFileUrl ? (
+                        fileType === "video" ? (
+                          <video
+                            src={uploadedFileUrl}
+                            className="w-full h-full object-cover animate-fadeIn"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={uploadedFileUrl}
+                            alt="Original Room"
+                            className="w-full h-full object-cover animate-fadeIn"
+                          />
+                        )
                       ) : (
-                        <img
-                          src={uploadedFileUrl}
-                          alt="Original Room"
-                          className="w-full h-full object-cover animate-fadeIn"
-                        />
+                        <div className="flex flex-col items-center justify-center text-slate-500">
+                          <Layers className="w-8 h-8 text-slate-750 mb-1" />
+                          <span className="text-[10px]">No Image Preview</span>
+                        </div>
                       )
                     ) : (
                       (() => {
-                        const matchedDesign = generatedDesigns.find(
-                          (d) => d.style.toLowerCase() === selectedStyle.toLowerCase()
-                        );
-                        const displayImg = matchedDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
+                        const activeDesign = generatedDesigns.find((d) => d.id === activeDesignId) || 
+                                             generatedDesigns.find((d) => d.style.toLowerCase() === selectedStyle.toLowerCase()) ||
+                                             generatedDesigns[generatedDesigns.length - 1];
+                        
+                        const displayImg = activeDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img;
                         return (
                           <div className="relative w-full h-full">
                             {imageLoading && (
