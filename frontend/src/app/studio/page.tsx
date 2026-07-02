@@ -1437,6 +1437,19 @@ function StudioContent() {
                       </div>
                     </button>
 
+                    <button
+                      onClick={() => handleAddObject("room", "#e2e8f0;width=4;depth=4")}
+                      className="w-full flex items-center gap-3 p-3 bg-blue-950/20 hover:bg-blue-950/40 border border-blue-900/40 rounded-xl text-left text-xs font-semibold text-blue-300 transition-colors cursor-pointer"
+                    >
+                      <div className="p-2 bg-blue-950/30 border border-blue-800/40 rounded-lg text-blue-400">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-bold">Add Custom Room Slab</p>
+                        <span className="text-[10px] text-slate-400 font-normal font-sans">Adds an editable room slab with walls</span>
+                      </div>
+                    </button>
+
                     {/* New Minimal Furniture Items */}
                     <button
                       onClick={() => handleAddObject("bookshelf")}
@@ -2359,6 +2372,9 @@ function StudioContent() {
               selectedObject={getSelectedObject()}
               onUpdateObject={handleUpdateObject}
               onDeleteObject={handleDeleteObject}
+              roomWidth={roomWidth}
+              roomDepth={roomDepth}
+              onUpdateRoomDimensions={handleUpdateRoomDimensions}
             />
           </div>
 

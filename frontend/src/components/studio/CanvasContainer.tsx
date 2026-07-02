@@ -244,6 +244,106 @@ function TV3D({ material, isSelected, onClick }: { material: string; isSelected:
   );
 }
 
+// Custom 3D AC Component
+function AC3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#f1f5f9";
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Main AC Body */}
+      <mesh position={[0, 2.2, 0]}>
+        <boxGeometry args={[1.0, 0.28, 0.22]} />
+        <meshStandardMaterial color={color} roughness={0.3} />
+      </mesh>
+      {/* Vent Flap */}
+      <mesh position={[0, 2.08, 0.05]}>
+        <boxGeometry args={[0.9, 0.02, 0.18]} />
+        <meshStandardMaterial color="#cbd5e1" />
+      </mesh>
+      {/* Subtle Brand/LED Dot */}
+      <mesh position={[0.35, 2.15, 0.12]}>
+        <boxGeometry args={[0.02, 0.02, 0.01]} />
+        <meshBasicMaterial color="#10b981" />
+      </mesh>
+      {isSelected && (
+        <mesh position={[0, 2.2, 0]}>
+          <boxGeometry args={[1.1, 0.35, 0.3]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom 3D Refrigerator Component
+function Refrigerator3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#cbd5e1";
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Main Fridge Body */}
+      <mesh position={[0, 0.9, 0]}>
+        <boxGeometry args={[0.75, 1.8, 0.7]} />
+        <meshStandardMaterial color={color} roughness={0.2} metalness={0.8} />
+      </mesh>
+      {/* Freezer Door Handle */}
+      <mesh position={[-0.32, 1.25, 0.36]}>
+        <boxGeometry args={[0.03, 0.4, 0.03]} />
+        <meshStandardMaterial color="#475569" metalness={0.9} />
+      </mesh>
+      {/* Fridge Door Handle */}
+      <mesh position={[-0.32, 0.5, 0.36]}>
+        <boxGeometry args={[0.03, 0.6, 0.03]} />
+        <meshStandardMaterial color="#475569" metalness={0.9} />
+      </mesh>
+      {/* Horizontal separator line */}
+      <mesh position={[0, 0.95, 0.355]}>
+        <boxGeometry args={[0.73, 0.01, 0.01]} />
+        <meshStandardMaterial color="#334155" />
+      </mesh>
+      {isSelected && (
+        <mesh position={[0, 0.9, 0]}>
+          <boxGeometry args={[0.85, 1.9, 0.8]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+// Custom 3D Washing Machine Component
+function WashingMachine3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
+  const color = material.startsWith("#") ? material : "#f8fafc";
+  return (
+    <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      {/* Main Body */}
+      <mesh position={[0, 0.42, 0]}>
+        <boxGeometry args={[0.65, 0.85, 0.65]} />
+        <meshStandardMaterial color={color} roughness={0.4} />
+      </mesh>
+      {/* Circular Front Door Ring */}
+      <mesh position={[0, 0.4, 0.33]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.02, 32]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Circular Front Glass */}
+      <mesh position={[0, 0.4, 0.335]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.01, 32]} />
+        <meshStandardMaterial color="#38bdf8" transparent opacity={0.5} roughness={0.1} />
+      </mesh>
+      {/* Top Control Panel screen */}
+      <mesh position={[0, 0.75, 0.31]}>
+        <boxGeometry args={[0.5, 0.08, 0.02]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      {isSelected && (
+        <mesh position={[0, 0.42, 0]}>
+          <boxGeometry args={[0.75, 0.95, 0.75]} />
+          <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 // Custom 3D Flower Pot Component
 function FlowerPot3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
   const potColor = material.startsWith("#") ? material : "#e2e8f0";

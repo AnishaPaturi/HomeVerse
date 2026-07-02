@@ -18,12 +18,18 @@ interface ObjectPropertiesPanelProps {
   selectedObject: RoomObject | null;
   onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
   onDeleteObject: (id: string) => void;
+  roomWidth?: number;
+  roomDepth?: number;
+  onUpdateRoomDimensions?: (width: number, depth: number) => void;
 }
 
 export default function ObjectPropertiesPanel({
   selectedObject,
   onUpdateObject,
   onDeleteObject,
+  roomWidth,
+  roomDepth,
+  onUpdateRoomDimensions,
 }: ObjectPropertiesPanelProps) {
   if (!selectedObject) {
     return (
@@ -45,8 +51,8 @@ export default function ObjectPropertiesPanel({
   const isRoom = object_type === "room";
   
   // Parse room dimensions if applicable
-  let roomWidth = 4;
-  let roomDepth = 4;
+  let customRoomWidth = 4;
+  let customRoomDepth = 4;
   let roomColor = "#e2e8f0";
   if (isRoom) {
     let mat = material || "";
@@ -55,9 +61,9 @@ export default function ObjectPropertiesPanel({
       roomColor = parts[0];
       for (const part of parts.slice(1)) {
         if (part.startsWith("width=")) {
-          roomWidth = parseFloat(part.split("=")[1]) || 4;
+          customRoomWidth = parseFloat(part.split("=")[1]) || 4;
         } else if (part.startsWith("depth=")) {
-          roomDepth = parseFloat(part.split("=")[1]) || 4;
+          customRoomDepth = parseFloat(part.split("=")[1]) || 4;
         }
       }
     } else {
@@ -183,30 +189,30 @@ export default function ObjectPropertiesPanel({
                 <div>
                   <div className="flex justify-between text-xs text-slate-400 mb-1">
                     <span>Room Width</span>
-                    <span className="font-mono">{roomWidth.toFixed(1)}m</span>
+                    <span className="font-mono">{customRoomWidth.toFixed(1)}m</span>
                   </div>
                   <input
                     type="range"
                     min="2.0"
                     max="12.0"
                     step="0.5"
-                    value={roomWidth}
-                    onChange={(e) => handleUpdateRoomSize(parseFloat(e.target.value), roomDepth)}
+                    value={customRoomWidth}
+                    onChange={(e) => handleUpdateRoomSize(parseFloat(e.target.value), customRoomDepth)}
                     className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                 </div>
                 <div>
                   <div className="flex justify-between text-xs text-slate-400 mb-1">
                     <span>Room Depth</span>
-                    <span className="font-mono">{roomDepth.toFixed(1)}m</span>
+                    <span className="font-mono">{customRoomDepth.toFixed(1)}m</span>
                   </div>
                   <input
                     type="range"
                     min="2.0"
                     max="12.0"
                     step="0.5"
-                    value={roomDepth}
-                    onChange={(e) => handleUpdateRoomSize(roomWidth, parseFloat(e.target.value))}
+                    value={customRoomDepth}
+                    onChange={(e) => handleUpdateRoomSize(customRoomWidth, parseFloat(e.target.value))}
                     className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                 </div>
@@ -309,6 +315,47 @@ export default function ObjectPropertiesPanel({
                 step="0.05"
                 value={scale}
                 onChange={(e) => onUpdateObject(id, { scale: parseFloat(e.target.value) })}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Room Boundary Dimensions (For Floor / Wall Selection) */}
+      {isWallOrFloor && onUpdateRoomDimensions && roomWidth && roomDepth && (
+        <div className="space-y-4 mt-4 pt-4 border-t border-slate-800/60">
+          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+            📐 Base Room Dimensions
+          </span>
+          <div className="space-y-3 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/40">
+            <div>
+              <div className="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Room Width</span>
+                <span className="font-mono">{roomWidth.toFixed(1)}m</span>
+              </div>
+              <input
+                type="range"
+                min="4.0"
+                max="16.0"
+                step="0.5"
+                value={roomWidth}
+                onChange={(e) => onUpdateRoomDimensions(parseFloat(e.target.value), roomDepth)}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+            </div>
+            <div>
+              <div className="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Room Depth</span>
+                <span className="font-mono">{roomDepth.toFixed(1)}m</span>
+              </div>
+              <input
+                type="range"
+                min="4.0"
+                max="16.0"
+                step="0.5"
+                value={roomDepth}
+                onChange={(e) => onUpdateRoomDimensions(roomWidth, parseFloat(e.target.value))}
                 className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>

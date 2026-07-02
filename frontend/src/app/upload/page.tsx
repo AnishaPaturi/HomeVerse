@@ -45,6 +45,10 @@ export default function UploadPage() {
   const [communityBlock, setCommunityBlock] = useState<string>("");
   const [hasFloorPlan, setHasFloorPlan] = useState<"yes" | "no">("no");
   const [squareFootage, setSquareFootage] = useState<number>(500);
+  const [dimensionsInput, setDimensionsInput] = useState<string>("3.63 m * 3.94 m");
+  const [customRoomType, setCustomRoomType] = useState<string>("");
+  const [bedroomNameType, setBedroomNameType] = useState<string>("Master Bedroom");
+  const [customBedroomName, setCustomBedroomName] = useState<string>("");
 
   // LiDAR scan states
   const [lidarStatus, setLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
@@ -429,18 +433,48 @@ export default function UploadPage() {
     const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
 
     try {
-      // Calculate room width and depth in meters based on square footage input
-      const A = squareFootage * 0.0929;
-      const L = Math.sqrt(A);
-      const calculatedWidth = Math.max(Math.min(Math.round(L * 2) / 2, 16), 4);
-      const calculatedDepth = Math.max(Math.min(Math.round(L * 2) / 2, 16), 4);
+      // Parse room dimensions input
+      let calculatedWidth = 5.0;
+      let calculatedDepth = 5.0;
+      try {
+        const normalized = dimensionsInput.toLowerCase().replace(/\s+/g, "").replace(/x/g, "*");
+        const parts = normalized.split("*");
+        if (parts.length >= 2) {
+          const part1 = parts[0];
+          const part2 = parts[1];
+          const num1 = parseFloat(part1) || 5.0;
+          const num2 = parseFloat(part2) || 5.0;
+          
+          let isFt1 = part1.includes("ft") || part1.includes("feet") || part1.includes("'");
+          let isFt2 = part2.includes("ft") || part2.includes("feet") || part2.includes("'");
+          
+          if (!isFt1 && !part1.includes("m") && num1 > 6.0) {
+            isFt1 = true;
+          }
+          if (!isFt2 && !part2.includes("m") && num2 > 6.0) {
+            isFt2 = true;
+          }
+          
+          calculatedWidth = isFt1 ? num1 * 0.3048 : num1;
+          calculatedDepth = isFt2 ? num2 * 0.3048 : num2;
+        }
+      } catch (e) {
+        console.warn("Error parsing input dimensions:", e);
+      }
+      
+      // Keep dimensions in reasonable bounds
+      calculatedWidth = Math.max(2.0, Math.min(20.0, Math.round(calculatedWidth * 100) / 100));
+      calculatedDepth = Math.max(2.0, Math.min(20.0, Math.round(calculatedDepth * 100) / 100));
+      
+      // Calculate derived square footage for database tracking
+      const sqFtValue = Math.round((calculatedWidth * calculatedDepth) / 0.0929);
 
       const structAnalysisObj = {
         property_type: propertyType,
         apartment_type: propertyType === "apartment" ? apartmentType : null,
         community_block: (propertyType === "apartment" && apartmentType === "community") ? communityBlock : null,
         has_floor_plan: hasFloorPlan,
-        square_footage: squareFootage,
+        square_footage: sqFtValue,
         room_width: calculatedWidth,
         room_depth: calculatedDepth,
         source: "scratch"
@@ -448,7 +482,20 @@ export default function UploadPage() {
       const structAnalysisStr = JSON.stringify(structAnalysisObj);
 
       // 1. Create project on backend
-      const projTitle = projectTitle.trim() || `My ${roomType} Design`;
+      let projTitle = "";
+      let finalRoomType = roomType;
+      
+      if (roomType === "Bedroom") {
+        projTitle = bedroomNameType === "Custom" 
+          ? (customBedroomName.trim() || "Custom Bedroom") 
+          : bedroomNameType;
+      } else if (roomType === "Other") {
+        projTitle = customRoomType.trim() || "My Custom Room";
+        finalRoomType = customRoomType.trim() || "Other";
+      } else {
+        projTitle = projectTitle.trim() || `My ${roomType} Design`;
+      }
+
       let projectIdFromBackend = null;
       try {
         const projRes = await fetch("http://localhost:8080/api/projects/", {
@@ -458,7 +505,7 @@ export default function UploadPage() {
           },
           body: JSON.stringify({
             title: projTitle,
-            room_type: roomType,
+            room_type: finalRoomType,
             thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
             user_id: userId,
             structural_analysis: structAnalysisStr
@@ -476,7 +523,7 @@ export default function UploadPage() {
       setProjectId(activeProjId);
       sessionStorage.setItem("homeverse_project_id", activeProjId);
       sessionStorage.setItem("homeverse_project_title", projTitle);
-      sessionStorage.setItem("homeverse_room_type", roomType);
+      sessionStorage.setItem("homeverse_room_type", finalRoomType);
 
       // 2. Create design on backend
       let designIdFromBackend = null;
@@ -1529,53 +1576,112 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {/* STEP 5: Space Dimensions & Presets */}
                     {scratchStep === 5 && (
                       <div className="space-y-3.5">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
-                              Square Footage
-                            </label>
-                            <input
-                              type="number"
-                              min="100"
-                              max="4000"
-                              value={squareFootage}
-                              onChange={(e) => setSquareFootage(Number(e.target.value))}
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
-                              Room Type
-                            </label>
-                            <select
-                              value={roomType}
-                              onChange={(e) => setRoomType(e.target.value)}
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                            >
-                              <option value="Living Room">Living Room</option>
-                              <option value="Bedroom">Bedroom</option>
-                              <option value="Office">Home Office</option>
-                              <option value="Kitchen">Kitchen/Dining</option>
-                            </select>
-                          </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            Room Dimensions
+                          </label>
+                          <input
+                            type="text"
+                            value={dimensionsInput}
+                            onChange={(e) => setDimensionsInput(e.target.value)}
+                            placeholder="e.g. 3.63 m * 3.94 m or 12 ft * 15 ft"
+                            className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                          />
+                          <span className="text-[9px] text-slate-500 font-sans leading-relaxed">
+                            Supports meters (m) or feet (ft) like <span className="font-mono text-slate-400 font-bold">3.63 m * 3.94 m</span> or <span className="font-mono text-slate-400 font-bold">12 ft * 15 ft</span>.
+                          </span>
                         </div>
 
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
-                            Design Title / Name
+                            Room Type
                           </label>
-                          <input
-                            type="text"
-                            value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
-                            onChange={(e) => setProjectTitle(e.target.value)}
-                            placeholder="e.g. Dream Living Room"
+                          <select
+                            value={roomType}
+                            onChange={(e) => setRoomType(e.target.value)}
                             className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                          />
+                          >
+                            <option value="Living Room">Living Room</option>
+                            <option value="Bedroom">Bedroom</option>
+                            <option value="Office">Home Office</option>
+                            <option value="Kitchen">Kitchen/Dining</option>
+                            <option value="Other">Other</option>
+                          </select>
                         </div>
+
+                        {roomType === "Other" && (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              Custom Room Title / Type
+                            </label>
+                            <input
+                              type="text"
+                              value={customRoomType}
+                              onChange={(e) => {
+                                setCustomRoomType(e.target.value);
+                                setProjectTitle(e.target.value);
+                              }}
+                              placeholder="e.g. Home Gym, Media Room, Library"
+                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
+
+                        {roomType === "Bedroom" && (
+                          <div className="space-y-3">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                                Choose Bedroom Name
+                              </label>
+                              <select
+                                value={bedroomNameType}
+                                onChange={(e) => setBedroomNameType(e.target.value)}
+                                className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                              >
+                                <option value="Master Bedroom">Master Bedroom</option>
+                                <option value="Kids Bedroom">Kids Bedroom</option>
+                                <option value="Guest Bedroom">Guest Bedroom</option>
+                                <option value="Teen Bedroom">Teen Bedroom</option>
+                                <option value="Custom">Custom Bedroom Name...</option>
+                              </select>
+                            </div>
+
+                            {bedroomNameType === "Custom" && (
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                                  Custom Bedroom Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={customBedroomName}
+                                  onChange={(e) => {
+                                    setCustomBedroomName(e.target.value);
+                                    setProjectTitle(e.target.value);
+                                  }}
+                                  placeholder="e.g. Anisha's Bedroom"
+                                  className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {roomType !== "Other" && roomType !== "Bedroom" && (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              Design Title / Name
+                            </label>
+                            <input
+                              type="text"
+                              value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
+                              onChange={(e) => setProjectTitle(e.target.value)}
+                              placeholder="e.g. Dream Living Room"
+                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
 
                         {/* Starting Preset */}
                         <div className="space-y-1">
