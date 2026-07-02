@@ -1817,6 +1817,7 @@ export default function UploadPage() {
                               className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
+                        )}
                          {/* Starting Preset */}
                         <div className="grid grid-cols-2 gap-3.5">
                           {/* Style Theme */}
