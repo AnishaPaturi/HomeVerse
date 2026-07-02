@@ -12,19 +12,28 @@ from app.models.object import Object as ObjectModel
 from app.config import settings
 import google.generativeai as genai
 
+def map_wall_to_direction(wall: str) -> str:
+    wall_lower = wall.lower()
+    if wall_lower in ["north", "east", "west", "south"]:
+        return wall.capitalize()
+    if wall_lower == "back":
+        return "North"
+    if wall_lower == "right":
+        return "East"
+    if wall_lower == "left":
+        return "West"
+    if wall_lower == "front":
+        return "South"
+    return "North"
+
 def build_dynamic_image_prompt(style: str, room_type: str, structural_analysis: dict, gemini_desc: str) -> str:
-    door_direction = "unknown"
+    door_direction = "North"
     doors = structural_analysis.get("doors", [])
     if doors and len(doors) > 0:
-        door_direction = doors[0].get("wall", "unknown")
+        raw_wall = doors[0].get("wall", "back")
+        door_direction = map_wall_to_direction(raw_wall)
     
-    window_info = ""
-    windows = structural_analysis.get("windows", [])
-    if windows:
-        window_walls = [w.get("wall", "") for w in windows]
-        window_info = f" with windows on the {', '.join(window_walls)} wall(s)"
-    
-    full_prompt = f"generate an image of a {room_type} with {door_direction} facing door{window_info} and a look of a {style} room which is fully furnished, {gemini_desc}. High-end, realistic, 4k, photorealistic, professional architectural photograph."
+    full_prompt = f"Generate an image where the room is {room_type} the style is {style} and the door of the current room is {door_direction} facing"
     return full_prompt
 
 class AIService:
@@ -543,14 +552,40 @@ class AIService:
             gemini_desc = style_data.get("description", "")
             
             full_prompt = build_dynamic_image_prompt(style, detected_room_type, structural_analysis, gemini_desc)
-            encoded_prompt = urllib.parse.quote(full_prompt)
-            image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux-schnell"
             
+            # Create the design model first to get design.id
             design = DesignModel(
                 project_id=project_id,
                 style=style,
-                image_url=image_url
+                image_url=""
             )
+            db.add(design)
+            db.commit()
+            db.refresh(design)
+
+            # Generate and download the image locally
+            os.makedirs("static/generated", exist_ok=True)
+            local_filename = f"{design.id}.jpg"
+            local_path = os.path.join("static/generated", local_filename)
+
+            encoded_prompt = urllib.parse.quote(full_prompt)
+            pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux"
+
+            import httpx
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.get(pollinations_url)
+                    if response.status_code == 200:
+                        with open(local_path, "wb") as f:
+                            f.write(response.content)
+                        design.image_url = f"/static/generated/{local_filename}"
+                    else:
+                        print(f"Failed to download image for design {design.id}, using remote URL. Status code: {response.status_code}")
+                        design.image_url = pollinations_url
+            except Exception as e:
+                print(f"Error downloading design image for {design.id}: {e}")
+                design.image_url = pollinations_url
+
             db.add(design)
             db.commit()
             db.refresh(design)

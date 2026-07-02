@@ -196,7 +196,7 @@ export default function UploadPage() {
   const [roomType, setRoomType] = useState<string>("Living Room");
   const [isReady, setIsReady] = useState(false);
 
-  // Dynamically generates a photorealistic design preview using Pollinations AI based on user configurations.
+  // Calls the backend template-image generator endpoint to get locally cached or generated room styling previews.
   const getTemplateImage = (style: string, facing: string, layout: "layout-a" | "layout-b"): string => {
     // Determine final readable room name
     let targetRoom = roomType;
@@ -208,29 +208,8 @@ export default function UploadPage() {
         : bedroomNameType;
     }
 
-    // Create a descriptive layout orientation description
-    const layoutDesc =
-      layout === "layout-a"
-        ? "a balanced center setup with symmetrical furniture placement optimized for traffic flow"
-        : "a cozy corner concept with space-saving accent furniture placed along the walls to maximize open space";
-
-    // Incorporate dimensions if provided
-    const dimDesc = dimensionsInput ? ` measuring ${dimensionsInput}` : "";
-
-    // Construct the dynamic photorealistic prompt matching user specs
-    const basePrompt = `generate an image of a ${targetRoom.toLowerCase()}${dimDesc} with a ${facing.toLowerCase()} facing entrance door, styled in a ${style.toLowerCase()} interior design aesthetic which is fully furnished with ${layoutDesc}. High-end luxury architectural render, photorealistic, 8k resolution, detailed lighting.`;
-
-    // Encode the prompt for Pollinations AI URL query parameter
-    const encodedPrompt = encodeURIComponent(basePrompt);
-    
-    // A simple deterministic hash code from the parameters to use as seed
-    const seedString = `${style}-${facing}-${layout}-${targetRoom}-${dimensionsInput}`;
-    let seed = 0;
-    for (let i = 0; i < seedString.length; i++) {
-      seed = (seed * 31 + seedString.charCodeAt(i)) % 1000000;
-    }
-
-    return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&nologo=true&private=true&model=flux&seed=${seed}`;
+    const backendUrl = "http://localhost:8080";
+    return `${backendUrl}/api/ai/template-image?room_type=${encodeURIComponent(targetRoom)}&style=${encodeURIComponent(style)}&direction=${encodeURIComponent(facing)}&layout=${encodeURIComponent(layout)}`;
   };
 
   useEffect(() => {
