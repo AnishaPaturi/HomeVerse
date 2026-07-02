@@ -129,73 +129,7 @@ const getFurnishedTemplateObjects = (
   return objects;
 };
 
-// Returns a fast-loading, highly reliable preset image for every combination of style, facing direction, and layout.
-const getTemplateImage = (style: string, facing: string, layout: "layout-a" | "layout-b"): string => {
-  const s = style.toLowerCase();
-  const f = facing.toLowerCase();
 
-  // Define unique high-resolution interior designs for every single direction and theme combination.
-  const images: Record<string, Record<string, Record<"layout-a" | "layout-b", string>>> = {
-    modern: {
-      north: {
-        "layout-a": "/templates/modern_north_layout-a.jpg",
-        "layout-b": "/templates/modern_north_layout-b.jpg"
-      },
-      south: {
-        "layout-a": "/templates/modern_south_layout-a.jpg",
-        "layout-b": "/templates/modern_south_layout-b.jpg"
-      },
-      east: {
-        "layout-a": "/templates/modern_east_layout-a.jpg",
-        "layout-b": "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=400&q=80"
-      },
-      west: {
-        "layout-a": "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    luxury: {
-      north: {
-        "layout-a": "https://images.unsplash.com/photo-1502005229762-fc1b2b812ca5?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=400&q=80"
-      },
-      south: {
-        "layout-a": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=400&q=80"
-      },
-      east: {
-        "layout-a": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=400&q=80"
-      },
-      west: {
-        "layout-a": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    japandi: {
-      north: {
-        "layout-a": "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1616593969747-4797dc75033e?auto=format&fit=crop&w=400&q=80"
-      },
-      south: {
-        "layout-a": "https://images.unsplash.com/photo-1617806118233-18e1db207f62?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?auto=format&fit=crop&w=400&q=80"
-      },
-      east: {
-        "layout-a": "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?auto=format&fit=crop&w=400&q=80"
-      },
-      west: {
-        "layout-a": "https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=400&q=80",
-        "layout-b": "https://images.unsplash.com/photo-1592595896551-12b371d546d5?auto=format&fit=crop&w=400&q=80"
-      }
-    }
-  };
-
-  const styleGroup = images[s] || images.modern;
-  const facingGroup = styleGroup[f] || styleGroup.north;
-  return facingGroup[layout];
-};
 
 export default function UploadPage() {
   const router = useRouter();
@@ -261,6 +195,43 @@ export default function UploadPage() {
   const [projectTitle, setProjectTitle] = useState<string>("My Interior Design");
   const [roomType, setRoomType] = useState<string>("Living Room");
   const [isReady, setIsReady] = useState(false);
+
+  // Dynamically generates a photorealistic design preview using Pollinations AI based on user configurations.
+  const getTemplateImage = (style: string, facing: string, layout: "layout-a" | "layout-b"): string => {
+    // Determine final readable room name
+    let targetRoom = roomType;
+    if (roomType === "Other") {
+      targetRoom = customRoomType.trim() || "Custom Room";
+    } else if (roomType === "Bedroom") {
+      targetRoom = bedroomNameType === "Custom"
+        ? (customBedroomName.trim() || "Custom Bedroom")
+        : bedroomNameType;
+    }
+
+    // Create a descriptive layout orientation description
+    const layoutDesc =
+      layout === "layout-a"
+        ? "a balanced center setup with symmetrical furniture placement optimized for traffic flow"
+        : "a cozy corner concept with space-saving accent furniture placed along the walls to maximize open space";
+
+    // Incorporate dimensions if provided
+    const dimDesc = dimensionsInput ? ` measuring ${dimensionsInput}` : "";
+
+    // Construct the dynamic photorealistic prompt matching user specs
+    const basePrompt = `generate an image of a ${targetRoom.toLowerCase()}${dimDesc} with a ${facing.toLowerCase()} facing entrance door, styled in a ${style.toLowerCase()} interior design aesthetic which is fully furnished with ${layoutDesc}. High-end luxury architectural render, photorealistic, 8k resolution, detailed lighting.`;
+
+    // Encode the prompt for Pollinations AI URL query parameter
+    const encodedPrompt = encodeURIComponent(basePrompt);
+    
+    // A simple deterministic hash code from the parameters to use as seed
+    const seedString = `${style}-${facing}-${layout}-${targetRoom}-${dimensionsInput}`;
+    let seed = 0;
+    for (let i = 0; i < seedString.length; i++) {
+      seed = (seed * 31 + seedString.charCodeAt(i)) % 1000000;
+    }
+
+    return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&nologo=true&private=true&model=flux&seed=${seed}`;
+  };
 
   useEffect(() => {
     if (uploadStep === "complete") {
