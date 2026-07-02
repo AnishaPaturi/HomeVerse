@@ -406,19 +406,37 @@ class AIService:
         encoded_prompt = urllib.parse.quote(image_prompt)
         pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux"
 
-        import httpx
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(pollinations_url)
-                if response.status_code == 200:
-                    with open(local_path, "wb") as f:
-                        f.write(response.content)
-                    design.image_url = f"/static/generated/{local_filename}"
-                else:
-                    design.image_url = pollinations_url
-        except Exception as e:
-            print(f"Error downloading design image: {e}")
-            design.image_url = pollinations_url
+        # Return Pollinations URL immediately so the API responds instantly, and cache the file in a background thread
+        design.image_url = pollinations_url
+        db.add(design)
+        db.commit()
+        db.refresh(design)
+
+        from app.db.session import SessionLocal
+        import threading
+        def download_and_cache():
+            import httpx
+            try:
+                # Pollinations AI generates and serves the image.
+                # This could take 5-15 seconds, so we download it here silently.
+                with httpx.Client(timeout=45.0) as client:
+                    response = client.get(pollinations_url)
+                    if response.status_code == 200:
+                        with open(local_path, "wb") as f:
+                            f.write(response.content)
+                        # Update DB reference to point to local file path
+                        bg_db = SessionLocal()
+                        try:
+                            bg_design = bg_db.query(DesignModel).filter(DesignModel.id == design.id).first()
+                            if bg_design:
+                                bg_design.image_url = f"/static/generated/{local_filename}"
+                                bg_db.commit()
+                        finally:
+                            bg_db.close()
+            except Exception as e:
+                print(f"Background download and cache failed: {e}")
+
+        threading.Thread(target=download_and_cache, daemon=True).start()
 
         db.add(design)
         db.commit()
