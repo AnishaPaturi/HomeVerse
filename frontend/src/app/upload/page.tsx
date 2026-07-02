@@ -129,6 +129,74 @@ const getFurnishedTemplateObjects = (
   return objects;
 };
 
+// Returns a fast-loading, highly reliable preset image for every combination of style, facing direction, and layout.
+const getTemplateImage = (style: string, facing: string, layout: "layout-a" | "layout-b"): string => {
+  const s = style.toLowerCase();
+  const f = facing.toLowerCase();
+
+  // Define unique high-resolution interior designs for every single direction and theme combination.
+  const images: Record<string, Record<string, Record<"layout-a" | "layout-b", string>>> = {
+    modern: {
+      north: {
+        "layout-a": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=400&q=80"
+      },
+      south: {
+        "layout-a": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1617806118233-18e1db207f62?auto=format&fit=crop&w=400&q=80"
+      },
+      east: {
+        "layout-a": "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80"
+      },
+      west: {
+        "layout-a": "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400&q=80"
+      }
+    },
+    luxury: {
+      north: {
+        "layout-a": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=400&q=80"
+      },
+      south: {
+        "layout-a": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1617806118233-18e1db207f62?auto=format&fit=crop&w=400&q=80"
+      },
+      east: {
+        "layout-a": "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80"
+      },
+      west: {
+        "layout-a": "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=400&q=80"
+      }
+    },
+    japandi: {
+      north: {
+        "layout-a": "https://images.unsplash.com/photo-1617806118233-18e1db207f62?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?auto=format&fit=crop&w=400&q=80"
+      },
+      south: {
+        "layout-a": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400&q=80"
+      },
+      east: {
+        "layout-a": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80"
+      },
+      west: {
+        "layout-a": "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=400&q=80",
+        "layout-b": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=400&q=80"
+      }
+    }
+  };
+
+  const styleGroup = images[s] || images.modern;
+  const facingGroup = styleGroup[f] || styleGroup.north;
+  return facingGroup[layout];
+};
+
 export default function UploadPage() {
   const router = useRouter();
   
@@ -1964,15 +2032,7 @@ export default function UploadPage() {
                             >
                               <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
                                 <img
-                                  src={
-                                    selectedStyle === "Modern"
-                                      ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=300"
-                                      : selectedStyle === "Luxury"
-                                      ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=300"
-                                      : selectedStyle === "Japandi"
-                                      ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=300"
-                                      : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=300"
-                                  }
+                                  src={getTemplateImage(selectedStyle, houseFacing, "layout-a")}
                                   alt="Layout A"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -2000,15 +2060,7 @@ export default function UploadPage() {
                             >
                               <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
                                 <img
-                                  src={
-                                    selectedStyle === "Modern"
-                                      ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=300"
-                                      : selectedStyle === "Luxury"
-                                      ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=300"
-                                      : selectedStyle === "Japandi"
-                                      ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=300"
-                                      : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=300"
-                                  }
+                                  src={getTemplateImage(selectedStyle, houseFacing, "layout-b")}
                                   alt="Layout B"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -2173,22 +2225,7 @@ export default function UploadPage() {
                   )
                 ) : activeMode === "scratch" ? (
                   (() => {
-                    const displayImg =
-                      selectedLayoutTemplate === "layout-a"
-                        ? selectedStyle === "Modern"
-                          ? "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=600"
-                          : selectedStyle === "Luxury"
-                          ? "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600"
-                          : selectedStyle === "Japandi"
-                          ? "https://images.unsplash.com/photo-1617806118233-18e1db207f62?q=80&w=600"
-                          : "https://images.unsplash.com/photo-1616046229478-9901c5536a45?q=80&w=600"
-                        : selectedStyle === "Modern"
-                        ? "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=600"
-                        : selectedStyle === "Luxury"
-                        ? "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=600"
-                        : selectedStyle === "Japandi"
-                        ? "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?q=80&w=600"
-                        : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=600";
+                    const displayImg = getTemplateImage(selectedStyle, houseFacing, selectedLayoutTemplate as any);
 
                     return (
                       <div className="relative w-full h-full animate-fadeIn group">
@@ -2315,7 +2352,7 @@ export default function UploadPage() {
                 <>
                   <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-850 animate-fadeIn">
                     <span className="text-[10px] font-bold text-blue-400 block mb-0.5">Style Profile: {selectedStyle}</span>
-                    <p className="text-[10px] text-slate-450 leading-relaxed">
+                    <p className="text-[10px] text-slate-455 leading-relaxed">
                       {styles.find((s) => s.name === selectedStyle)?.desc}
                     </p>
                   </div>
@@ -2328,6 +2365,21 @@ export default function UploadPage() {
                     })}
                   </div>
                 </>
+              )}
+
+              {activeMode === "scratch" && (
+                <div className="hidden pointer-events-none w-0 h-0 overflow-hidden" aria-hidden="true">
+                  {/* Prefetch all 8 images for the selected style to make dynamic toggles instant */}
+                  {["North", "South", "East", "West"].flatMap((dir) =>
+                    ["layout-a", "layout-b"].map((layout) => (
+                      <img
+                        key={`${dir}-${layout}`}
+                        src={getTemplateImage(selectedStyle, dir, layout as any)}
+                        alt="prefetch"
+                      />
+                    ))
+                  )}
+                </div>
               )}
 
               {/* Quick Bypass / Demo Trigger */}
