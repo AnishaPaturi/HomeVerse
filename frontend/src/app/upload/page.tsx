@@ -164,6 +164,45 @@ export default function UploadPage() {
   const [customBedroomName, setCustomBedroomName] = useState<string>("");
   const [houseFacing, setHouseFacing] = useState<string>("North");
   const [selectedLayoutTemplate, setSelectedLayoutTemplate] = useState<string>("layout-a");
+  const [isPreGenerating, setIsPreGenerating] = useState<boolean>(false);
+
+  const triggerPreGeneration = async (targetRoom: string) => {
+    setIsPreGenerating(true);
+    try {
+      const formData = new FormData();
+      formData.append("room_type", targetRoom);
+
+      const res = await fetch("http://localhost:8080/api/ai/pre-generate-templates", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to pre-generate template images.");
+      }
+
+      setScratchStep(3); // Advance to Step 3 automatically
+    } catch (err: any) {
+      console.error(err);
+      // Advance to step 3 regardless to avoid blocking user flow
+      setScratchStep(3);
+    } finally {
+      setIsPreGenerating(false);
+    }
+  };
+
+  const handleStep1Submit = () => {
+    let targetRoom = roomType;
+    if (roomType === "Other") {
+      targetRoom = customRoomType.trim() || "Custom Room";
+    } else if (roomType === "Bedroom") {
+      targetRoom = bedroomNameType === "Custom"
+        ? (customBedroomName.trim() || "Custom Bedroom")
+        : bedroomNameType;
+    }
+    setScratchStep(2);
+    triggerPreGeneration(targetRoom);
+  };
 
   // LiDAR scan states
   const [lidarStatus, setLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
@@ -1917,84 +1956,83 @@ export default function UploadPage() {
                       </div>
                     </div>
 
-                    {/* STEP 1: Property Type */}
+                    {/* STEP 1: Room Details Configuration */}
                     {scratchStep === 1 && (
-                      <div className="space-y-3">
-                        <label className="text-xs font-semibold text-slate-350 block">
-                          What type of property are we designing?
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setPropertyType("independent")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              propertyType === "independent"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-850 text-slate-455 hover:text-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">🏠 Independent House</span>
-                            <span className="text-[10px] text-slate-500 font-normal">Single standing villa, bungalow, or duplex.</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPropertyType("apartment")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              propertyType === "apartment"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-850 text-slate-455 hover:text-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">🏢 Apartment / Flat</span>
-                            <span className="text-[10px] text-slate-500 font-normal">Multistory building unit, flat, or condo.</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                                    {/* STEP 2: Floor Plan Share */}
-                    {scratchStep === 2 && (
-                      <div className="space-y-3">
-                        <label className="text-xs font-semibold text-slate-355 block">
-                          Do you have a floor plan map that you can share?
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setHasFloorPlan("no")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              hasFloorPlan === "no"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-950/40 border-slate-855 text-slate-455 hover:text-slate-300"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">📐 Draw Manually</span>
-                            <span className="text-[10px] text-slate-500 font-normal">I will enter square feet and place walls myself.</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setHasFloorPlan("yes")}
-                            className={`p-3.5 rounded-xl border text-left flex flex-col justify-between h-24 transition-all cursor-pointer ${
-                              hasFloorPlan === "yes"
-                                ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                            }`}
-                          >
-                            <span className="font-bold text-xs">📂 Share Floor Plan</span>
-                            <span className="text-[10px] text-slate-500 font-normal">Upload plan image/drawing (Optional).</span>
-                          </button>
-                        </div>
-                        {hasFloorPlan === "yes" && (
-                          <div className="border border-dashed border-slate-800 rounded-xl p-3 bg-slate-950 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:border-slate-700">
-                            📎 Attach Floorplan Image (PNG/JPG)
+                      <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
+                        {/* Property Type */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Property Type
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPropertyType("independent")}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                                propertyType === "independent"
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <span className="font-bold text-xs">🏠 Independent House</span>
+                              <span className="text-[9px] text-slate-500 font-normal">Villa or duplex.</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPropertyType("apartment")}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                                propertyType === "apartment"
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <span className="font-bold text-xs">🏢 Apartment / Flat</span>
+                              <span className="text-[9px] text-slate-500 font-normal">Multistory flat.</span>
+                            </button>
                           </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
 
-                    {scratchStep === 3 && (
-                      <div className="space-y-3.5">
+                        {/* Floor Plan Share */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Floor Plan Option
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setHasFloorPlan("no")}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                                hasFloorPlan === "no"
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <span className="font-bold text-xs">📐 Draw Manually</span>
+                              <span className="text-[9px] text-slate-500 font-normal">Draw room layout manually.</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHasFloorPlan("yes")}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                                hasFloorPlan === "yes"
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <span className="font-bold text-xs">📂 Share Floor Plan</span>
+                              <span className="text-[9px] text-slate-500 font-normal">Upload blueprint scan.</span>
+                            </button>
+                          </div>
+                          {hasFloorPlan === "yes" && (
+                            <div className="border border-dashed border-slate-800 rounded-xl p-2.5 bg-slate-950 flex items-center justify-center text-[9px] text-slate-500 cursor-pointer hover:border-slate-700">
+                              📎 Attach Floorplan Image (PNG/JPG)
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Room Dimensions */}
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                             Room Dimensions
                           </label>
                           <input
@@ -2004,31 +2042,30 @@ export default function UploadPage() {
                             placeholder="e.g. 3.63 m * 3.94 m or 12 ft * 15 ft"
                             className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                           />
-                          <span className="text-[9px] text-slate-500 font-sans leading-relaxed">
-                            Supports meters (m) or feet (ft) like <span className="font-mono text-slate-400 font-bold">3.63 m * 3.94 m</span> or <span className="font-mono text-slate-400 font-bold">12 ft * 15 ft</span>.
-                          </span>
                         </div>
 
+                        {/* Room Type */}
                         <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                             Room Type
                           </label>
                           <select
                             value={roomType}
                             onChange={(e) => setRoomType(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                           >
-                            <option value="Living Room" className="bg-slate-900 text-slate-200">Living Room</option>
-                            <option value="Bedroom" className="bg-slate-900 text-slate-200">Bedroom</option>
-                            <option value="Office" className="bg-slate-900 text-slate-200">Home Office</option>
-                            <option value="Kitchen" className="bg-slate-900 text-slate-200">Kitchen/Dining</option>
-                            <option value="Other" className="bg-slate-900 text-slate-200">Other</option>
+                            <option value="Living Room">Living Room</option>
+                            <option value="Bedroom">Bedroom</option>
+                            <option value="Office">Home Office</option>
+                            <option value="Kitchen">Kitchen/Dining</option>
+                            <option value="Other">Other (Custom Type...)</option>
                           </select>
                         </div>
 
+                        {/* Custom Room Type input */}
                         {roomType === "Other" && (
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                          <div className="flex flex-col gap-1 animate-fadeIn">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                               Custom Room Title / Type
                             </label>
                             <input
@@ -2039,33 +2076,34 @@ export default function UploadPage() {
                                 setProjectTitle(e.target.value);
                               }}
                               placeholder="e.g. Home Gym, Media Room, Library"
-                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
                         )}
 
+                        {/* Bedroom Type selectors */}
                         {roomType === "Bedroom" && (
-                          <div className="space-y-3">
+                          <div className="space-y-3 animate-fadeIn">
                             <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                                 Choose Bedroom Name
                               </label>
                               <select
                                 value={bedroomNameType}
                                 onChange={(e) => setBedroomNameType(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                               >
-                                <option value="Master Bedroom" className="bg-slate-900 text-slate-200">Master Bedroom</option>
-                                <option value="Kids Bedroom" className="bg-slate-900 text-slate-200">Kids Bedroom</option>
-                                <option value="Guest Bedroom" className="bg-slate-900 text-slate-200">Guest Bedroom</option>
-                                <option value="Teen Bedroom" className="bg-slate-900 text-slate-200">Teen Bedroom</option>
-                                <option value="Custom" className="bg-slate-900 text-slate-200">Custom Bedroom Name...</option>
+                                <option value="Master Bedroom">Master Bedroom</option>
+                                <option value="Kids Bedroom">Kids Bedroom</option>
+                                <option value="Guest Bedroom">Guest Bedroom</option>
+                                <option value="Teen Bedroom">Teen Bedroom</option>
+                                <option value="Custom">Custom Bedroom Name...</option>
                               </select>
                             </div>
 
                             {bedroomNameType === "Custom" && (
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                              <div className="flex flex-col gap-1 animate-fadeIn">
+                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                                   Custom Bedroom Name
                                 </label>
                                 <input
@@ -2076,16 +2114,17 @@ export default function UploadPage() {
                                     setProjectTitle(e.target.value);
                                   }}
                                   placeholder="e.g. Anisha's Bedroom"
-                                  className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                                  className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                                 />
                               </div>
                             )}
                           </div>
                         )}
 
+                        {/* Design Title */}
                         {roomType !== "Other" && roomType !== "Bedroom" && (
                           <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                               Design Title / Name
                             </label>
                             <input
@@ -2093,15 +2132,43 @@ export default function UploadPage() {
                               value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
                               onChange={(e) => setProjectTitle(e.target.value)}
                               placeholder="e.g. Dream Living Room"
-                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
                             />
                           </div>
                         )}
-                         {/* Starting Preset */}
+                      </div>
+                    )}
+
+                    {/* STEP 2: Background Image Generation Progress */}
+                    {scratchStep === 2 && (
+                      <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[360px] animate-fadeIn">
+                        <div className="relative w-20 h-20 flex items-center justify-center">
+                          <div className="absolute inset-0 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                          <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="font-bold text-sm text-slate-200">Image Generation In Progress</h3>
+                          <p className="text-[10px] text-slate-450 max-w-[240px] leading-relaxed">
+                            Pre-rendering design style and layout template combinations for your custom <span className="text-blue-400 font-semibold">{roomType}</span> space. Please wait...
+                          </p>
+                        </div>
+                        <div className="w-full bg-slate-900 border border-slate-850/80 p-2.5 rounded-xl text-[9px] text-slate-500 font-mono text-left max-w-[260px] space-y-1">
+                          <div className="flex justify-between items-center text-blue-400 animate-pulse">
+                            <span>⚡ Generating styles...</span>
+                            <span>[RUNNING]</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 3: Style, Facing & Layout options selection */}
+                    {scratchStep === 3 && (
+                      <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                        {/* Starting Preset */}
                         <div className="grid grid-cols-2 gap-3.5">
                           {/* Style Theme */}
                           <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                               Style Theme
                             </label>
                             <div className="grid grid-cols-2 gap-1 py-1">
@@ -2124,7 +2191,7 @@ export default function UploadPage() {
 
                           {/* House Facing */}
                           <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
                               House Facing
                             </label>
                             <div className="grid grid-cols-2 gap-1 py-1">
@@ -2147,8 +2214,8 @@ export default function UploadPage() {
                         </div>
 
                         {/* Fully Furnished Templates */}
-                        <div className="space-y-1.5 pt-0.5">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-500 font-mono block">
+                        <div className="space-y-1.5 pt-0.5 animate-fadeIn">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
                             Select Fully Furnished Template Option
                           </label>
                           <div className="grid grid-cols-2 gap-3">
@@ -2215,7 +2282,7 @@ export default function UploadPage() {
 
                   {/* Navigation controls */}
                   <div className="flex gap-2.5">
-                    {scratchStep > 1 && (
+                    {scratchStep > 1 && scratchStep !== 2 && (
                       <button
                         type="button"
                         onClick={prevScratchStep}
@@ -2225,19 +2292,21 @@ export default function UploadPage() {
                       </button>
                     )}
                     
-                    {scratchStep < 3 ? (
+                    {scratchStep === 1 && (
                       <button
                         type="button"
-                        onClick={nextScratchStep}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold border border-slate-800 rounded-xl transition-all cursor-pointer text-xs"
+                        onClick={handleStep1Submit}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs"
                       >
-                        Continue <ArrowRight className="w-3.5 h-3.5" />
+                        Continue to Style Options <ArrowRight className="w-3.5 h-3.5" />
                       </button>
-                    ) : (
+                    )}
+
+                    {scratchStep === 3 && (
                       <button
                         type="button"
                         onClick={handleCreateFromScratch}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce"
                       >
                         Open Studio Space <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -2245,10 +2314,8 @@ export default function UploadPage() {
                   </div>
                 </div>
               )}
-
             </div>
           </div>
-
           {/* Right Side: Demo showcase preview */}
           <div className="w-full md:w-1/2 flex flex-col gap-6">
             <div className="glass-panel p-6 rounded-3xl border-slate-800/80 space-y-4 flex flex-col justify-between flex-1 shadow-2xl">
@@ -2365,6 +2432,38 @@ export default function UploadPage() {
                   )
                 ) : activeMode === "scratch" ? (
                   (() => {
+                    if (scratchStep === 1) {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
+                          <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
+                            <Layers className="w-6 h-6 text-slate-650" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Set Up Room Geometry</p>
+                            <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
+                              Enter your space dimensions and configuration on the left to start the pre-generation.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (scratchStep === 2) {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn">
+                          <div className="w-14 h-14 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 relative">
+                            <div className="absolute inset-0 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <Sparkles className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Pre-rendering 3D Layout Styles</p>
+                            <p className="text-[9px] text-slate-550 max-w-[220px] mt-1 leading-relaxed">
+                              Generating and caching style/facing/layout variations for your space.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const displayImg = getTemplateImage(selectedStyle, houseFacing, selectedLayoutTemplate as any);
 
                     return (

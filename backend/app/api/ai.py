@@ -143,3 +143,70 @@ async def get_template_image_endpoint(
         
     # Fallback redirect to pollinations directly
     return RedirectResponse(url)
+
+@router.post("/pre-generate-templates")
+async def pre_generate_templates(
+    room_type: str = Form(...)
+):
+    """
+    Pre-generates all 40 combinations (5 styles * 4 directions * 2 layouts)
+    for a chosen room type in the background concurrently.
+    """
+    styles = ["Modern", "Japandi", "Scandinavian", "Minimalist", "Luxury"]
+    directions = ["North", "East", "West", "South"]
+    layouts = ["layout-a", "layout-b"]
+    
+    import concurrent.futures
+    
+    def generate_single_combination(style: str, direction: str, layout: str):
+        # Sanitize inputs for filename
+        safe_room = "".join(c for c in room_type if c.isalnum() or c in " -_").replace(" ", "_")
+        safe_style = "".join(c for c in style if c.isalnum() or c in " -_").replace(" ", "_")
+        safe_direction = "".join(c for c in direction if c.isalnum() or c in " -_").replace(" ", "_")
+        safe_layout = "".join(c for c in layout if c.isalnum() or c in " -_").replace(" ", "_")
+        
+        filename = f"{safe_room}_{safe_style}_{safe_direction}_{safe_layout}.jpg"
+        dir_path = "static/templates"
+        os.makedirs(dir_path, exist_ok=True)
+        file_path = os.path.join(dir_path, filename)
+        
+        # Check if it already exists
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            return True
+            
+        layout_suffix = "layout option A, balanced furniture setup" if layout == "layout-a" else "layout option B, cozy corner layout"
+        seed = 1001 if layout == "layout-a" else 2002
+        
+        prompt = f"Generate an image where the room is {room_type} the style is {style} and the door of the current room is {direction} facing, {layout_suffix}"
+        encoded_prompt = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
+        
+        try:
+            with httpx.Client(timeout=30.0) as client:
+                response = client.get(url)
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    return True
+        except Exception as e:
+            print(f"Error pre-generating template: {e}")
+        return False
+
+    loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+        futures = []
+        for style in styles:
+            for direction in directions:
+                for layout in layouts:
+                    futures.append(
+                        loop.run_in_executor(
+                            executor,
+                            generate_single_combination,
+                            style,
+                            direction,
+                            layout
+                        )
+                    )
+        await asyncio.gather(*futures)
+        
+    return {"status": "success", "message": f"Pre-generated combinations for {room_type}"}
