@@ -15,7 +15,8 @@ import {
   RefreshCw,
   LogOut,
   User,
-  Home
+  Home,
+  DollarSign
 } from "lucide-react";
 
 const getFurnishedTemplateObjects = (
@@ -164,44 +165,78 @@ export default function UploadPage() {
   const [customBedroomName, setCustomBedroomName] = useState<string>("");
   const [houseFacing, setHouseFacing] = useState<string>("North");
   const [selectedLayoutTemplate, setSelectedLayoutTemplate] = useState<string>("layout-a");
-  const [isPreGenerating, setIsPreGenerating] = useState<boolean>(false);
+  const [numBedrooms, setNumBedrooms] = useState<string>("3");
+  const [mainDoorDirection, setMainDoorDirection] = useState<string>("North");
+  const [kitchenDoorDirection, setKitchenDoorDirection] = useState<string>("East");
+  const [numBathrooms, setNumBathrooms] = useState<string>("2");
+  const [numBalconies, setNumBalconies] = useState<string>("2");
+  const [dimensionsHouse, setDimensionsHouse] = useState<string>("30 ft * 40 ft");
+  const [dimensionsEachRoom, setDimensionsEachRoom] = useState<string>("Hall: 15x20, Kitchen: 10x12, Master Bed: 14x16, Bath: 8x6");
+  const [numWindows, setNumWindows] = useState<string>("6");
+  const [numDoors, setNumDoors] = useState<string>("8");
+  const [numFloors, setNumFloors] = useState<string>("2");
+  const [roomsPerFloor, setRoomsPerFloor] = useState<string>("Floor 1: Hall, Kitchen, Bath. Floor 2: 2 Bedrooms, Bath.");
+  const [rooftopDesign, setRooftopDesign] = useState<string>("Garden seating area with turf and pergola");
+  const [budgetSelection, setBudgetSelection] = useState<string>("Mid-Range");
+  const [selectedRoomToDesign, setSelectedRoomToDesign] = useState<string>("Hall");
+  const [scratchDesigns, setScratchDesigns] = useState<Array<{id: string, style: string, image_url: string}>>([]);
+  const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
+  const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
 
-  const triggerPreGeneration = async (targetRoom: string) => {
-    setIsPreGenerating(true);
+  const triggerScratchGeneration = async () => {
+    setIsGeneratingScratch(true);
+    setScratchStep(4); // Move to background progress step
     try {
-      const formData = new FormData();
-      formData.append("room_type", targetRoom);
+      const pId = projectId || crypto.randomUUID();
+      if (!projectId) {
+        setProjectId(pId);
+        sessionStorage.setItem("homeverse_project_id", pId);
+      }
 
-      const res = await fetch("http://localhost:8080/api/ai/pre-generate-templates", {
+      // Consolidate house details
+      const detailsObj = {
+        mainDoorDirection,
+        kitchenDoorDirection,
+        numBedrooms,
+        numBathrooms,
+        numBalconies,
+        dimensionsHouse,
+        dimensionsEachRoom,
+        numWindows,
+        numDoors,
+        ...(propertyType === "independent" ? { numFloors, roomsPerFloor, rooftopDesign } : {})
+      };
+
+      const formData = new FormData();
+      formData.append("project_id", pId);
+      formData.append("room_type", selectedRoomToDesign);
+      formData.append("budget", budgetSelection);
+      formData.append("property_type", propertyType);
+      formData.append("house_details", JSON.stringify(detailsObj));
+
+      const res = await fetch("http://localhost:8080/api/ai/generate-scratch-designs", {
         method: "POST",
         body: formData
       });
 
       if (!res.ok) {
-        throw new Error("Failed to pre-generate template images.");
+        throw new Error("Failed to generate custom designs.");
       }
 
-      setScratchStep(3); // Advance to Step 3 automatically
+      const data = await res.json();
+      setScratchDesigns(data);
+      if (data.length > 0) {
+        setSelectedScratchDesignId(data[0].id);
+        setSelectedStyle(data[0].style);
+      }
+      setScratchStep(5); // Move to selection options step
     } catch (err: any) {
       console.error(err);
-      // Advance to step 3 regardless to avoid blocking user flow
-      setScratchStep(3);
+      setError(err.message || "Failed to generate designs. Please try again.");
+      setScratchStep(3); // Go back to room choice step
     } finally {
-      setIsPreGenerating(false);
+      setIsGeneratingScratch(false);
     }
-  };
-
-  const handleStep1Submit = () => {
-    let targetRoom = roomType;
-    if (roomType === "Other") {
-      targetRoom = customRoomType.trim() || "Custom Room";
-    } else if (roomType === "Bedroom") {
-      targetRoom = bedroomNameType === "Custom"
-        ? (customBedroomName.trim() || "Custom Bedroom")
-        : bedroomNameType;
-    }
-    setScratchStep(2);
-    triggerPreGeneration(targetRoom);
   };
 
   // LiDAR scan states
@@ -661,171 +696,22 @@ export default function UploadPage() {
   };
 
   const handleCreateFromScratch = async () => {
-    setError(null);
-    setUploadStep("uploading");
-
-    const userId = user?.id || "d0000000-0000-0000-0000-000000000000";
-
-    try {
-      // Parse room dimensions input
-      let calculatedWidth = 5.0;
-      let calculatedDepth = 5.0;
-      try {
-        const normalized = dimensionsInput.toLowerCase().replace(/\s+/g, "").replace(/x/g, "*");
-        const parts = normalized.split("*");
-        if (parts.length >= 2) {
-          const part1 = parts[0];
-          const part2 = parts[1];
-          const num1 = parseFloat(part1) || 5.0;
-          const num2 = parseFloat(part2) || 5.0;
-          
-          let isFt1 = part1.includes("ft") || part1.includes("feet") || part1.includes("'");
-          let isFt2 = part2.includes("ft") || part2.includes("feet") || part2.includes("'");
-          
-          if (!isFt1 && !part1.includes("m") && num1 > 6.0) {
-            isFt1 = true;
-          }
-          if (!isFt2 && !part2.includes("m") && num2 > 6.0) {
-            isFt2 = true;
-          }
-          
-          calculatedWidth = isFt1 ? num1 * 0.3048 : num1;
-          calculatedDepth = isFt2 ? num2 * 0.3048 : num2;
-        }
-      } catch (e) {
-        console.warn("Error parsing input dimensions:", e);
-      }
-      
-      // Keep dimensions in reasonable bounds
-      calculatedWidth = Math.max(2.0, Math.min(20.0, Math.round(calculatedWidth * 100) / 100));
-      calculatedDepth = Math.max(2.0, Math.min(20.0, Math.round(calculatedDepth * 100) / 100));
-      
-      // Calculate derived square footage for database tracking
-      const sqFtValue = Math.round((calculatedWidth * calculatedDepth) / 0.0929);
-
-      const structAnalysisObj = {
-        property_type: propertyType,
-        apartment_type: null,
-        community_block: null,
-        has_floor_plan: hasFloorPlan,
-        square_footage: sqFtValue,
-        room_width: calculatedWidth,
-        room_depth: calculatedDepth,
-        source: "scratch"
-      };
-      const structAnalysisStr = JSON.stringify(structAnalysisObj);
-
-      // 1. Create project on backend
-      let projTitle = "";
-      let finalRoomType = roomType;
-      
-      if (roomType === "Bedroom") {
-        projTitle = bedroomNameType === "Custom" 
-          ? (customBedroomName.trim() || "Custom Bedroom") 
-          : bedroomNameType;
-      } else if (roomType === "Other") {
-        projTitle = customRoomType.trim() || "My Custom Room";
-        finalRoomType = customRoomType.trim() || "Other";
-      } else {
-        projTitle = projectTitle.trim() || `My ${roomType} Design`;
-      }
-
-      let projectIdFromBackend = null;
-      try {
-        const projRes = await fetch("http://localhost:8080/api/projects/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            title: projTitle,
-            room_type: finalRoomType,
-            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
-            user_id: userId,
-            structural_analysis: structAnalysisStr
-          })
-        });
-        if (projRes.ok) {
-          const projectData = await projRes.json();
-          projectIdFromBackend = projectData.id;
-        }
-      } catch (err) {
-        console.warn("Backend project creation failed, fallback to client UUID:", err);
-      }
-
-      const activeProjId = projectIdFromBackend || crypto.randomUUID();
-      setProjectId(activeProjId);
-      sessionStorage.setItem("homeverse_project_id", activeProjId);
-      sessionStorage.setItem("homeverse_project_title", projTitle);
-      sessionStorage.setItem("homeverse_room_type", finalRoomType);
-
-      // 2. Create design on backend
-      let designIdFromBackend = null;
-      try {
-        const designRes = await fetch("http://localhost:8080/api/designs/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            project_id: activeProjId,
-            style: selectedStyle,
-            image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
-            selected: true
-          })
-        });
-        if (designRes.ok) {
-          const designData = await designRes.json();
-          designIdFromBackend = designData.id;
-        }
-      } catch (err) {
-        console.warn("Backend design creation failed:", err);
-      }
-
-      const activeDesignId = designIdFromBackend || crypto.randomUUID();
-
-      // 3. Pre-populate layout template objects on the backend database
-      const templateObjects = getFurnishedTemplateObjects(finalRoomType, selectedStyle, houseFacing, calculatedWidth, calculatedDepth);
-      const designObjectsToSave = [
-        { object_type: "floor", material: selectedStyle === "Luxury" ? "granite" : "wood_light", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0 },
-        { object_type: "wall", material: selectedStyle === "Minimalist" ? "#ffffff" : selectedStyle === "Luxury" ? "#1e293b" : "#f1f5f9", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0 },
-        ...templateObjects
-      ];
-
-      for (const obj of designObjectsToSave) {
-        try {
-          await fetch(`http://localhost:8080/api/designs/${activeDesignId}/objects`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(obj)
-          });
-        } catch (err) {
-          console.warn("Failed to pre-populate template object:", err);
-        }
-      }
-
-      const localDesign = {
-        id: activeDesignId,
-        style: selectedStyle,
-        image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350"
-      };
-
-      setGeneratedDesigns([localDesign]);
-      sessionStorage.setItem("homeverse_generated_designs", JSON.stringify([localDesign]));
-      sessionStorage.setItem("homeverse_selected_style", selectedStyle);
-      sessionStorage.setItem("homeverse_upload_step", "complete");
-      setUploadStep("complete");
-
-      // Redirect directly to studio
-      router.push(`/studio?style=${selectedStyle}&designId=${activeDesignId}`);
-
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to initialize scratch design.");
-      setUploadStep("idle");
+    if (!selectedScratchDesignId) {
+      setError("Please wait for design generation to complete or select an option.");
+      return;
     }
+    setError(null);
+    setUploadStep("complete");
+
+    // Save selected design details to sessionStorage
+    sessionStorage.setItem("homeverse_project_id", projectId || "");
+    sessionStorage.setItem("homeverse_project_title", `My Custom ${selectedRoomToDesign}`);
+    sessionStorage.setItem("homeverse_room_type", selectedRoomToDesign);
+    sessionStorage.setItem("homeverse_selected_style", selectedStyle);
+    sessionStorage.setItem("homeverse_upload_step", "complete");
+
+    // Redirect to studio with selected designId and style
+    router.push(`/studio?style=${selectedStyle}&designId=${selectedScratchDesignId}`);
   };
 
   const nextScratchStep = () => {
@@ -833,7 +719,11 @@ export default function UploadPage() {
   };
 
   const prevScratchStep = () => {
-    setScratchStep((prev) => prev - 1);
+    if (scratchStep === 5) {
+      setScratchStep(3); // skip step 4 loading page
+    } else {
+      setScratchStep((prev) => prev - 1);
+    }
   };
 
   const handleStartLidarScan = () => {
@@ -1931,20 +1821,19 @@ export default function UploadPage() {
                   )}
                 </div>
               )}
-
               {activeMode === "scratch" && (
                 <div className="space-y-4 flex-1 flex flex-col justify-between animate-fade-in">
                   <div className="bg-slate-900/20 border border-slate-850/80 p-4 rounded-2xl space-y-4">
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        Design Wizard: Step {scratchStep} of 3
+                        Design Wizard: Step {scratchStep} of 5
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3].map((s) => (
+                        {[1, 2, 3, 4, 5].map((s) => (
                           <div
                             key={s}
-                            className={`w-4 h-1.5 rounded-full transition-all ${
+                            className={`w-3.5 h-1.5 rounded-full transition-all ${
                               s === scratchStep
                                 ? "bg-blue-500"
                                 : s < scratchStep
@@ -1956,27 +1845,15 @@ export default function UploadPage() {
                       </div>
                     </div>
 
-                    {/* STEP 1: Room Details Configuration */}
+                    {/* STEP 1: House Type Details Form */}
                     {scratchStep === 1 && (
-                      <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
-                        {/* Property Type */}
+                      <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+                        {/* Property Type Selection */}
                         <div className="space-y-1.5">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
                             Property Type
                           </label>
                           <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setPropertyType("independent")}
-                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
-                                propertyType === "independent"
-                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <span className="font-bold text-xs">🏠 Independent House</span>
-                              <span className="text-[9px] text-slate-500 font-normal">Villa or duplex.</span>
-                            </button>
                             <button
                               type="button"
                               onClick={() => setPropertyType("apartment")}
@@ -1989,292 +1866,332 @@ export default function UploadPage() {
                               <span className="font-bold text-xs">🏢 Apartment / Flat</span>
                               <span className="text-[9px] text-slate-500 font-normal">Multistory flat.</span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setPropertyType("independent")}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                                propertyType === "independent"
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <span className="font-bold text-xs">🏠 Independent House</span>
+                              <span className="text-[9px] text-slate-500 font-normal">Villa, Duplex, or Bungalow.</span>
+                            </button>
                           </div>
                         </div>
 
-                        {/* Floor Plan Share */}
-                        <div className="space-y-1.5">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Floor Plan Option
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setHasFloorPlan("no")}
-                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
-                                hasFloorPlan === "no"
-                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <span className="font-bold text-xs">📐 Draw Manually</span>
-                              <span className="text-[9px] text-slate-500 font-normal">Draw room layout manually.</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setHasFloorPlan("yes")}
-                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
-                                hasFloorPlan === "yes"
-                                  ? "bg-blue-950/20 border-blue-500 text-blue-400"
-                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <span className="font-bold text-xs">📂 Share Floor Plan</span>
-                              <span className="text-[9px] text-slate-500 font-normal">Upload blueprint scan.</span>
-                            </button>
-                          </div>
-                          {hasFloorPlan === "yes" && (
-                            <div className="border border-dashed border-slate-800 rounded-xl p-2.5 bg-slate-950 flex items-center justify-center text-[9px] text-slate-500 cursor-pointer hover:border-slate-700">
-                              📎 Attach Floorplan Image (PNG/JPG)
+                        {/* If Independent House: Floors and Rooms on Floors info */}
+                        {propertyType === "independent" && (
+                          <div className="space-y-3 animate-fadeIn border-l-2 border-blue-900/40 pl-2">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                                Number of Floors
+                              </label>
+                              <select
+                                value={numFloors}
+                                onChange={(e) => setNumFloors(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
+                              >
+                                <option value="1">1 Floor (Single Storey)</option>
+                                <option value="2">2 Floors (Duplex)</option>
+                                <option value="3">3 Floors (Triplex)</option>
+                                <option value="4+">4+ Floors</option>
+                              </select>
                             </div>
-                          )}
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                                Rooms Present on Each Floor
+                              </label>
+                              <textarea
+                                value={roomsPerFloor}
+                                onChange={(e) => setRoomsPerFloor(e.target.value)}
+                                placeholder="e.g. Ground: Living Room, Kitchen. First floor: 2 Bedrooms."
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none transition-colors h-14 resize-none font-sans"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                                Rooftop Design Intent / Plan
+                              </label>
+                              <textarea
+                                value={rooftopDesign}
+                                onChange={(e) => setRooftopDesign(e.target.value)}
+                                placeholder="e.g. Roof garden, lounge space with turf, open kitchen."
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none transition-colors h-14 resize-none font-sans"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* General House Layout Fields */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              No. of Bedrooms
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={numBedrooms}
+                              onChange={(e) => setNumBedrooms(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              No. of Bathrooms
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={numBathrooms}
+                              onChange={(e) => setNumBathrooms(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
                         </div>
 
-                        {/* Room Dimensions */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                              Main Door Facing
+                            </label>
+                            <select
+                              value={mainDoorDirection}
+                              onChange={(e) => setMainDoorDirection(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
+                            >
+                              <option value="North">North</option>
+                              <option value="East">East</option>
+                              <option value="West">West</option>
+                              <option value="South">South</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                              Kitchen Door Facing
+                            </label>
+                            <select
+                              value={kitchenDoorDirection}
+                              onChange={(e) => setKitchenDoorDirection(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
+                            >
+                              <option value="North">North</option>
+                              <option value="East">East</option>
+                              <option value="West">West</option>
+                              <option value="South">South</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              No. of Balconies
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              value={numBalconies}
+                              onChange={(e) => setNumBalconies(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              House Dimensions
+                            </label>
+                            <input
+                              type="text"
+                              value={dimensionsHouse}
+                              onChange={(e) => setDimensionsHouse(e.target.value)}
+                              placeholder="e.g. 30 ft * 40 ft"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              No. of Windows
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={numWindows}
+                              onChange={(e) => setNumWindows(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
+                              No. of Doors
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={numDoors}
+                              onChange={(e) => setNumDoors(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        </div>
+
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                            Room Dimensions
+                            Dimensions of Each Room
                           </label>
-                          <input
-                            type="text"
-                            value={dimensionsInput}
-                            onChange={(e) => setDimensionsInput(e.target.value)}
-                            placeholder="e.g. 3.63 m * 3.94 m or 12 ft * 15 ft"
-                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
+                          <textarea
+                            value={dimensionsEachRoom}
+                            onChange={(e) => setDimensionsEachRoom(e.target.value)}
+                            placeholder="e.g. Kitchen: 10x12, Living Room: 15x20, Bathroom: 6x8"
+                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none transition-colors h-14 resize-none font-sans"
                           />
                         </div>
 
-                        {/* Room Type */}
-                        <div className="flex flex-col gap-1">
+                        <div className="space-y-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                            Room Type
+                            House Plan Blueprint / Screenshot
                           </label>
-                          <select
-                            value={roomType}
-                            onChange={(e) => setRoomType(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
-                          >
-                            <option value="Living Room">Living Room</option>
-                            <option value="Bedroom">Bedroom</option>
-                            <option value="Office">Home Office</option>
-                            <option value="Kitchen">Kitchen/Dining</option>
-                            <option value="Other">Other (Custom Type...)</option>
-                          </select>
+                          <div className="border border-dashed border-slate-800 rounded-xl p-3 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-450 cursor-pointer hover:border-slate-700/80 transition-colors">
+                            <Upload className="w-5 h-5 text-slate-500 mb-1" />
+                            <span>Attach Plan File (PDF/PNG/JPG)</span>
+                          </div>
                         </div>
-
-                        {/* Custom Room Type input */}
-                        {roomType === "Other" && (
-                          <div className="flex flex-col gap-1 animate-fadeIn">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                              Custom Room Title / Type
-                            </label>
-                            <input
-                              type="text"
-                              value={customRoomType}
-                              onChange={(e) => {
-                                setCustomRoomType(e.target.value);
-                                setProjectTitle(e.target.value);
-                              }}
-                              placeholder="e.g. Home Gym, Media Room, Library"
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                            />
-                          </div>
-                        )}
-
-                        {/* Bedroom Type selectors */}
-                        {roomType === "Bedroom" && (
-                          <div className="space-y-3 animate-fadeIn">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                                Choose Bedroom Name
-                              </label>
-                              <select
-                                value={bedroomNameType}
-                                onChange={(e) => setBedroomNameType(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
-                              >
-                                <option value="Master Bedroom">Master Bedroom</option>
-                                <option value="Kids Bedroom">Kids Bedroom</option>
-                                <option value="Guest Bedroom">Guest Bedroom</option>
-                                <option value="Teen Bedroom">Teen Bedroom</option>
-                                <option value="Custom">Custom Bedroom Name...</option>
-                              </select>
-                            </div>
-
-                            {bedroomNameType === "Custom" && (
-                              <div className="flex flex-col gap-1 animate-fadeIn">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                                  Custom Bedroom Name
-                                </label>
-                                <input
-                                  type="text"
-                                  value={customBedroomName}
-                                  onChange={(e) => {
-                                    setCustomBedroomName(e.target.value);
-                                    setProjectTitle(e.target.value);
-                                  }}
-                                  placeholder="e.g. Anisha's Bedroom"
-                                  className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Design Title */}
-                        {roomType !== "Other" && roomType !== "Bedroom" && (
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                              Design Title / Name
-                            </label>
-                            <input
-                              type="text"
-                              value={projectTitle === "My Interior Design" ? `My Custom Room` : projectTitle}
-                              onChange={(e) => setProjectTitle(e.target.value)}
-                              placeholder="e.g. Dream Living Room"
-                              className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors"
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
 
-                    {/* STEP 2: Background Image Generation Progress */}
+                    {/* STEP 2: Budget selection */}
                     {scratchStep === 2 && (
-                      <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[360px] animate-fadeIn">
-                        <div className="relative w-20 h-20 flex items-center justify-center">
-                          <div className="absolute inset-0 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                          <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
+                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Design Budget Tier</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Select a matching budget target for spatial furnishing suggestions.</p>
                         </div>
-                        <div className="space-y-2">
-                          <h3 className="font-bold text-sm text-slate-200">Image Generation In Progress</h3>
-                          <p className="text-[10px] text-slate-450 max-w-[240px] leading-relaxed">
-                            Pre-rendering design style and layout template combinations for your custom <span className="text-blue-400 font-semibold">{roomType}</span> space. Please wait...
-                          </p>
-                        </div>
-                        <div className="w-full bg-slate-900 border border-slate-850/80 p-2.5 rounded-xl text-[9px] text-slate-500 font-mono text-left max-w-[260px] space-y-1">
-                          <div className="flex justify-between items-center text-blue-400 animate-pulse">
-                            <span>⚡ Generating styles...</span>
-                            <span>[RUNNING]</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* STEP 3: Style, Facing & Layout options selection */}
-                    {scratchStep === 3 && (
-                      <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-                        {/* Starting Preset */}
-                        <div className="grid grid-cols-2 gap-3.5">
-                          {/* Style Theme */}
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                              Style Theme
-                            </label>
-                            <div className="grid grid-cols-2 gap-1 py-1">
-                              {styles.map((style) => (
-                                <button
-                                  key={style.name}
-                                  type="button"
-                                  onClick={() => setSelectedStyle(style.name)}
-                                  className={`rounded-lg py-1 text-center transition-all cursor-pointer border text-[9px] font-bold ${
-                                    selectedStyle === style.name
-                                      ? "bg-blue-600 border-blue-500 text-white shadow-md"
-                                      : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
-                                  }`}
-                                >
-                                  {style.name}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* House Facing */}
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                              House Facing
-                            </label>
-                            <div className="grid grid-cols-2 gap-1 py-1">
-                              {["North", "East", "West", "South"].map((dir) => (
-                                <button
-                                  key={dir}
-                                  type="button"
-                                  onClick={() => setHouseFacing(dir)}
-                                  className={`rounded-lg py-1 text-center transition-all cursor-pointer border text-[9px] font-bold ${
-                                    houseFacing === dir
-                                      ? "bg-blue-600 border-blue-500 text-white shadow-md"
-                                      : "bg-slate-900 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-850"
-                                  }`}
-                                >
-                                  {dir}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Fully Furnished Templates */}
-                        <div className="space-y-1.5 pt-0.5 animate-fadeIn">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Select Fully Furnished Template Option
-                          </label>
-                          <div className="grid grid-cols-2 gap-3">
-                            {/* Option 1: Layout A */}
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {[
+                            { name: "Economy", desc: "Cost-efficient, functional space saving layout and off-the-shelf furnishings.", icon: "💰" },
+                            { name: "Mid-Range", desc: "Curated premium finishes, statement items, balanced style elements.", icon: "💎" },
+                            { name: "Luxury", desc: "High-end bespoke materials (marble/custom metal), custom built-ins, statement lighting.", icon: "✨" }
+                          ].map((tier) => (
                             <button
                               type="button"
-                              onClick={() => setSelectedLayoutTemplate("layout-a")}
-                              className={`p-2.5 rounded-xl border text-left space-y-1.5 transition-all cursor-pointer flex flex-col h-36 group ${
-                                selectedLayoutTemplate === "layout-a"
-                                  ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-lg"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
-                                <img
-                                  src={getTemplateImage(selectedStyle, houseFacing, "layout-a")}
-                                  alt="Layout A"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                                <span className="absolute bottom-1 left-1 text-[7px] bg-blue-950/95 text-blue-400 border border-blue-800/40 px-1 py-0.2 rounded font-mono font-bold">
-                                  Balanced Layout
-                                </span>
-                              </div>
-                              <div>
-                                <h4 className="font-extrabold text-[10px] text-slate-200 leading-tight">Balanced Center Setup</h4>
-                                <p className="text-[8px] text-slate-500 font-sans mt-0.5 leading-snug line-clamp-1">
-                                  Centered seating/bed alignment optimized for traffic flow.
-                                </p>
-                              </div>
-                            </button>
-
-                            {/* Option 2: Layout B */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedLayoutTemplate("layout-b")}
-                              className={`p-2.5 rounded-xl border text-left space-y-1.5 transition-all cursor-pointer flex flex-col h-36 group ${
-                                selectedLayoutTemplate === "layout-b"
-                                  ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-lg"
+                              key={tier.name}
+                              onClick={() => setBudgetSelection(tier.name)}
+                              className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                                budgetSelection === tier.name
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400 animate-pulse"
                                   : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                               }`}
                             >
-                              <div className="relative w-full h-18 rounded-lg overflow-hidden border border-slate-800/80">
-                                <img
-                                  src={getTemplateImage(selectedStyle, houseFacing, "layout-b")}
-                                  alt="Layout B"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                                <span className="absolute bottom-1 left-1 text-[7px] bg-emerald-950/95 text-emerald-450 border border-emerald-800/40 px-1 py-0.2 rounded font-mono font-bold">
-                                  Corner Accent Layout
-                                </span>
-                              </div>
-                              <div>
-                                <h4 className="font-extrabold text-[10px] text-slate-200 leading-tight">Cosy Corner Concept</h4>
-                                <p className="text-[8px] text-slate-500 font-sans mt-0.5 leading-snug line-clamp-1">
-                                  Maximizes visual space by placing focal furniture along side walls.
-                                </p>
+                              <span className="text-xl mt-0.5">{tier.icon}</span>
+                              <div className="space-y-0.5">
+                                <h4 className="font-bold text-xs text-slate-200">{tier.name}</h4>
+                                <p className="text-[9px] font-sans text-slate-500 leading-normal">{tier.desc}</p>
                               </div>
                             </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 3: Room Choice to design first */}
+                    {scratchStep === 3 && (
+                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Select Room to Design First</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Now that the house structure is defined, choose where we start designing.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: "Hall", label: "Hall / Living Room" },
+                            { id: "Master Bedroom", label: "Master Bedroom" },
+                            { id: "Second Bedroom", label: "Second Bedroom" },
+                            { id: "Kids Bedroom", label: "Kids Bedroom" },
+                            { id: "Dining room", label: "Dining Room" },
+                            { id: "Kitchen", label: "Kitchen" },
+                            { id: "foyer", label: "Foyer" },
+                            { id: "bathrooms", label: "Bathroom" }
+                          ].map((room) => (
+                            <button
+                              type="button"
+                              key={room.id}
+                              onClick={() => setSelectedRoomToDesign(room.id)}
+                              className={`p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs h-16 flex items-center justify-center ${
+                                selectedRoomToDesign === room.id
+                                  ? "bg-blue-950/20 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              {room.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 4: Pre-generation Loader */}
+                    {scratchStep === 4 && (
+                      <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[320px] animate-fadeIn">
+                        <div className="relative w-16 h-16 flex items-center justify-center">
+                          <div className="absolute inset-0 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                          <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="font-bold text-sm text-slate-200">Image Generation In Progress</h3>
+                          <p className="text-[10px] text-slate-455 max-w-[240px] leading-relaxed">
+                            Pre-rendering the 6 styled design options for your selected <span className="text-blue-400 font-semibold">{selectedRoomToDesign}</span> space. Please wait...
+                          </p>
+                        </div>
+                        <div className="w-full bg-slate-900 border border-slate-850/80 p-2.5 rounded-xl text-[9px] text-slate-500 font-mono text-left max-w-[260px] space-y-1">
+                          <div className="flex justify-between items-center text-emerald-450 animate-pulse">
+                            <span>⚡ Launching parallel style GPUs...</span>
+                            <span>[ACTIVE]</span>
                           </div>
+                          <div className="text-[8px] text-slate-655 leading-snug">Generating Modern, Scandinavian, Modern Luxury, Japandi, Industrial, Contemporary renders.</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 5: Selection grid for the 6 styles */}
+                    {scratchStep === 5 && (
+                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Select Design Style</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Choose your preferred setup style to load in the 3D space.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {scratchDesigns.map((design) => (
+                            <button
+                              type="button"
+                              key={design.id}
+                              onClick={() => {
+                                setSelectedScratchDesignId(design.id);
+                                setSelectedStyle(design.style);
+                              }}
+                              className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all cursor-pointer group ${
+                                selectedScratchDesignId === design.id
+                                  ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                              }`}
+                            >
+                              <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-850">
+                                <img
+                                  src={design.image_url}
+                                  alt={design.style}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-[10px] text-slate-200 leading-tight">{design.style}</h4>
+                              </div>
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -2282,7 +2199,7 @@ export default function UploadPage() {
 
                   {/* Navigation controls */}
                   <div className="flex gap-2.5">
-                    {scratchStep > 1 && scratchStep !== 2 && (
+                    {scratchStep > 1 && scratchStep !== 4 && (
                       <button
                         type="button"
                         onClick={prevScratchStep}
@@ -2295,18 +2212,38 @@ export default function UploadPage() {
                     {scratchStep === 1 && (
                       <button
                         type="button"
-                        onClick={handleStep1Submit}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs"
+                        onClick={() => setScratchStep(2)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
                       >
-                        Continue to Style Options <ArrowRight className="w-3.5 h-3.5" />
+                        Continue to Budget <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {scratchStep === 2 && (
+                      <button
+                        type="button"
+                        onClick={() => setScratchStep(3)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
+                      >
+                        Select Room to Design <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
 
                     {scratchStep === 3 && (
                       <button
                         type="button"
+                        onClick={triggerScratchGeneration}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-pulse animate-fadeIn"
+                      >
+                        Generate 6 Styled Options <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {scratchStep === 5 && (
+                      <button
+                        type="button"
                         onClick={handleCreateFromScratch}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce animate-fadeIn"
                       >
                         Open Studio Space <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -2316,7 +2253,6 @@ export default function UploadPage() {
               )}
             </div>
           </div>
-          {/* Right Side: Demo showcase preview */}
           <div className="w-full md:w-1/2 flex flex-col gap-6">
             <div className="glass-panel p-6 rounded-3xl border-slate-800/80 space-y-4 flex flex-col justify-between flex-1 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-900">
@@ -2439,9 +2375,9 @@ export default function UploadPage() {
                             <Layers className="w-6 h-6 text-slate-650" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-300">Set Up Room Geometry</p>
+                            <p className="text-xs font-bold text-slate-300">Set Up House Geometry</p>
                             <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
-                              Enter your space dimensions and configuration on the left to start the pre-generation.
+                              Enter your apartment or independent house details on the left, then click continue.
                             </p>
                           </div>
                         </div>
@@ -2449,22 +2385,53 @@ export default function UploadPage() {
                     }
                     if (scratchStep === 2) {
                       return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
+                          <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
+                            <DollarSign className="w-6 h-6 text-slate-650" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Set Design Budget Tier</p>
+                            <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
+                              Choose a budget style class to align material presets and furnishing tiers.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (scratchStep === 3) {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
+                          <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
+                            <Home className="w-6 h-6 text-slate-650" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Select Initial Target Room</p>
+                            <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
+                              Select which room you want to design first (e.g. Hall, Master Bedroom, Kitchen).
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (scratchStep === 4) {
+                      return (
                         <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn">
                           <div className="w-14 h-14 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 relative">
                             <div className="absolute inset-0 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                             <Sparkles className="w-5 h-5 text-blue-400" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-300">Pre-rendering 3D Layout Styles</p>
+                            <p className="text-xs font-bold text-slate-300">Pre-rendering 6 Design Variations</p>
                             <p className="text-[9px] text-slate-550 max-w-[220px] mt-1 leading-relaxed">
-                              Generating and caching style/facing/layout variations for your space.
+                              Executing 6 parallel GPU model runs for Modern, Scandinavian, Modern Luxury, Japandi, Industrial, and Contemporary.
                             </p>
                           </div>
                         </div>
                       );
                     }
 
-                    const displayImg = getTemplateImage(selectedStyle, houseFacing, selectedLayoutTemplate as any);
+                    const activeDesign = scratchDesigns.find((d) => d.id === selectedScratchDesignId);
+                    const displayImg = activeDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600";
 
                     return (
                       <div className="relative w-full h-full animate-fadeIn group">
@@ -2478,23 +2445,23 @@ export default function UploadPage() {
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent p-4 pt-10">
                           <div className="flex flex-wrap gap-1.5 items-center mb-1.5">
                             <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                              {roomType || "Living Room"}
+                              {selectedRoomToDesign}
                             </span>
                             <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 font-bold font-mono px-2 py-0.5 rounded uppercase">
                               {selectedStyle} Theme
                             </span>
                             <span className="text-[8px] bg-amber-500/10 border border-amber-500/25 text-amber-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                              {houseFacing} Facing
+                              {budgetSelection} Budget
                             </span>
                           </div>
                           
                           <h3 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                            {selectedLayoutTemplate === "layout-a" ? "Balanced Setup Preview" : "Cosy Corner Setup Preview"}
+                            {selectedStyle} Style Option Preview
                           </h3>
                           
                           <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                            Furnished template matching <span className="font-mono text-slate-300 font-semibold">{dimensionsInput || "standard dimensions"}</span>. Standard minimalist meshes will align automatically upon workspace load.
+                            Layout matching your home specifications. Main Door facing <span className="font-mono text-slate-350">{mainDoorDirection}</span>, Kitchen Door facing <span className="font-mono text-slate-350">{kitchenDoorDirection}</span>.
                           </p>
                         </div>
                       </div>

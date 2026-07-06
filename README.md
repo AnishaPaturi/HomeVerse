@@ -83,8 +83,13 @@ A conversational sidebar allows users to modify the room using natural language:
 * *User*: "Add a 4x5 bedroom extension"  
   *AI Copilot*: *Adds a navigable custom room slab with built-in doorway opening.*
 
-### House Facing & Fully Furnished Templates
-At Step 5 of manual room construction, users choose the facing direction of their house (North, East, West, South) and pick between two dynamic fully-furnished layouts (e.g., Balanced Center Setup or Cosy Corner Concept). HomeVerse automatically pre-populates the workspace with coordinate-correct, style-synchronized furniture meshes that line up perfectly with design best practices.
+### "Start from Scratch" Home Configurator Wizard
+For users designing a space from scratch, HomeVerse provides an interactive 5-step configurator wizard:
+1. **House Geometry**: Select between Apartment or Independent House. Specify detailed structural information including bedrooms, bathrooms, main door direction, kitchen door direction, balconies, house dimensions, individual room dimensions, windows, doors, and upload a floor plan blueprint.
+2. **Budget Tiering**: Choose a budget class (Economy, Mid-Range, Luxury) to align material presets and furnishing suggestions.
+3. **Target Room Selection**: Select the first room to design (e.g. Hall, Master Bedroom, Second Bedroom, Kids Bedroom, Dining Room, Kitchen, Foyer, Bathroom).
+4. **Parallel Style Generation**: The backend triggers 6 parallel Pollinations AI image renders and Gemini coordinate model runs (generating Modern, Scandinavian, Modern Luxury, Japandi, Industrial, and Contemporary designs simultaneously) in under 6 seconds.
+5. **Style Option Selector**: Compare the 6 custom-generated renders instantly side-by-side, pick your favorite setup, and click "Open Studio Space" to launch the 3D interactive studio prepopulated with style-synchronized furniture coordinates.
 
 ### Direct Local Storage (Cloud-Free)
 To ensure maximum speed, data ownership, and seamless offline capability, HomeVerse saves uploaded photos and designs directly to the local disk at `static/uploads/`, eliminating high latency and dependencies on Cloudinary or AWS S3.

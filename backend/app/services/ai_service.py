@@ -1664,6 +1664,78 @@ class AIService:
             except Exception as e:
                 print(f"Error loading original file for Gemini: {e}")
 
+        room_requirements_text = ""
+        room_lower = room_type.lower()
+        if "hall" in room_lower or "living" in room_lower:
+            room_requirements_text = """Include these specific objects for Hall:
+            - Sofas (object_type: "sofa")
+            - Teepoy / Coffee table (object_type: "coffee_table")
+            - TV (object_type: "tv")
+            - Cabinet below TV (object_type: "sideboard")
+            - Wall decorations and show pieces (object_type: "mirror")
+            - Ceiling lights (object_type: "lamp")
+            - Side table between sofas (object_type: "nightstand")
+            - Blinds or curtains (object_type: "curtains" or "blinds")"""
+        elif "master bedroom" in room_lower:
+            room_requirements_text = """Include these specific objects for Master Bedroom:
+            - Bed with storage (object_type: "bed")
+            - Curtains or blinds (object_type: "curtains" or "blinds")
+            - Cupboards for storage (object_type: "wardrobe")
+            - TV unit (object_type: "tv")
+            - Window seat/storage (object_type: "bench")
+            - Show pieces (object_type: "plant_box")
+            - Dressing Table and storage (object_type: "console_table")
+            - Bedside table (object_type: "nightstand")
+            - AC (object_type: "lamp")"""
+        elif "second bedroom" in room_lower:
+            room_requirements_text = """Include these specific objects for Second Bedroom:
+            - Bed with storage (object_type: "bed")
+            - Curtains or blinds (object_type: "curtains" or "blinds")
+            - Cupboards for storage (object_type: "wardrobe")
+            - TV unit (object_type: "tv")
+            - Window seat/storage (object_type: "bench")
+            - Show pieces on a wall (object_type: "plant_box")
+            - Desk and chair (object_type: "desk" and "chair")
+            - Dressing Table (object_type: "console_table")
+            - Bedside table (object_type: "nightstand")
+            - AC (object_type: "lamp")
+            - Storage for used clothes (object_type: "stool")"""
+        elif "kids bedroom" in room_lower:
+            room_requirements_text = """Include these specific objects for Kids Bedroom:
+            - Bed with storage (object_type: "bed")
+            - Cupboards (object_type: "wardrobe")
+            - Desk and chair (object_type: "desk" and "chair")
+            - TV (object_type: "tv")
+            - AC (object_type: "lamp")
+            - Dressing Table (object_type: "console_table")
+            - Curtains or blinds (object_type: "curtains" or "blinds")
+            - Window seat (object_type: "bench")"""
+        elif "dining" in room_lower:
+            room_requirements_text = """Include these specific objects for Dining Room:
+            - Dining table with chairs (object_type: "dining_table" and "chair")
+            - Fridge (object_type: "sideboard")
+            - Crockery unit (object_type: "bookshelf")
+            - Storage cupboards (object_type: "wardrobe")
+            - Show pieces for walls (object_type: "plant_box" or "mirror")"""
+        elif "kitchen" in room_lower:
+            room_requirements_text = """Include these specific objects for Kitchen:
+            - Stove (object_type: "stool")
+            - Sink (object_type: "stool")
+            - Pantry (object_type: "wardrobe")
+            - Storage for oven/microwave (object_type: "sideboard")
+            - Kitchen platform (object_type: "desk")
+            - Fan or lighting (object_type: "lamp")"""
+        elif "foyer" in room_lower:
+            room_requirements_text = """Include these specific objects for Foyer:
+            - Wall designs and console table (object_type: "console_table" and "mirror")"""
+        elif "bathroom" in room_lower or "bath" in room_lower:
+            room_requirements_text = """Include these specific objects for Bathroom:
+            - Toilet/Latrine (object_type: "pouf")
+            - Sink (object_type: "stool")
+            - Glass door partition (object_type: "wall")
+            - Shower area (object_type: "bench")
+            - Taps and storage unit (object_type: "nightstand")"""
+
         prompt = f"""
         You are an AI Interior Designer and Architect.
         Analyze this room photo or video scan, and generate a customized interior design 3D layout for this space.
@@ -1692,7 +1764,8 @@ class AIService:
 
         Requirements:
         - You MUST include a floor object (object_type: "floor") and a wall object (object_type: "wall").
-        - You MUST include 3 to 7 furniture or decoration objects that match a {room_type} (e.g. if Bedroom: bed, nightstand, lamp, wardrobe; if Gym: mirror, bench, rack, plant; if Office: desk, chair, bookshelf, lamp; if Living Room: sofa, coffee_table, chair, lamp, tv, rug, plants).
+        - You MUST include these specific objects:
+        {room_requirements_text}
         - Choose materials and colors matching: {color_palette or style}.
 
         For each object specify:
@@ -1739,35 +1812,74 @@ class AIService:
             ]
 
             room_lower = room_type.lower()
-            if "bed" in room_lower:
-                default_objects.extend([
-                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 1.0, "material": "leather_brown"},
-                    {"object_type": "nightstand", "position_x": -1.5, "position_y": 0.0, "position_z": -3.5, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"},
-                    {"object_type": "lamp", "position_x": -1.5, "position_y": 0.6, "position_z": -3.5, "rotation": 0.0, "scale": 1.0, "material": "#fbbf24"}
-                ])
-            elif "office" in room_lower or "study" in room_lower:
-                default_objects.extend([
-                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 3.14, "scale": 1.0, "material": "wood_dark"},
-                    {"object_type": "chair", "position_x": 0.0, "position_y": 0.0, "position_z": -2.2, "rotation": 0.0, "scale": 1.0, "material": "leather_black"},
-                    {"object_type": "lamp", "position_x": -0.8, "position_y": 0.75, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#fafafa"}
-                ])
-            elif "kitchen" in room_lower or "dining" in room_lower:
-                default_objects.extend([
-                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "marble"},
-                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
-                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"}
-                ])
-            elif "gym" in room_lower:
-                default_objects.extend([
-                    {"object_type": "mirror", "position_x": 0.0, "position_y": 1.0, "position_z": -4.9, "rotation": 0.0, "scale": 1.5, "material": "marble"},
-                    {"object_type": "bench", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "leather_black"},
-                    {"object_type": "flower_pot", "position_x": -1.5, "position_y": 0.0, "position_z": -4.0, "rotation": 0.0, "scale": 1.0, "material": "#16a34a"}
-                ])
-            else:  # Living room and everything else
+            if "hall" in room_lower or "living" in room_lower:
                 default_objects.extend([
                     {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#9ca3af"},
                     {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": -2.0, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"},
-                    {"object_type": "lamp", "position_x": -1.5, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#f59e0b"}
+                    {"object_type": "tv", "position_x": 0.0, "position_y": 0.8, "position_z": -4.8, "rotation": 3.14, "scale": 1.0, "material": "leather_black"},
+                    {"object_type": "sideboard", "position_x": 0.0, "position_y": 0.0, "position_z": -4.8, "rotation": 3.14, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "mirror", "position_x": 1.8, "position_y": 1.2, "position_z": -3.0, "rotation": -1.57, "scale": 0.8, "material": "marble"},
+                    {"object_type": "lamp", "position_x": 0.0, "position_y": 2.5, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#f59e0b"},
+                    {"object_type": "nightstand", "position_x": 1.2, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 0.8, "material": "wood_light"},
+                    {"object_type": "curtains", "position_x": -1.9, "position_y": 1.2, "position_z": -3.0, "rotation": 1.57, "scale": 1.2, "material": "#fafafa"}
+                ])
+            elif "master bedroom" in room_lower:
+                default_objects.extend([
+                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 1.0, "material": "leather_brown"},
+                    {"object_type": "curtains", "position_x": -1.9, "position_y": 1.2, "position_z": -3.0, "rotation": 1.57, "scale": 1.2, "material": "#fafafa"},
+                    {"object_type": "wardrobe", "position_x": 1.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "tv", "position_x": 0.0, "position_y": 1.0, "position_z": -1.5, "rotation": 0.0, "scale": 0.8, "material": "leather_black"},
+                    {"object_type": "bench", "position_x": -1.8, "position_y": 0.4, "position_z": -2.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "console_table", "position_x": -1.5, "position_y": 0.0, "position_z": -4.0, "rotation": 0.0, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "nightstand", "position_x": -1.2, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 0.8, "material": "wood_dark"}
+                ])
+            elif "second bedroom" in room_lower:
+                default_objects.extend([
+                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 1.0, "material": "leather_brown"},
+                    {"object_type": "curtains", "position_x": -1.9, "position_y": 1.2, "position_z": -3.0, "rotation": 1.57, "scale": 1.2, "material": "#fafafa"},
+                    {"object_type": "wardrobe", "position_x": 1.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "desk", "position_x": -1.5, "position_y": 0.0, "position_z": -2.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "chair", "position_x": -1.0, "position_y": 0.0, "position_z": -2.0, "rotation": -1.57, "scale": 0.9, "material": "leather_black"},
+                    {"object_type": "console_table", "position_x": 1.2, "position_y": 0.0, "position_z": -4.5, "rotation": 3.14, "scale": 0.8, "material": "wood_light"},
+                    {"object_type": "nightstand", "position_x": -1.2, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 0.8, "material": "wood_dark"}
+                ])
+            elif "kids bedroom" in room_lower:
+                default_objects.extend([
+                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 3.14, "scale": 1.0, "material": "wood_light"},
+                    {"object_type": "wardrobe", "position_x": 1.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 1.0, "material": "wood_light"},
+                    {"object_type": "desk", "position_x": -1.5, "position_y": 0.0, "position_z": -2.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "chair", "position_x": -1.0, "position_y": 0.0, "position_z": -2.0, "rotation": -1.57, "scale": 0.9, "material": "leather_black"},
+                    {"object_type": "console_table", "position_x": 1.2, "position_y": 0.0, "position_z": -4.5, "rotation": 3.14, "scale": 0.8, "material": "wood_light"},
+                    {"object_type": "curtains", "position_x": -1.9, "position_y": 1.2, "position_z": -3.0, "rotation": 1.57, "scale": 1.2, "material": "#fafafa"}
+                ])
+            elif "dining" in room_lower:
+                default_objects.extend([
+                    {"object_type": "dining_table", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.1, "material": "wood_dark"},
+                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 0.9, "material": "wood_light"},
+                    {"object_type": "sideboard", "position_x": -1.8, "position_y": 0.0, "position_z": -4.0, "rotation": 1.57, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "bookshelf", "position_x": 1.8, "position_y": 0.0, "position_z": -4.0, "rotation": -1.57, "scale": 1.0, "material": "wood_light"}
+                ])
+            elif "kitchen" in room_lower:
+                default_objects.extend([
+                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": -3.5, "rotation": 0.0, "scale": 1.2, "material": "marble"},
+                    {"object_type": "sideboard", "position_x": -1.8, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "wardrobe", "position_x": 1.8, "position_y": 0.0, "position_z": -3.0, "rotation": -1.57, "scale": 1.0, "material": "wood_light"}
+                ])
+            elif "foyer" in room_lower:
+                default_objects.extend([
+                    {"object_type": "console_table", "position_x": 0.0, "position_y": 0.0, "position_z": -4.5, "rotation": 3.14, "scale": 1.0, "material": "wood_dark"},
+                    {"object_type": "mirror", "position_x": 0.0, "position_y": 1.2, "position_z": -4.8, "rotation": 0.0, "scale": 1.0, "material": "marble"}
+                ])
+            elif "bathroom" in room_lower or "bath" in room_lower:
+                default_objects.extend([
+                    {"object_type": "wall", "position_x": -0.8, "position_y": 1.0, "position_z": -3.0, "rotation": 1.57, "scale": 1.2, "material": "marble"},
+                    {"object_type": "stool", "position_x": 0.8, "position_y": 0.0, "position_z": -4.0, "rotation": 0.0, "scale": 0.8, "material": "wood_light"}
+                ])
+            else:
+                default_objects.extend([
+                    {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "#9ca3af"},
+                    {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": -2.0, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"}
                 ])
 
             result = {

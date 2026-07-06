@@ -210,3 +210,79 @@ async def pre_generate_templates(
         await asyncio.gather(*futures)
         
     return {"status": "success", "message": f"Pre-generated combinations for {room_type}"}
+
+from app.models.project import Project as ProjectModel
+import json
+
+@router.post("/generate-scratch-designs")
+async def generate_scratch_designs(
+    project_id: UUID = Form(...),
+    room_type: str = Form(...),
+    budget: str = Form(...),
+    property_type: str = Form(...),
+    house_details: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Generates 6 customized room designs in parallel representing the 6 design styles:
+    Modern, Scandinavian, Modern Luxury, Japandi, Industrial, Contemporary.
+    Saves them in the database under the project and returns the designs list.
+    """
+    # Create or update project details
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+        project = ProjectModel(
+            id=project_id,
+            title=f"My {room_type} Project",
+            room_type=room_type,
+            thumbnail=""
+        )
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+        
+    try:
+        analysis_data = {
+            "budget": budget,
+            "property_type": property_type,
+            "house_details": json.loads(house_details) if house_details.startswith(("{", "[")) else house_details
+        }
+        project.structural_analysis = json.dumps(analysis_data)
+        project.room_type = room_type
+        db.commit()
+    except Exception as e:
+        print(f"Error saving scratch project details: {e}")
+
+    # Top 6 House Design Styles
+    styles = ["Modern", "Scandinavian", "Modern Luxury", "Japandi", "Industrial", "Contemporary"]
+    
+    # Run all 6 dynamic generations in parallel
+    tasks = []
+    for style in styles:
+        tasks.append(
+            ai_service.generate_dynamic_design(
+                project_id=project_id,
+                room_type=room_type,
+                style=style,
+                color_palette=None,
+                custom_prompt=f"Budget: {budget}. House details: {house_details}",
+                db=db
+            )
+        )
+    
+    try:
+        designs = await asyncio.gather(*tasks)
+    except Exception as e:
+        print(f"Error generating scratch designs: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate scratch designs: {e}"
+        )
+        
+    return [
+        {
+            "id": str(d.id),
+            "style": d.style,
+            "image_url": d.image_url
+        } for d in designs
+    ]
