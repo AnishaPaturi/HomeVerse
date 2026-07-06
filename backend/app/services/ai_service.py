@@ -1024,7 +1024,7 @@
     #                     if response.status_code == 200:
     #                         with open(local_path, "wb") as f:
     #                             f.write(response.content)
-    #                         design.image_url = f"/static/generated/{local_filename}"
+    #                         design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
     #                     else:
     #                         print(f"Failed to download image for design {design.id}, using remote URL. Status code: {response.status_code}")
     #                         design.image_url = pollinations_url
@@ -2089,7 +2089,7 @@ Camera Perspective and Composition (Matching sample_hall.png):
                         try:
                             bg_design = bg_db.query(DesignModel).filter(DesignModel.id == design.id).first()
                             if bg_design:
-                                bg_design.image_url = f"/static/generated/{local_filename}"
+                                bg_design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
                                 bg_db.commit()
                         finally:
                             bg_db.close()
@@ -2183,7 +2183,7 @@ Camera Perspective and Composition (Matching sample_hall.png):
                         if response.status_code == 200:
                             with open(local_path, "wb") as f:
                                 f.write(response.content)
-                            design.image_url = f"/static/generated/{local_filename}"
+                            design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
                         else:
                             print(f"Failed to download image for design {design.id} ({style}/{direction}/{layout}), using remote URL. Status: {response.status_code}")
                             design.image_url = pollinations_url

@@ -1,5 +1,19 @@
 "use client";
 
+// Silence internal Three.js deprecation warnings (e.g. THREE.Clock, THREE.WebGLShadowMap)
+if (typeof window !== "undefined") {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (
+      typeof args[0] === "string" &&
+      (args[0].includes("THREE.Clock") || args[0].includes("THREE.WebGLShadowMap"))
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
+}
+
 import React, { useRef, Suspense, useState, useEffect } from "react";
 import { Canvas, useLoader, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, useGLTF, PointerLockControls, TransformControls } from "@react-three/drei";
