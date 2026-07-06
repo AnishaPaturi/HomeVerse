@@ -402,12 +402,14 @@ Composition:
 - Warm ambient lighting, soft shadows, photorealistic rendering.
 - High-resolution, ultra realistic 4K architectural visualization, no people, no text."""
 
-            encoded_prompt = urllib.parse.quote(image_prompt)
+            # Clean prompt to remove newlines for web safety
+            clean_prompt = " ".join(image_prompt.splitlines())
+            encoded_prompt = urllib.parse.quote(clean_prompt)
             # Use style specific seed
             seed = abs(hash(f"{style_name}-{project_id}")) % 100000
             pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
             
-            # Save temporary URL
+            # Save remote URL as primary to bypass local port/network binding limits in user browser
             design.image_url = pollinations_url
             sub_db.commit()
 
@@ -433,7 +435,7 @@ Composition:
             sub_db.commit()
             sub_db.refresh(design)
 
-            # Download & cache locally in background
+            # Download & cache locally in background for database archival
             local_filename = f"{design.id}.jpg"
             local_path = os.path.join("static/generated", local_filename)
             os.makedirs("static/generated", exist_ok=True)
@@ -444,8 +446,6 @@ Composition:
                     if response.status_code == 200:
                         with open(local_path, "wb") as f:
                             f.write(response.content)
-                        design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
-                        sub_db.commit()
             except Exception as e:
                 print(f"Failed to cache image for style {style_name}: {e}")
                 
