@@ -2099,15 +2099,8 @@ Composition (matching sample_hall.png):
                     if response.status_code == 200:
                         with open(local_path, "wb") as f:
                             f.write(response.content)
-                        # Update DB reference to point to local file path
-                        bg_db = SessionLocal()
-                        try:
-                            bg_design = bg_db.query(DesignModel).filter(DesignModel.id == design.id).first()
-                            if bg_design:
-                                bg_design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
-                                bg_db.commit()
-                        finally:
-                            bg_db.close()
+                        # Cache local file for archival/offline support, but keep remote URL as primary to bypass port/binding limits
+                        pass
             except Exception as e:
                 print(f"Background download and cache failed: {e}")
 

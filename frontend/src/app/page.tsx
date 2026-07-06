@@ -76,17 +76,15 @@ export default function HomePage() {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (uploadStep === "complete") {
-      setImageLoading(true);
-      setImageError(false);
-    }
-  }, [selectedStyle, uploadStep, generatedDesigns]);
+    setImageError(false);
+  }, [selectedStyle, uploadStep]);
 
   const getFilterForStyle = (style: string) => {
     switch (style) {
       case "Modern":
         return "contrast(1.15) saturate(0.85) brightness(0.95) hue-rotate(-5deg)";
       case "Luxury":
+      case "Modern Luxury":
         return "contrast(1.1) saturate(1.25) sepia(0.15) brightness(0.95)";
       case "Scandinavian":
         return "brightness(1.15) contrast(0.95) saturate(1.05) sepia(0.05)";
@@ -94,6 +92,10 @@ export default function HomePage() {
         return "brightness(1.1) saturate(0.3) contrast(1.05)";
       case "Japandi":
         return "sepia(0.2) brightness(1.05) saturate(0.9) contrast(0.95)";
+      case "Industrial":
+        return "contrast(1.2) brightness(0.9) saturate(0.8)";
+      case "Contemporary":
+        return "contrast(1.05) brightness(1.05) saturate(1.1)";
       default:
         return "none";
     }
@@ -122,8 +124,19 @@ export default function HomePage() {
           { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -0.8, rotation: 1.57, scale: 0.8, material: "#71717a" }
         ];
       case "Luxury":
+      case "Modern Luxury":
         return [
           { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.1, rotation: -0.1, scale: 1.05, material: "#0f766e" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#d97706" }
+        ];
+      case "Industrial":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#71717a" },
+          { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#18181b" }
+        ];
+      case "Contemporary":
+        return [
+          { id: "1", object_type: "sofa", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#e4e4e7" },
           { id: "2", object_type: "coffee_table", position_x: 0.0, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#d97706" }
         ];
       default:
@@ -138,6 +151,9 @@ export default function HomePage() {
     { name: "Scandinavian", img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350", desc: "Light oak, high contrast, hygge vibes" },
     { name: "Minimalist", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Maximum space, hidden storage, monochrome" },
     { name: "Luxury", img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", desc: "Polished marble, gold lining, velvet upholstery" },
+    { name: "Modern Luxury", img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", desc: "Polished marble, gold lining, velvet upholstery" },
+    { name: "Industrial", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350", desc: "Raw concrete, brick walls, dark wood, and metal accents" },
+    { name: "Contemporary", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Sleek curved lines, neutral tones, statement lighting" },
   ];
 
   // Simulated AI Copilot prompt handler

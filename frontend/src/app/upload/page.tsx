@@ -353,15 +353,16 @@ export default function UploadPage() {
       formData.append("room_type", selectedRoomToDesign);
       formData.append("budget", finalBudget);
 
-      const res = await fetch("http://localhost:8080/api/ai/generate-scratch-designs", {
+      // Step 1: Initialize design stubs instantly
+      const initRes = await fetch("http://localhost:8080/api/ai/initialize-scratch-designs", {
         method: "POST",
         body: formData
       });
 
-      if (!res.ok) {
-        let errMsg = "Failed to generate custom designs.";
+      if (!initRes.ok) {
+        let errMsg = "Failed to initialize designs.";
         try {
-          const errData = await res.json();
+          const errData = await initRes.json();
           if (errData && errData.detail) {
             errMsg = errData.detail;
           }
@@ -369,16 +370,46 @@ export default function UploadPage() {
         throw new Error(errMsg);
       }
 
-      const data = await res.json();
-      setScratchDesigns(data);
-      if (data.length > 0) {
-        setSelectedScratchDesignId(data[0].id);
-        setSelectedStyle(data[0].style);
+      const initData = await initRes.json();
+      const layoutDesc = initData.layout_desc;
+      const initialDesigns = initData.designs;
+
+      setScratchDesigns(initialDesigns);
+      if (initialDesigns.length > 0) {
+        setSelectedScratchDesignId(initialDesigns[0].id);
+        setSelectedStyle(initialDesigns[0].style);
+      }
+
+      // Step 2: Sequentially render each style variant to prevent API rate limits and show progressive loaders in grid
+      for (let i = 0; i < initialDesigns.length; i++) {
+        const stub = initialDesigns[i];
+        try {
+          const renderFormData = new FormData();
+          renderFormData.append("design_id", stub.id);
+          renderFormData.append("layout_desc", layoutDesc);
+          renderFormData.append("room_type", selectedRoomToDesign);
+          renderFormData.append("budget", finalBudget);
+
+          const renderRes = await fetch("http://localhost:8080/api/ai/render-scratch-design", {
+            method: "POST",
+            body: renderFormData
+          });
+
+          if (renderRes.ok) {
+            const rendered = await renderRes.json();
+            setScratchDesigns((prev) =>
+              prev.map((d) => (d.id === rendered.id ? rendered : d))
+            );
+          } else {
+            console.error(`Failed rendering ${stub.style}`);
+          }
+        } catch (e) {
+          console.error(`Error rendering ${stub.style}:`, e);
+        }
       }
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to generate designs. Please try again.");
-      setScratchStep(5); // Go back to styles preview
     } finally {
       setIsGeneratingScratch(false);
     }
@@ -2431,7 +2462,7 @@ export default function UploadPage() {
                     {/* STEP 6: Generation & Layout Locked Comparison Render */}
                     {scratchStep === 6 && (
                       <div className="space-y-4 animate-fadeIn">
-                        {isGeneratingScratch ? (
+                        {isGeneratingScratch && scratchDesigns.length === 0 ? (
                           <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[320px] animate-fadeIn">
                             <div className="relative w-16 h-16 flex items-center justify-center">
                               <div className="absolute inset-0 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
@@ -2476,12 +2507,19 @@ export default function UploadPage() {
                                       : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                                   }`}
                                 >
-                                  <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-850">
-                                    <img
-                                      src={design.image_url}
-                                      alt={design.style}
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
+                                  <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center">
+                                    {design.image_url ? (
+                                      <img
+                                        src={design.image_url}
+                                        alt={design.style}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                      />
+                                    ) : (
+                                      <div className="flex flex-col items-center justify-center gap-1.5">
+                                        <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                                        <span className="text-[7px] text-slate-500 font-mono tracking-wider uppercase">Generating...</span>
+                                      </div>
+                                    )}
                                   </div>
                                   <div>
                                     <h4 className="font-bold text-[10px] text-slate-200 leading-tight">{design.style}</h4>
@@ -2762,7 +2800,7 @@ export default function UploadPage() {
                         </div>
                       );
                     }
-                    if (scratchStep === 6 && isGeneratingScratch) {
+                    if (scratchStep === 6 && scratchDesigns.length === 0) {
                       return (
                         <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn">
                           <div className="w-14 h-14 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 relative">
@@ -2771,8 +2809,8 @@ export default function UploadPage() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-300">Pre-rendering Locked Layout styles</p>
-                            <p className="text-[9px] text-slate-550 max-w-[220px] mt-1 leading-relaxed">
-                              Executing 6 parallel GPU model runs with the locked coordinate layout.
+                            <p className="text-[9px] text-slate-555 max-w-[220px] mt-1 leading-relaxed">
+                              Setting up common structural 3D blueprint coordinates and loading stubs...
                             </p>
                           </div>
                         </div>
@@ -2780,7 +2818,20 @@ export default function UploadPage() {
                     }
 
                     const activeDesign = scratchDesigns.find((d) => d.id === selectedScratchDesignId);
-                    const displayImg = activeDesign?.image_url || styles.find((s) => s.name === selectedStyle)?.img || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600";
+                    
+                    if (!activeDesign || !activeDesign.image_url) {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-505 p-6 text-center space-y-4 animate-fadeIn h-full w-full bg-slate-955/65">
+                          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Rendering style redesign...</p>
+                            <p className="text-[9px] text-slate-500 mt-1">Applying {selectedStyle} materials to locked room layout</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const displayImg = activeDesign.image_url;
 
                     return (
                       <div className="relative w-full h-full animate-fadeIn group">

@@ -476,3 +476,201 @@ Composition:
             "image_url": d.image_url
         } for d in designs
     ]
+
+
+@router.post("/initialize-scratch-designs")
+async def initialize_scratch_designs(
+    project_id: UUID = Form(...),
+    room_type: str = Form(...),
+    budget: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Step 1 of progressive scratch design: Creates design records and generic 3D objects
+    immediately, returning design stubs without waiting for long image renders.
+    """
+    from app.models.design import Design as DesignModel
+    from app.models.object import Object as ObjectModel
+    from app.services.layout_engine import layout_engine
+
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not project.structural_analysis:
+        raise HTTPException(status_code=400, detail="House model not found. Please create the house model first.")
+
+    try:
+        house_model = json.loads(project.structural_analysis)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse house model: {e}")
+
+    try:
+        common_layout = await layout_engine.generate_common_layout(
+            house_model=house_model,
+            room_type=room_type,
+            budget=budget
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate layout: {e}")
+
+    styles = ["Modern", "Scandinavian", "Modern Luxury", "Japandi", "Industrial", "Contemporary"]
+    
+    STYLE_MATERIALS = {
+        "Modern": {"floor": "wood_light", "wall": "#e5e7eb", "sofa": "leather_black", "table": "glass", "cabinet": "wood_dark", "curtains": "#fafafa", "accent": "#9ca3af", "bed": "fabric_grey", "metal": "black_metal"},
+        "Scandinavian": {"floor": "wood_light", "wall": "#ffffff", "sofa": "fabric_grey", "table": "wood_light", "cabinet": "wood_light", "curtains": "#fafafa", "accent": "#10b981", "bed": "fabric_grey", "metal": "wood_light"},
+        "Modern Luxury": {"floor": "marble", "wall": "wood_dark", "sofa": "leather_brown", "table": "marble", "cabinet": "wood_dark", "curtains": "#1e293b", "accent": "gold", "bed": "leather_brown", "metal": "gold"},
+        "Japandi": {"floor": "wood_light", "wall": "#f5f5f4", "sofa": "#e7e5e4", "table": "wood_light", "cabinet": "wood_light", "curtains": "#f5f5f4", "accent": "#0f766e", "bed": "fabric_grey", "metal": "wood_light"},
+        "Industrial": {"floor": "concrete", "wall": "brick", "sofa": "leather_black", "table": "wood_dark", "cabinet": "black_metal", "curtains": "#4b5563", "accent": "black_metal", "bed": "leather_black", "metal": "black_metal"},
+        "Contemporary": {"floor": "wood_dark", "wall": "#f3f4f6", "sofa": "#6b7280", "table": "glass", "cabinet": "wood_dark", "curtains": "#cbd5e1", "accent": "gold", "bed": "fabric_grey", "metal": "black_metal"}
+    }
+
+    def map_generic_to_style_material(generic_material: str, style_name: str) -> str:
+        mapping = STYLE_MATERIALS.get(style_name, STYLE_MATERIALS["Modern"])
+        mat_lower = generic_material.lower()
+        if "floor" in mat_lower:
+            return mapping["floor"]
+        elif "wall" in mat_lower:
+            return mapping["wall"]
+        elif "sofa" in mat_lower:
+            return mapping["sofa"]
+        elif "table" in mat_lower or "coffee" in mat_lower:
+            return mapping["table"]
+        elif "cabinet" in mat_lower or "wardrobe" in mat_lower or "sideboard" in mat_lower:
+            return mapping["cabinet"]
+        elif "curtain" in mat_lower or "blind" in mat_lower:
+            return mapping["curtains"]
+        elif "metal" in mat_lower:
+            return mapping["metal"]
+        elif "bed" in mat_lower:
+            return mapping["bed"]
+        return mapping.get("accent", generic_material)
+
+    created_designs = []
+    for style_name in styles:
+        # Create Design Model record
+        design = DesignModel(
+            project_id=project_id,
+            style=style_name,
+            image_url="" # Empty for now
+        )
+        db.add(design)
+        db.commit()
+        db.refresh(design)
+
+        # Create Object Models
+        objects = common_layout.get("objects", [])
+        for obj_info in objects:
+            style_mat = map_generic_to_style_material(obj_info.get("material", "wood_base"), style_name)
+            obj = ObjectModel(
+                design_id=design.id,
+                object_type=obj_info.get("object_type", "sofa"),
+                position_x=obj_info.get("position_x", 0.0),
+                position_y=obj_info.get("position_y", 0.0),
+                position_z=obj_info.get("position_z", 0.0),
+                rotation=obj_info.get("rotation", 0.0),
+                scale=obj_info.get("scale", 1.0),
+                material=style_mat
+            )
+            db.add(obj)
+        db.commit()
+        
+        created_designs.append({
+            "id": str(design.id),
+            "style": design.style,
+            "image_url": ""
+        })
+
+    # Update project room type
+    if project.room_type != room_type:
+        project.room_type = room_type
+        db.commit()
+
+    return {
+        "layout_desc": common_layout.get("layout_description", ""),
+        "designs": created_designs
+    }
+
+
+@router.post("/render-scratch-design")
+async def render_scratch_design(
+    design_id: UUID = Form(...),
+    layout_desc: str = Form(...),
+    room_type: str = Form(...),
+    budget: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Step 2 of progressive scratch design: Generates prompt and renders a single design style
+    staggered to avoid rate limiting and allow immediate progressive loading in UI.
+    """
+    from app.models.design import Design as DesignModel
+    import httpx
+    import urllib.parse
+    import os
+
+    design = db.query(DesignModel).filter(DesignModel.id == design_id).first()
+    if not design:
+        raise HTTPException(status_code=404, detail="Design record not found")
+
+    project = db.query(ProjectModel).filter(ProjectModel.id == design.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    try:
+        house_model = json.loads(project.structural_analysis)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to parse house model")
+
+    # Style Rules Text
+    STYLE_RULES = {
+        "Modern": "White, Grey, Wood, Minimal, Straight Lines, Glass. Sleek minimalist furniture.",
+        "Scandinavian": "Oak, White, Plants, Soft Lighting, Fabric, Light Flooring. Warm, functional and natural.",
+        "Modern Luxury": "Marble, Gold, Wood Veneer, Ambient Lighting, Large Furniture, Premium Decor. Rich and sophisticated finishes.",
+        "Japandi": "Light Wood, Beige, Minimal, Natural Materials, Paper Lamps, Plants. Fusion of Japanese and Nordic minimalism.",
+        "Industrial": "Concrete, Brick, Black Metal, Leather, Dark Wood. Raw elements, urban loft style.",
+        "Contemporary": "Curved Furniture, Neutral Palette, Statement Lighting, Latest Trends. Bold and comfort-focused."
+    }
+
+    style_name = design.style
+    main_door = house_model.get("mainDoor", "North")
+    budget_influence = f"The design fits a budget of {budget}. It has styling and materials corresponding to this budget level."
+    
+    image_prompt = f"""Wide-angle professional architectural photo of a {room_type} in {style_name} style.
+Layout & Furniture: {layout_desc}.
+Style elements: {STYLE_RULES.get(style_name, '')} {budget_influence}
+Composition:
+- Camera is positioned at the entrance door threshold (main door faces {main_door}), looking straight into the room.
+- Part of the open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view.
+- Warm ambient lighting, soft shadows, photorealistic rendering.
+- High-resolution, ultra realistic 4K architectural visualization, no people, no text."""
+
+    # Clean prompt to remove newlines for web safety
+    clean_prompt = " ".join(image_prompt.splitlines())
+    encoded_prompt = urllib.parse.quote(clean_prompt)
+    seed = abs(hash(f"{style_name}-{design.project_id}")) % 100000
+    pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
+
+    # Update design record
+    design.image_url = pollinations_url
+    db.commit()
+
+    # Download & cache locally in background
+    local_filename = f"{design.id}.jpg"
+    local_path = os.path.join("static/generated", local_filename)
+    os.makedirs("static/generated", exist_ok=True)
+
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            response = await client.get(pollinations_url)
+            if response.status_code == 200:
+                with open(local_path, "wb") as f:
+                    f.write(response.content)
+    except Exception as e:
+        print(f"Failed to cache image for design {design.id}: {e}")
+
+    return {
+        "id": str(design.id),
+        "style": design.style,
+        "image_url": design.image_url
+    }
