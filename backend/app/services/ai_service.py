@@ -1403,6 +1403,23 @@ def map_wall_to_direction(wall: str) -> str:
     return "North"
 
 
+def sanitize_prompt_for_image(prompt: str) -> str:
+    if not prompt:
+        return ""
+    import re
+    # Remove curly braces and anything between them (which strips JSON)
+    cleaned = re.sub(r'\{.*?\}', '', prompt, flags=re.DOTALL)
+    # Remove square brackets and anything between them
+    cleaned = re.sub(r'\[.*?\]', '', cleaned, flags=re.DOTALL)
+    # Remove newlines and double spaces
+    cleaned = cleaned.replace('\n', ' ').replace('\r', ' ')
+    cleaned = ' '.join(cleaned.split())
+    # Truncate to 300 characters to make it completely safe
+    if len(cleaned) > 300:
+        cleaned = cleaned[:300] + "..."
+    return cleaned
+
+
 def build_dynamic_image_prompt(style: str, room_type: str, structural_analysis: dict, gemini_desc: str) -> str:
     door_direction = "North"
     doors = structural_analysis.get("doors", [])
@@ -2045,19 +2062,17 @@ class AIService:
         if color_palette:
             layout_str += f", using color palette: {color_palette}"
         if custom_prompt:
-            layout_str += f", incorporating requests: {custom_prompt}"
+            layout_str += f", incorporating requests: {sanitize_prompt_for_image(custom_prompt)}"
 
-        image_prompt = f"""Wide-angle eye-level architectural photograph of a {room_type} designed in {style} style.
-The room is generated based on the layout: {layout_str}.
-
-Camera Perspective and Composition (Matching sample_hall.png):
-- The camera is positioned directly at the entrance doorway threshold on the {door_wall} wall of the room, looking straight {camera_view} into the room.
-- A portion of the partially open entrance door and its frame/jamb is clearly visible in the foreground on the left edge of the frame, framing the view into the room, exactly matching the composition, perspective, and framing style of sample_hall.png.
-- The view captures the layout from this doorway threshold looking straight into the room's main area.
-- The lighting is bright and warm, with abundant natural light pouring in from large windows or glass balcony doors, diffused by sheers, complemented by recessed ceiling spotlights, cove lighting, and a modern central chandelier/ceiling fan.
-- The flooring consists of large polished cream/neutral tiles or wood, with a textured area rug grounding the central seating/furniture arrangement.
-- Fully furnished, matching the {style} theme with premium materials (e.g., leather, polished wood, marble accents).
-- High-end architectural visualization, realistic shadows, no people, clean composition, no text or watermarks."""
+        image_prompt = f"""Wide-angle architectural photo of a {room_type} designed in {style} style.
+Layout: {layout_str}.
+Composition (matching sample_hall.png):
+- Camera at entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room.
+- Part of open entrance door frame/jamb is visible in the foreground on the left edge.
+- Bright natural light from large windows/balcony doors, recessed spotlights, and central chandelier.
+- Polished tiles/wood floor, textured rug grounding modern furniture.
+- Fully furnished in {style} theme, premium materials (leather, wood, marble).
+- Photorealistic architectural visualization, realistic shadows, clean composition, no people or text."""
 
         os.makedirs("static/generated", exist_ok=True)
         local_filename = f"{design.id}.jpg"
