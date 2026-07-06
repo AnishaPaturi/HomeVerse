@@ -1803,7 +1803,7 @@ export default function CanvasContainer({
     <div className="w-full h-full relative rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/80">
       <Canvas
         camera={{ position: [5, activeFloor * 3.0 + 4, 6], fov: 50 }}
-        shadows
+        shadows={{ type: THREE.PCFShadowMap }}
         onClick={() => onSelectObject(null)}
       >
         <ambientLight intensity={0.6} />

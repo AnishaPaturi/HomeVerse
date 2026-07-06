@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
+import { PCFShadowMap } from "three";
 
 interface Hero3DSceneProps {
   styleName: string;
@@ -162,7 +163,7 @@ export default function Hero3DScene({ styleName }: Hero3DSceneProps) {
     <div className="w-full h-full min-h-[350px] relative rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950/50 backdrop-blur-sm">
       <Canvas
         camera={{ position: [4.5, 3.5, 5.5], fov: 45 }}
-        shadows
+        shadows={{ type: PCFShadowMap }}
       >
         <ambientLight intensity={0.7} />
         <directionalLight
