@@ -182,6 +182,31 @@ export default function UploadPage() {
   const [scratchDesigns, setScratchDesigns] = useState<Array<{id: string, style: string, image_url: string}>>([]);
   const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
   const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
+  const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (activeMode !== "scratch" || scratchStep !== 1) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            setHousePlanFile(file);
+            console.log("Image captured from clipboard paste:", file.name);
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, [activeMode, scratchStep]);
 
   const triggerScratchGeneration = async () => {
     setIsGeneratingScratch(true);
@@ -213,6 +238,9 @@ export default function UploadPage() {
       formData.append("budget", budgetSelection);
       formData.append("property_type", propertyType);
       formData.append("house_details", JSON.stringify(detailsObj));
+      if (housePlanFile) {
+        formData.append("house_plan_file", housePlanFile);
+      }
 
       const res = await fetch("http://localhost:8080/api/ai/generate-scratch-designs", {
         method: "POST",
@@ -220,7 +248,14 @@ export default function UploadPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to generate custom designs.");
+        let errMsg = "Failed to generate custom designs.";
+        try {
+          const errData = await res.json();
+          if (errData && errData.detail) {
+            errMsg = errData.detail;
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
@@ -2056,12 +2091,49 @@ export default function UploadPage() {
 
                         <div className="space-y-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                            House Plan Blueprint / Screenshot
+                            House Plan Blueprint / Screenshot (Upload or paste)
                           </label>
-                          <div className="border border-dashed border-slate-800 rounded-xl p-3 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-450 cursor-pointer hover:border-slate-700/80 transition-colors">
-                            <Upload className="w-5 h-5 text-slate-500 mb-1" />
-                            <span>Attach Plan File (PDF/PNG/JPG)</span>
-                          </div>
+                          <input
+                            type="file"
+                            id="house-plan-upload"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files && files.length > 0) {
+                                setHousePlanFile(files[0]);
+                              }
+                            }}
+                          />
+                          {!housePlanFile ? (
+                            <div 
+                              onClick={() => document.getElementById("house-plan-upload")?.click()}
+                              className="border border-dashed border-slate-800 hover:border-blue-500/50 rounded-xl p-3.5 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-455 cursor-pointer hover:bg-slate-900/10 transition-all group"
+                            >
+                              <Upload className="w-5 h-5 text-slate-500 group-hover:text-blue-450 group-hover:scale-105 transition-all mb-1.5" />
+                              <span className="font-medium text-slate-350">Click to upload image or PDF</span>
+                              <span className="text-[8px] text-slate-600 font-sans mt-0.5">Or paste directly with Ctrl + V</span>
+                            </div>
+                          ) : (
+                            <div className="border border-slate-800 rounded-xl p-2.5 bg-slate-905/60 flex items-center justify-between text-xs text-slate-200">
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="text-base">📄</span>
+                                <div className="truncate">
+                                  <p className="font-bold text-[10px] text-slate-300 truncate leading-tight">{housePlanFile.name}</p>
+                                  <p className="text-[8px] text-slate-550 font-sans">
+                                    {(housePlanFile.size / 1024).toFixed(1)} KB • {housePlanFile.type.split("/")[1]?.toUpperCase() || "File"}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setHousePlanFile(null)}
+                                className="p-1 text-slate-550 hover:text-red-400 transition-colors text-[9px] font-bold border border-slate-850 hover:border-red-900/30 rounded bg-slate-950/80 cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

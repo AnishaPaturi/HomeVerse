@@ -1420,28 +1420,86 @@ def build_direction_layout_prompt(style: str, room_type: str, direction: str, la
     Used by generate_style_variants() to produce 8 distinct images per style
     (4 directions x 2 layouts), instead of a single image per style.
     """
-    return f"""Room Type: {room_type}
-Interior Style: {style}
-Entrance Direction: {direction}
-Layout Variant: {layout}
+    # Determine door wall and camera view direction based on entrance direction
+    door_wall = direction
+    camera_view = "North"
+    direction_lower = direction.lower()
+    if direction_lower == "north":
+        camera_view = "South"
+    elif direction_lower == "south":
+        camera_view = "North"
+    elif direction_lower == "east":
+        camera_view = "West"
+    elif direction_lower == "west":
+        camera_view = "East"
 
-Generate a photorealistic interior design.
-Constraints:
-- Camera at entrance on the {direction} wall, looking into room.
-- Door visible at edge of frame, positioned on the {direction} wall.
-- Fully furnished, matching selected style.
-- Furniture arranged per '{layout}' — must look visibly different from the other layout variant.
-- Maintain clear walking space.
-- Realistic lighting, high-quality materials.
-- Clean, uncluttered composition.
-- No people.
-- No text or watermarks.
-- Generate exactly ONE image.
-- High-quality architectural visualization.
-Design context: {description}"""
+    return f"""Wide-angle eye-level architectural photograph of a {room_type} designed in {style} style.
+The room is generated based on the layout: {layout} (Entrance on the {direction} wall). Design context: {description}.
+
+Constraints and Camera Perspective (Matching sample_hall.png):
+- The camera is positioned directly at the entrance doorway threshold on the {door_wall} wall, looking straight {camera_view} into the room (door perspective).
+- A portion of the partially open entrance door and its frame/jamb is clearly visible in the foreground on the left edge of the frame, framing the view into the room, exactly matching the composition, perspective, and framing style of sample_hall.png.
+- The lighting is bright and warm, with abundant natural light pouring in from large windows or glass balcony doors, diffused by sheers, complemented by recessed ceiling spotlights, cove lighting, and a modern central chandelier/ceiling fan.
+- The flooring consists of large polished cream/neutral tiles or wood, with a textured area rug grounding the central seating/furniture arrangement.
+- Fully furnished, matching the {style} theme with premium materials (e.g., leather, polished wood, marble accents).
+- High-end architectural visualization, realistic shadows, no people, clean composition, no text or watermarks."""
 
 
 class AIService:
+    async def validate_upload_content(self, file_bytes: bytes, filename: str, mime_type: str) -> bool:
+        """
+        Uses Gemini to validate if the uploaded file is indeed an interior room,
+        a home area, a house blueprint/floor plan, or a blurred photo of a room,
+        and returns True. Returns False if it is unrelated nonsense (like pets, cars, outdoor scenery, food).
+        """
+        # Quick pre-check on filename keywords to skip simple things (optional, but keep it robust)
+        filename_lower = filename.lower()
+        non_room_keywords = ["cat", "dog", "animal", "car", "vehicle", "apple", "banana", "fruit", "food"]
+        for kw in non_room_keywords:
+            if kw in filename_lower:
+                return False
+                
+        api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return True # Fallback to True if no key is set
+
+        import google.generativeai as genai
+        import json
+        genai.configure(api_key=api_key)
+
+        contents = [
+            {
+                "mime_type": mime_type,
+                "data": file_bytes
+            },
+            """Analyze this uploaded file.
+            Is this file an interior room of a house/building, a home area, a blueprint, a floor plan, or a blurred/out-of-focus photo of a room?
+            Respond with a JSON object:
+            {
+              "is_valid": true or false,
+              "reason": "short explanation"
+            }
+            Set "is_valid" to true if it is:
+            - A room photo, even if it is extremely blurry, out-of-focus, low resolution, or poorly lit.
+            - A blueprint, floor plan, layout diagram, 2D/3D architectural drawing, or sketch of a house/room.
+            - Any interior room, house area, or building interior.
+            
+            Set "is_valid" to false ONLY if it is clearly unrelated nonsense (like pets, animals, cars, food, outdoor landscape photos without buildings, random abstract graphics, etc.).
+            Do not include markdown blocks. Return only raw JSON."""
+        ]
+
+        try:
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
+                contents,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            result = json.loads(response.text)
+            return bool(result.get("is_valid", True))
+        except Exception as e:
+            print(f"Gemini content validation failed: {e}. Defaulting to True.")
+            return True
+
     async def analyze_room_upload(self, project_id: uuid.UUID, file: UploadFile, db: Session):
         """
         Accepts the uploaded file, saves it locally,
@@ -1500,8 +1558,9 @@ class AIService:
 
         prompt = """
         You are an AI Interior Designer and Architect.
-        Analyze this room photo or video scan to perform a detailed structural layout and lighting analysis.
-        Identify the room type. It could be any interior area (e.g., Living Room, Bedroom, Kitchen, Office, Bathroom, Gym, Playroom, Hallway, Dining Room, Attic, etc.). Be specific!
+        Analyze this room photo, blueprint, floor plan, or video scan to perform a detailed structural layout and lighting analysis.
+        If it is a blueprint or floor plan, identify it as such or detect the primary room focus.
+        Identify the room type. It could be any interior area (e.g., Living Room, Bedroom, Kitchen, Office, Bathroom, Gym, Playroom, Hallway, Dining Room, Attic, etc.) or "Floor Plan" / "Blueprint" if it represents a whole house layout. Be specific!
 
         Respond ONLY with a valid JSON object matching the following JSON Schema:
         {
@@ -1533,8 +1592,8 @@ class AIService:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
                 contents,
                 generation_config={"response_mime_type": "application/json"}
             )
@@ -1638,6 +1697,30 @@ class AIService:
                 break
 
         contents = []
+        
+        # Load sample_hall.png as style/perspective reference
+        sample_hall_bytes = None
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sample_hall_path = os.path.join(base_dir, "Help images", "sample_hall.png")
+        if not os.path.exists(sample_hall_path):
+            sample_hall_path = "Help images/sample_hall.png"
+            if not os.path.exists(sample_hall_path):
+                sample_hall_path = "../Help images/sample_hall.png"
+        
+        if os.path.exists(sample_hall_path):
+            try:
+                with open(sample_hall_path, "rb") as f:
+                    sample_hall_bytes = f.read()
+            except Exception as e:
+                print(f"Error loading sample_hall.png: {e}")
+
+        if sample_hall_bytes:
+            contents.append("Below is the reference image (sample_hall.png). It represents the target composition and camera perspective you must match. Notice the camera is positioned at the entrance doorway threshold, and a portion of the entrance door frame/jamb is visible in the foreground on the left edge of the frame, looking straight into the room:")
+            contents.append({
+                "mime_type": "image/png",
+                "data": sample_hall_bytes
+            })
+
         if original_file_path and os.path.exists(original_file_path):
             try:
                 with open(original_file_path, "rb") as f:
@@ -1655,8 +1738,10 @@ class AIService:
                         time.sleep(1)
                         video_file = genai.get_file(video_file.name)
                     if video_file.state.name != "FAILED":
+                        contents.append("Below is the user's uploaded walkthrough video scan of their room:")
                         contents.append(video_file)
                 else:
+                    contents.append("Below is the user's uploaded floor plan / blueprint / room photo that defines the layout, walls, door locations, and window positions:")
                     contents.append({
                         "mime_type": mime_type,
                         "data": file_bytes
@@ -1738,7 +1823,15 @@ class AIService:
 
         prompt = f"""
         You are an AI Interior Designer and Architect.
-        Analyze this room photo or video scan, and generate a customized interior design 3D layout for this space.
+        Analyze the user's blueprint, floor plan, or room photo, and generate a customized interior design 3D layout for this space.
+        
+        If the user has uploaded a blueprint or floor plan:
+        - Carefully analyze the plan of the room corresponding to the selected space type ({room_type}).
+        - Determine its exact boundary walls, door positions, and window locations.
+        - Formulate a 3D layout where the placement and orientation of all objects strictly respect the plan's boundaries.
+        
+        If a reference image (sample_hall.png) is provided:
+        - Study its camera perspective and composition. Notice it represents a "door perspective" where the camera stands at the entrance threshold, looking into the room, with the door frame/jamb partially visible in the foreground on the left edge of the frame, looking straight into the room.
 
         The user has specified these design requirements:
         - **Room / Space Type**: "{room_type}"
@@ -1747,6 +1840,12 @@ class AIService:
         - **Custom Instructions / Notes**: "{custom_prompt or "None"}"
 
         Based on these choices, formulate a custom 3D layout. The layout MUST consist of objects relevant to a {room_type} in the style of {style}.
+
+        You MUST write the "description" field as a detailed room description. The description MUST:
+        1. Be written from the perspective of someone standing at the main entrance door of the room, looking straight inside (door perspective).
+        2. Describe the layout of the furniture (sofas, tables, cabinets, etc.) exactly as shown on the user's plan.
+        3. Match the target camera perspective of the reference image (sample_hall.png) by specifying that the camera is at the entrance threshold and a portion of the open door frame is visible in the foreground on the edge of the frame.
+        4. Detail the lighting, materials, and colors matching the selected style ({style}).
 
         3D Coordinate System Rules:
         - The center of the room is (0.0, 0.0, -3.0).
@@ -1779,7 +1878,7 @@ class AIService:
 
         Respond ONLY with a valid JSON object matching the following JSON Schema:
         {{
-          "description": "A detailed multi-sentence description summarizing the redesign, detailing why these materials and colors were chosen for a {room_type} in {style} style.",
+          "description": "A detailed multi-sentence description serving as an image prompt that summarizes the design from the doorway perspective, matching the layout of the plan, with the doorway framing the view as in the reference image.",
           "objects": [
             {{
               "object_type": "string",
@@ -1797,8 +1896,8 @@ class AIService:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
                 contents,
                 generation_config={"response_mime_type": "application/json"}
             )
@@ -1903,11 +2002,44 @@ class AIService:
         if project.structural_analysis:
             try:
                 struct_data = json.loads(project.structural_analysis)
-                doors = struct_data.get("doors", [])
-                if doors and len(doors) > 0:
-                    door_direction = map_wall_to_direction(doors[0].get("wall", "back"))
-            except:
-                pass
+                # Try getting from scratch house details first
+                house_details = struct_data.get("house_details")
+                if house_details:
+                    if isinstance(house_details, str):
+                        try:
+                            house_details = json.loads(house_details)
+                        except:
+                            pass
+                    if isinstance(house_details, dict):
+                        if "kitchen" in room_type.lower():
+                            door_direction = house_details.get("kitchenDoorDirection", "North")
+                        else:
+                            door_direction = house_details.get("mainDoorDirection", "North")
+                else:
+                    # Fallback to structural analysis doors
+                    doors = struct_data.get("doors", [])
+                    if doors and len(doors) > 0:
+                        door_direction = map_wall_to_direction(doors[0].get("wall", "back"))
+            except Exception as e:
+                print(f"Error parsing door direction: {e}")
+
+        # Determine door wall and camera view direction based on the main door facing direction
+        door_wall = "South"  # default: door is on the front wall
+        camera_view = "North"  # default: camera looks straight back into the room
+        
+        door_direction_lower = door_direction.lower()
+        if "north" in door_direction_lower:
+            door_wall = "North"
+            camera_view = "South"
+        elif "south" in door_direction_lower:
+            door_wall = "South"
+            camera_view = "North"
+        elif "east" in door_direction_lower:
+            door_wall = "East"
+            camera_view = "West"
+        elif "west" in door_direction_lower:
+            door_wall = "West"
+            camera_view = "East"
 
         layout_str = description
         if color_palette:
@@ -1915,22 +2047,17 @@ class AIService:
         if custom_prompt:
             layout_str += f", incorporating requests: {custom_prompt}"
 
-        image_prompt = f"""Room Type: {room_type}
-Interior Style: {style}
-Entrance Direction: {door_direction}
-Layout Variant: {layout_str}
+        image_prompt = f"""Wide-angle eye-level architectural photograph of a {room_type} designed in {style} style.
+The room is generated based on the layout: {layout_str}.
 
-Generate a photorealistic interior design.
-Constraints:
-- Camera at entrance, looking into room.
-- Door visible at edge of frame.
-- Fully furnished, matching selected style.
-- Furniture arranged per layout variant.
-- Maintain clear walking space.
-- Realistic lighting, high-quality materials.
-- Clean, uncluttered composition.
-- No people.
-- High-quality architectural visualization."""
+Camera Perspective and Composition (Matching sample_hall.png):
+- The camera is positioned directly at the entrance doorway threshold on the {door_wall} wall of the room, looking straight {camera_view} into the room.
+- A portion of the partially open entrance door and its frame/jamb is clearly visible in the foreground on the left edge of the frame, framing the view into the room, exactly matching the composition, perspective, and framing style of sample_hall.png.
+- The view captures the layout from this doorway threshold looking straight into the room's main area.
+- The lighting is bright and warm, with abundant natural light pouring in from large windows or glass balcony doors, diffused by sheers, complemented by recessed ceiling spotlights, cove lighting, and a modern central chandelier/ceiling fan.
+- The flooring consists of large polished cream/neutral tiles or wood, with a textured area rug grounding the central seating/furniture arrangement.
+- Fully furnished, matching the {style} theme with premium materials (e.g., leather, polished wood, marble accents).
+- High-end architectural visualization, realistic shadows, no people, clean composition, no text or watermarks."""
 
         os.makedirs("static/generated", exist_ok=True)
         local_filename = f"{design.id}.jpg"
@@ -2320,8 +2447,8 @@ Constraints:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
                 contents,
                 generation_config={"response_mime_type": "application/json"}
             )
@@ -2727,8 +2854,8 @@ Constraints:
         """
 
         try:
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await model.generate_content_async(
                 prompt,
                 generation_config={"response_mime_type": "application/json"}
             )

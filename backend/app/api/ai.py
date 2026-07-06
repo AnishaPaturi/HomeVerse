@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, s
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 import os
 import urllib.parse
 import httpx
@@ -30,24 +30,19 @@ async def upload_and_analyze_room(
             detail="Only image or video files are supported."
         )
     
-    # Check if the file represents a room or interior area
-    filename_lower = file.filename.lower()
-    non_room_keywords = [
-        "cat", "dog", "animal", "car", "vehicle", "apple", "banana", "fruit", 
-        "outdoor", "outside", "landscape", "nature", "forest", "mountain", 
-        "ocean", "beach", "sky", "garden", "park", "street", "exterior",
-        "cityscape", "food"
-    ]
-    is_room = True
-    for kw in non_room_keywords:
-        if kw in filename_lower:
-            is_room = False
-            break
-            
-    if not is_room:
+    # Read the file bytes for validation
+    file_bytes = await file.read()
+    await file.seek(0)
+    
+    is_valid = await ai_service.validate_upload_content(
+        file_bytes=file_bytes,
+        filename=file.filename,
+        mime_type=file.content_type or "image/jpeg"
+    )
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room or home area."
+            detail="Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room, home area, or blueprint plan."
         )
     
     # Process the file using the AI service wrapper
@@ -212,6 +207,7 @@ async def pre_generate_templates(
     return {"status": "success", "message": f"Pre-generated combinations for {room_type}"}
 
 from app.models.project import Project as ProjectModel
+from app.models.user import User as UserModel
 import json
 
 @router.post("/generate-scratch-designs")
@@ -221,6 +217,7 @@ async def generate_scratch_designs(
     budget: str = Form(...),
     property_type: str = Form(...),
     house_details: str = Form(...),
+    house_plan_file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -233,6 +230,7 @@ async def generate_scratch_designs(
     if not project:
         project = ProjectModel(
             id=project_id,
+            user_id=UUID("d0000000-0000-0000-0000-000000000000"),
             title=f"My {room_type} Project",
             room_type=room_type,
             thumbnail=""
@@ -240,12 +238,44 @@ async def generate_scratch_designs(
         db.add(project)
         db.commit()
         db.refresh(project)
+
+    blueprint_url = None
+    if house_plan_file:
+        try:
+            file_bytes = await house_plan_file.read()
+            await house_plan_file.seek(0)
+            
+            # Content validation
+            is_valid = await ai_service.validate_upload_content(
+                file_bytes=file_bytes,
+                filename=house_plan_file.filename,
+                mime_type=house_plan_file.content_type or "image/jpeg"
+            )
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room, home area, or blueprint plan."
+                )
+            
+            file_ext = house_plan_file.filename.split(".")[-1] if "." in house_plan_file.filename else "jpg"
+            static_filename = f"{project_id}_blueprint.{file_ext}"
+            os.makedirs("static/uploads", exist_ok=True)
+            local_path = os.path.join("static", "uploads", static_filename)
+            with open(local_path, "wb") as f:
+                f.write(file_bytes)
+            blueprint_url = f"http://localhost:8080/static/uploads/{static_filename}"
+            print(f"Blueprint stored locally: {blueprint_url}")
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            print(f"Local storage blueprint save failed: {e}")
         
     try:
         analysis_data = {
             "budget": budget,
             "property_type": property_type,
-            "house_details": json.loads(house_details) if house_details.startswith(("{", "[")) else house_details
+            "house_details": json.loads(house_details) if house_details.startswith(("{", "[")) else house_details,
+            "blueprint_url": blueprint_url
         }
         project.structural_analysis = json.dumps(analysis_data)
         project.room_type = room_type
@@ -256,19 +286,24 @@ async def generate_scratch_designs(
     # Top 6 House Design Styles
     styles = ["Modern", "Scandinavian", "Modern Luxury", "Japandi", "Industrial", "Contemporary"]
     
-    # Run all 6 dynamic generations in parallel
-    tasks = []
-    for style in styles:
-        tasks.append(
-            ai_service.generate_dynamic_design(
+    from app.db.session import SessionLocal
+
+    async def run_single_style_generation(style_name: str):
+        sub_db = SessionLocal()
+        try:
+            design = await ai_service.generate_dynamic_design(
                 project_id=project_id,
                 room_type=room_type,
-                style=style,
+                style=style_name,
                 color_palette=None,
                 custom_prompt=f"Budget: {budget}. House details: {house_details}",
-                db=db
+                db=sub_db
             )
-        )
+            return design
+        finally:
+            sub_db.close()
+
+    tasks = [run_single_style_generation(style) for style in styles]
     
     try:
         designs = await asyncio.gather(*tasks)
