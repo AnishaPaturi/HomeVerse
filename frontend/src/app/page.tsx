@@ -26,6 +26,19 @@ import {
 import Hero3DScene from "@/components/landing/Hero3DScene";
 import CanvasContainer from "@/components/studio/CanvasContainer";
 
+const generateUUID = () => {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
+    try {
+      return window.crypto.randomUUID();
+    } catch (_) {}
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export default function HomePage() {
   const router = useRouter();
   
@@ -267,7 +280,7 @@ export default function HomePage() {
         console.warn("Backend project creation failed, fallback to client-side UUID:", err);
       }
 
-      const projectId = projectData?.id || crypto.randomUUID();
+      const projectId = projectData?.id || generateUUID();
 
       // Trigger UI analysis state
       setTimeout(() => {
@@ -298,11 +311,11 @@ export default function HomePage() {
         }
         // Fallback mock designs
         designsList = [
-          { id: crypto.randomUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Minimalist", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350" },
-          { id: crypto.randomUUID(), style: "Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350" }
+          { id: generateUUID(), style: "Modern", image_url: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350" },
+          { id: generateUUID(), style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350" },
+          { id: generateUUID(), style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350" },
+          { id: generateUUID(), style: "Minimalist", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350" },
+          { id: generateUUID(), style: "Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350" }
         ];
       }
 

@@ -19,6 +19,19 @@ import {
   DollarSign
 } from "lucide-react";
 
+const generateUUID = () => {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
+    try {
+      return window.crypto.randomUUID();
+    } catch (_) {}
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 const getFurnishedTemplateObjects = (
   roomType: string,
   style: string,
@@ -286,7 +299,7 @@ export default function UploadPage() {
     setIsValidatingHouseJson(true);
     setValidationError(null);
     try {
-      const pId = projectId || crypto.randomUUID();
+      const pId = projectId || generateUUID();
       if (!projectId) {
         setProjectId(pId);
         sessionStorage.setItem("homeverse_project_id", pId);
@@ -345,7 +358,7 @@ export default function UploadPage() {
     setIsGeneratingScratch(true);
     setScratchStep(6); // Move to Step 6 loading & renders grid
     try {
-      const pId = projectId || crypto.randomUUID();
+      const pId = projectId || generateUUID();
       const finalBudget = budgetSelection === "Custom" ? customBudget : budgetSelection;
 
       const formData = new FormData();
@@ -773,7 +786,7 @@ export default function UploadPage() {
         console.warn("Backend project creation failed, fallback to client-side UUID:", err);
       }
 
-      const activeProjId = projectData?.id || crypto.randomUUID();
+      const activeProjId = projectData?.id || generateUUID();
       setProjectId(activeProjId);
       sessionStorage.setItem("homeverse_project_id", activeProjId);
 
@@ -989,14 +1002,14 @@ export default function UploadPage() {
         console.warn("Backend project creation failed, fallback to client UUID:", err);
       }
 
-      const activeProjId = projectIdFromBackend || crypto.randomUUID();
+      const activeProjId = projectIdFromBackend || generateUUID();
       setProjectId(activeProjId);
       sessionStorage.setItem("homeverse_project_id", activeProjId);
       sessionStorage.setItem("homeverse_project_title", projTitle);
       sessionStorage.setItem("homeverse_room_type", roomType);
 
       // 2. Create design on backend
-      let activeDesignId = crypto.randomUUID();
+      let activeDesignId = generateUUID();
       try {
         const designRes = await fetch("http://localhost:8080/api/designs/", {
           method: "POST",
@@ -1119,14 +1132,14 @@ export default function UploadPage() {
         console.warn("Backend project creation failed, fallback to client UUID:", err);
       }
 
-      const activeProjId = projectIdFromBackend || crypto.randomUUID();
+      const activeProjId = projectIdFromBackend || generateUUID();
       setProjectId(activeProjId);
       sessionStorage.setItem("homeverse_project_id", activeProjId);
       sessionStorage.setItem("homeverse_project_title", projTitle);
       sessionStorage.setItem("homeverse_room_type", roomType);
 
       // 2. Create design on backend
-      let activeDesignId = crypto.randomUUID();
+      let activeDesignId = generateUUID();
       try {
         const designRes = await fetch("http://localhost:8080/api/designs/", {
           method: "POST",
@@ -2425,35 +2438,41 @@ export default function UploadPage() {
                         </div>
                         <div className="space-y-3">
                           {getStyleCardInfo(budgetSelection, customBudget).map((style) => (
-                            <div
+                            <button
+                              type="button"
                               key={style.name}
-                              className="border border-slate-850 bg-slate-955/60 rounded-2xl overflow-hidden p-3 flex gap-3 transition-all hover:border-blue-500/30"
+                              onClick={() => setSelectedStyle(style.name)}
+                              className={`text-left w-full flex gap-3 transition-all p-3 rounded-2xl overflow-hidden cursor-pointer border ${
+                                selectedStyle === style.name
+                                  ? "bg-slate-905/60 border-blue-500 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-955/60 border-slate-850 hover:border-slate-800 hover:bg-slate-950/20"
+                              }`}
                             >
                               <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-900 bg-slate-950">
                                 <img src={style.image} alt={style.name} className="w-full h-full object-cover" />
                               </div>
-                              <div className="flex-1 flex flex-col justify-between">
+                              <div className="flex-1 flex flex-col justify-between h-20">
                                 <div>
                                   <div className="flex items-center justify-between">
-                                    <h4 className="font-bold text-xs text-blue-400 leading-none">{style.name}</h4>
+                                    <h4 className={`font-bold text-xs leading-none ${selectedStyle === style.name ? "text-blue-400" : "text-slate-200"}`}>{style.name}</h4>
                                     <span className="text-[8px] bg-blue-900/30 px-1.5 py-0.5 rounded font-mono font-bold text-blue-400">
                                       Est: {style.budget}
                                     </span>
                                   </div>
-                                  <p className="text-[9px] text-slate-400 font-sans leading-normal mt-1">{style.description}</p>
+                                  <p className="text-[9.5px] text-slate-400 font-sans leading-normal mt-1 line-clamp-2">{style.description}</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1.5 mt-2 border-t border-slate-900/40 pt-1 text-[8px] leading-tight">
+                                <div className="grid grid-cols-2 gap-1.5 border-t border-slate-900/40 pt-1 text-[8px] leading-tight">
                                   <div>
                                     <span className="text-slate-550 block font-mono">COLORS:</span>
-                                    <span className="text-slate-300 font-medium">{style.colors}</span>
+                                    <span className="text-slate-300 font-medium truncate block">{style.colors}</span>
                                   </div>
                                   <div>
-                                    <span className="text-emerald-500 block font-mono font-bold">PROS & CONS:</span>
-                                    <span className="text-emerald-400/90 leading-tight">Pros: {style.pros}</span>
+                                    <span className="text-emerald-500 block font-mono font-bold">PROS:</span>
+                                    <span className="text-emerald-400/90 leading-tight truncate block">{style.pros}</span>
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -2786,15 +2805,24 @@ export default function UploadPage() {
                       );
                     }
                     if (scratchStep === 5) {
+                      const matchedStyle = styles.find((s) => s.name === selectedStyle);
+                      const displayImg = matchedStyle?.img || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600";
+                      
                       return (
-                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
-                          <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
-                            <Sparkles className="w-6 h-6 text-slate-650" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-300">Explore Theme Renders</p>
-                            <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
-                              Review style guidelines, colors, pros, and cons before generating layout comparisons.
+                        <div className="relative w-full h-full animate-fadeIn group">
+                          <img
+                            src={displayImg}
+                            alt={`${selectedStyle} Preset Preview`}
+                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-955 via-slate-955/85 to-transparent p-4 pt-10">
+                            <div className="flex flex-wrap gap-1.5 items-center mb-1">
+                              <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
+                                {selectedStyle} Theme (Preset Preview)
+                              </span>
+                            </div>
+                            <p className="text-[9.5px] text-slate-300 leading-normal line-clamp-2">
+                              {matchedStyle?.desc || "A custom designer layout preset view."}
                             </p>
                           </div>
                         </div>
