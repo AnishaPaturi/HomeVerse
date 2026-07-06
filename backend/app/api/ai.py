@@ -592,6 +592,67 @@ async def initialize_scratch_designs(
     }
 
 
+ROOM_FURNITURE = {
+    "Hall": [
+        "Sofa", "Center Table", "TV", "TV Cabinet", "Wall Decor", "Feature Wall", 
+        "False Ceiling", "Designer Lights", "Side Tables", "Curtains", "Blinds", 
+        "Indoor Plants", "Carpet"
+    ],
+    "Master Bedroom": [
+        "King Bed with Storage", "Wardrobes", "TV Unit", "TV", "Window Seat", 
+        "Curtains", "Side Tables", "Dressing Table", "Mirror", "Storage", 
+        "Showpieces", "AC"
+    ],
+    "Second Bedroom": [
+        "Queen Bed", "Storage", "Wardrobe", "TV", "TV Unit", "Study Desk", 
+        "Chair", "Laundry Storage", "Curtains", "Side Tables", "AC", 
+        "Dressing Table", "Decor"
+    ],
+    "Kids Bedroom": [
+        "Bed", "Wardrobe", "Study Table", "Chair", "Bookshelf", "Storage", 
+        "TV", "Curtains", "Window Seat", "AC", "Play Area"
+    ],
+    "Dining": [
+        "Dining Table", "Chairs based on dimensions", "Fridge", "Crockery Unit", 
+        "Storage Cabinets", "Wall Decor", "Pendant Lights"
+    ],
+    "Kitchen": [
+        "Kitchen Platform", "Sink", "Gas Stove", "Chimney", "Pantry", 
+        "Microwave Unit", "Oven Unit", "Storage", "Tall Unit", "Exhaust", 
+        "Fan"
+    ],
+    "Bathroom": [
+        "WC", "Wash Basin", "Mirror", "Storage Cabinet", "Glass Shower Partition", 
+        "Shower Area", "Niche Storage", "Towel Holder", "Ventilation"
+    ],
+    "Foyer": [
+        "Console Table", "Wall Panel", "Mirror", "Decor", "Lighting", "Storage"
+    ],
+    "Lobby": [
+        "Minimal Seating", "Wall Art", "Lighting", "Decor"
+    ],
+    "Puja Room": [
+        "Mandir", "Storage", "Lighting", "Marble", "Wood Carving", "Bell", "Warm Lights"
+    ]
+}
+
+def extract_room_dimensions(house_model: dict, room_type: str) -> str:
+    each_room = house_model.get("dimensionsEachRoom", {})
+    room_dim = each_room.get(room_type) or each_room.get(room_type.lower())
+    if isinstance(room_dim, dict):
+        w = room_dim.get("width") or room_dim.get("width_m") or room_dim.get("w")
+        l = room_dim.get("length") or room_dim.get("length_m") or room_dim.get("l")
+        if w and l:
+            return f"{w}m × {l}m"
+    elif isinstance(room_dim, str):
+        return room_dim
+        
+    h_dim = house_model.get("dimensionsHouse", {})
+    if isinstance(h_dim, dict) and h_dim.get("width") and h_dim.get("length"):
+        return f"{h_dim.get('width')}m x {h_dim.get('length')}m"
+        
+    return "3.63m × 3.94m"
+
 @router.post("/render-scratch-design")
 async def render_scratch_design(
     design_id: UUID = Form(...),
@@ -622,36 +683,60 @@ async def render_scratch_design(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to parse house model")
 
-    # Style Rules Text
-    STYLE_RULES = {
-        "Modern": "White, Grey, Wood, Minimal, Straight Lines, Glass. Sleek minimalist furniture.",
-        "Scandinavian": "Oak, White, Plants, Soft Lighting, Fabric, Light Flooring. Warm, functional and natural.",
-        "Modern Luxury": "Marble, Gold, Wood Veneer, Ambient Lighting, Large Furniture, Premium Decor. Rich and sophisticated finishes.",
-        "Japandi": "Light Wood, Beige, Minimal, Natural Materials, Paper Lamps, Plants. Fusion of Japanese and Nordic minimalism.",
-        "Industrial": "Concrete, Brick, Black Metal, Leather, Dark Wood. Raw elements, urban loft style.",
-        "Contemporary": "Curved Furniture, Neutral Palette, Statement Lighting, Latest Trends. Bold and comfort-focused."
-    }
-
     style_name = design.style
-    main_door = house_model.get("mainDoor", "North")
-    budget_influence = f"The design fits a budget of {budget}. It has styling and materials corresponding to this budget level."
+    room_dims = extract_room_dimensions(house_model, room_type)
+    house_type = project.house_type or "Apartment"
     
-    image_prompt = f"""Wide-angle professional architectural photo of a {room_type} in {style_name} style.
-Layout & Furniture: {layout_desc}.
-Style elements: {STYLE_RULES.get(style_name, '')} {budget_influence}
-Composition:
-- Camera is positioned at the entrance door threshold (main door faces {main_door}), looking straight into the room.
-- Part of the open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view.
-- Warm ambient lighting, soft shadows, photorealistic rendering.
-- High-resolution, ultra realistic 4K architectural visualization, no people, no text."""
+    furniture_items = ROOM_FURNITURE.get(room_type, ["Sofa", "Center Table", "Lights", "Decor"])
+    furniture_list = "\n".join([f"• {item}" for item in furniture_items])
 
-    # Clean prompt to remove newlines for web safety
+    image_prompt = f"""You are a professional architect and interior designer.
+
+Generate ONE photorealistic room only.
+
+Room Type:
+{room_type}
+
+Dimensions:
+{room_dims}
+
+House Type:
+{house_type}
+
+Design Style:
+{style_name} ({budget} tier)
+
+Furniture Requirements:
+{furniture_list}
+
+Architecture Rules:
+- Follow uploaded blueprint exactly.
+- Do not modify walls.
+- Do not move doors.
+- Do not move windows.
+- Maintain walking space.
+- Furniture scale must match room dimensions.
+
+Window Rules:
+If French Window
+→ Full Length Curtains
+Else
+→ Premium Roller Blinds
+
+Camera & Rendering:
+- View: Door View
+- Angle: Eye Level
+- Camera: 24mm Lens
+- Light: Natural Daylight
+- Quality: Ultra Realistic, Architectural Visualization, PBR Materials, Ray Traced Lighting, 4K
+
+Only generate ONE image."""
+
     clean_prompt = " ".join(image_prompt.splitlines())
     encoded_prompt = urllib.parse.quote(clean_prompt)
     seed = abs(hash(f"{style_name}-{design.project_id}")) % 100000
     pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
 
-    # Update design record
     design.image_url = pollinations_url
     db.commit()
 

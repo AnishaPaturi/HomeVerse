@@ -266,7 +266,12 @@ export default function UploadPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [budgetSelection, setBudgetSelection] = useState<string>("10L");
   const [selectedRoomToDesign, setSelectedRoomToDesign] = useState<string>("Hall");
-  const [scratchDesigns, setScratchDesigns] = useState<Array<{id: string, style: string, image_url: string}>>([]);
+  const [scratchDesigns, setScratchDesigns] = useState<Array<{
+    id: string;
+    style: string;
+    image_url: string;
+    status?: "waiting" | "generating" | "completed" | "failed";
+  }>>([]);
   const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
   const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
   const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
@@ -385,7 +390,10 @@ export default function UploadPage() {
 
       const initData = await initRes.json();
       const layoutDesc = initData.layout_desc;
-      const initialDesigns = initData.designs;
+      const initialDesigns = initData.designs.map((d: any, idx: number) => ({
+        ...d,
+        status: idx === 0 ? "generating" : "waiting"
+      }));
 
       setScratchDesigns(initialDesigns);
       if (initialDesigns.length > 0) {
@@ -396,6 +404,12 @@ export default function UploadPage() {
       // Step 2: Sequentially render each style variant to prevent API rate limits and show progressive loaders in grid
       for (let i = 0; i < initialDesigns.length; i++) {
         const stub = initialDesigns[i];
+        
+        // Update current stub status to "generating"
+        setScratchDesigns((prev) =>
+          prev.map((d) => (d.id === stub.id ? { ...d, status: "generating" } : d))
+        );
+
         try {
           const renderFormData = new FormData();
           renderFormData.append("design_id", stub.id);
@@ -410,14 +424,21 @@ export default function UploadPage() {
 
           if (renderRes.ok) {
             const rendered = await renderRes.json();
+            // Update to "completed" and store URL
             setScratchDesigns((prev) =>
-              prev.map((d) => (d.id === rendered.id ? rendered : d))
+              prev.map((d) => (d.id === rendered.id ? { ...rendered, status: "completed" } : d))
             );
           } else {
             console.error(`Failed rendering ${stub.style}`);
+            setScratchDesigns((prev) =>
+              prev.map((d) => (d.id === stub.id ? { ...d, status: "failed" } : d))
+            );
           }
         } catch (e) {
           console.error(`Error rendering ${stub.style}:`, e);
+          setScratchDesigns((prev) =>
+            prev.map((d) => (d.id === stub.id ? { ...d, status: "failed" } : d))
+          );
         }
       }
     } catch (err: any) {
@@ -2523,25 +2544,46 @@ export default function UploadPage() {
                                   className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all cursor-pointer group ${
                                     selectedScratchDesignId === design.id
                                       ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
-                                      : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                      : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                                   }`}
                                 >
                                   <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center">
-                                    {design.image_url ? (
+                                    {design.status === "completed" && design.image_url ? (
                                       <img
                                         src={design.image_url}
                                         alt={design.style}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                       />
-                                    ) : (
+                                    ) : design.status === "generating" ? (
                                       <div className="flex flex-col items-center justify-center gap-1.5">
                                         <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
-                                        <span className="text-[7px] text-slate-500 font-mono tracking-wider uppercase">Generating...</span>
+                                        <span className="text-[7px] text-blue-400 font-mono tracking-wider uppercase font-semibold">Generating...</span>
+                                      </div>
+                                    ) : design.status === "failed" ? (
+                                      <div className="flex flex-col items-center justify-center gap-1">
+                                        <span className="text-red-500 text-xs">⚠️</span>
+                                        <span className="text-[7px] text-red-400 font-mono tracking-wider uppercase font-semibold">Failed</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col items-center justify-center gap-1">
+                                        <span className="text-slate-600 text-[10px]">⏳</span>
+                                        <span className="text-[7px] text-slate-500 font-mono tracking-wider uppercase">Waiting...</span>
                                       </div>
                                     )}
                                   </div>
-                                  <div>
+                                  <div className="flex justify-between items-center w-full">
                                     <h4 className="font-bold text-[10px] text-slate-200 leading-tight">{design.style}</h4>
+                                    <span className={`text-[7px] font-mono font-bold uppercase ${
+                                      design.status === "completed" ? "text-emerald-450" :
+                                      design.status === "generating" ? "text-blue-400 animate-pulse" :
+                                      design.status === "failed" ? "text-red-400" :
+                                      "text-slate-500"
+                                    }`}>
+                                      {design.status === "completed" ? "Done" :
+                                       design.status === "generating" ? "Active" :
+                                       design.status === "failed" ? "Failed" :
+                                       "Pending"}
+                                    </span>
                                   </div>
                                 </button>
                               ))}
@@ -2847,13 +2889,37 @@ export default function UploadPage() {
 
                     const activeDesign = scratchDesigns.find((d) => d.id === selectedScratchDesignId);
                     
-                    if (!activeDesign || !activeDesign.image_url) {
+                    if (!activeDesign || activeDesign.status === "waiting") {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn h-full w-full bg-slate-950/60">
+                          <span className="text-slate-600 text-lg">⏳</span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-300">Queue pending...</p>
+                            <p className="text-[9px] text-slate-550 mt-1">This style is waiting in the generation queue</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (activeDesign.status === "generating" || !activeDesign.image_url) {
                       return (
                         <div className="flex flex-col items-center justify-center text-slate-505 p-6 text-center space-y-4 animate-fadeIn h-full w-full bg-slate-955/65">
                           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                           <div>
                             <p className="text-xs font-bold text-slate-300">Rendering style redesign...</p>
                             <p className="text-[9px] text-slate-500 mt-1">Applying {selectedStyle} materials to locked room layout</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (activeDesign.status === "failed") {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn h-full w-full bg-slate-950/60">
+                          <span className="text-red-500 text-lg">⚠️</span>
+                          <div>
+                            <p className="text-xs font-bold text-red-400">Generation Failed</p>
+                            <p className="text-[9px] text-slate-500 mt-1">The AI model was unable to generate this style render</p>
                           </div>
                         </div>
                       );
