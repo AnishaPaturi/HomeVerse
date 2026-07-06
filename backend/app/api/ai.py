@@ -91,6 +91,26 @@ async def copilot_chat(
     )
     return response
 
+def standardize_room_name(room_type: str) -> str:
+    r = room_type.lower().strip()
+    if "hall" in r or "living" in r:
+        return "Living_Room"
+    if "bedroom" in r:
+        if "master" in r:
+            return "Master_Bedroom"
+        elif "second" in r:
+            return "Second_Bedroom"
+        elif "kids" in r or "kid" in r:
+            return "Kids_Bedroom"
+        return "Bedroom"
+    if "bath" in r:
+        return "Bathroom"
+    if "kitchen" in r:
+        return "Kitchen"
+    if "office" in r:
+        return "Office"
+    return "".join(c for c in room_type if c.isalnum() or c in " -_").replace(" ", "_")
+
 @router.get("/template-image")
 async def get_template_image_endpoint(
     room_type: str = "Living Room",
@@ -103,7 +123,7 @@ async def get_template_image_endpoint(
     Caches the images locally to prevent broken images and speed up loads.
     """
     # Sanitize inputs for filename
-    safe_room = "".join(c for c in room_type if c.isalnum() or c in " -_").replace(" ", "_")
+    safe_room = standardize_room_name(room_type)
     safe_style = "".join(c for c in style if c.isalnum() or c in " -_").replace(" ", "_")
     safe_direction = "".join(c for c in direction if c.isalnum() or c in " -_").replace(" ", "_")
     safe_layout = "".join(c for c in layout if c.isalnum() or c in " -_").replace(" ", "_")
@@ -138,7 +158,7 @@ async def get_template_image_endpoint(
         
     # Fallback redirect to pollinations directly
     return RedirectResponse(url)
-
+ 
 @router.post("/pre-generate-templates")
 async def pre_generate_templates(
     room_type: str = Form(...)
@@ -155,7 +175,7 @@ async def pre_generate_templates(
     
     def generate_single_combination(style: str, direction: str, layout: str):
         # Sanitize inputs for filename
-        safe_room = "".join(c for c in room_type if c.isalnum() or c in " -_").replace(" ", "_")
+        safe_room = standardize_room_name(room_type)
         safe_style = "".join(c for c in style if c.isalnum() or c in " -_").replace(" ", "_")
         safe_direction = "".join(c for c in direction if c.isalnum() or c in " -_").replace(" ", "_")
         safe_layout = "".join(c for c in layout if c.isalnum() or c in " -_").replace(" ", "_")
@@ -637,6 +657,29 @@ ROOM_FURNITURE = {
 }
 
 def extract_room_dimensions(house_model: dict, room_type: str) -> str:
+    # Try the new "rooms" dictionary first
+    rooms = house_model.get("rooms", {})
+    if rooms:
+        room_key = room_type.lower().replace(" / ", "_").replace(" ", "_")
+        if "hall" in room_key or "living" in room_key:
+            room_key = "hall"
+        elif "master" in room_key:
+            room_key = "master_bedroom"
+        elif "second" in room_key:
+            room_key = "second_bedroom"
+        elif "kid" in room_key:
+            room_key = "kids_bedroom"
+        elif "bath" in room_key:
+            room_key = "bathroom"
+            
+        r_info = rooms.get(room_key)
+        if isinstance(r_info, dict):
+            w = r_info.get("width") or r_info.get("width_m") or r_info.get("w")
+            l = r_info.get("length") or r_info.get("length_m") or r_info.get("l")
+            if w and l:
+                return f"{w}m × {l}m"
+
+    # Fallback to dimensionsEachRoom
     each_room = house_model.get("dimensionsEachRoom", {})
     room_dim = each_room.get(room_type) or each_room.get(room_type.lower())
     if isinstance(room_dim, dict):
@@ -685,7 +728,7 @@ async def render_scratch_design(
 
     style_name = design.style
     room_dims = extract_room_dimensions(house_model, room_type)
-    house_type = project.house_type or "Apartment"
+    house_type = house_model.get("houseType") or house_model.get("property_type") or "Apartment"
     
     furniture_items = ROOM_FURNITURE.get(room_type, ["Sofa", "Center Table", "Lights", "Decor"])
     furniture_list = "\n".join([f"• {item}" for item in furniture_items])
@@ -751,6 +794,8 @@ Only generate ONE image."""
             if response.status_code == 200:
                 with open(local_path, "wb") as f:
                     f.write(response.content)
+                design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
+                db.commit()
     except Exception as e:
         print(f"Failed to cache image for design {design.id}: {e}")
 
