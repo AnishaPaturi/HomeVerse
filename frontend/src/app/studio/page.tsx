@@ -176,6 +176,7 @@ function StudioContent() {
                           "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
+                          design_id: designId,
                           object_type: obj.object_type,
                           position_x: obj.position_x,
                           position_y: obj.position_y,
@@ -1067,6 +1068,7 @@ function StudioContent() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
+            design_id: designId,
             object_type: type,
             position_x: newObjLocal.position_x,
             position_y: newObjLocal.position_y,

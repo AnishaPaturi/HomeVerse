@@ -94,6 +94,7 @@ class LayoutEngine:
 
         Notes for parsing:
         - Look at the user's `dimensionsEachRoom` text ("{house_details.get('dimensionsEachRoom', '')}") and try to parse custom width/length for Hall, Bedroom, Kitchen, Dining, Bathroom.
+        - The user has selected the specific room "{house_details.get('selectedRoomToDesign', '')}" to design/modify, and specified its dimensions as "{house_details.get('roomWidth', '')} x {house_details.get('roomLength', '')} meters". You MUST set this room's dimensions to match these values exactly in the "rooms" dictionary.
         - If the user enters dimensions in feet (e.g., 10x12, 10 ft * 12 ft), convert them to meters (multiply feet by 0.3048).
         - If not specified, estimate typical realistic room dimensions in meters that fit within the total house footprint.
         - Ensure all width and length fields are floats in meters.
@@ -112,7 +113,41 @@ class LayoutEngine:
             return result
         except Exception as e:
             print(f"Error creating house JSON with Gemini: {e}")
-            # Fallback house JSON
+            # Fallback house JSON parsing logic
+            selected_room = house_details.get("selectedRoomToDesign", "Hall").lower().replace(" ", "_")
+            if "hall" in selected_room or "living" in selected_room:
+                selected_room = "hall"
+            elif "master" in selected_room:
+                selected_room = "master_bedroom"
+            elif "second" in selected_room:
+                selected_room = "second_bedroom"
+            elif "kids" in selected_room or "kids_bedroom" in selected_room:
+                selected_room = "kids_bedroom"
+            elif "kitchen" in selected_room:
+                selected_room = "kitchen"
+            elif "bathroom" in selected_room:
+                selected_room = "bathroom"
+                
+            r_width = 3.63
+            r_length = 3.94
+            try:
+                r_width = float(house_details.get("roomWidth", 3.63))
+                r_length = float(house_details.get("roomLength", 3.94))
+            except:
+                pass
+
+            rooms = {
+                "hall": {"width": 3.63, "length": 3.94, "windows": 2, "doors": 1},
+                "master_bedroom": {"width": 4.0, "length": 4.5, "windows": 2, "doors": 1},
+                "kitchen": {"width": 3.0, "length": 3.5, "windows": 1, "doors": 1},
+                "bathroom": {"width": 1.8, "length": 2.2, "windows": 1, "doors": 1}
+            }
+            if selected_room in rooms:
+                rooms[selected_room]["width"] = r_width
+                rooms[selected_room]["length"] = r_length
+            else:
+                rooms[selected_room] = {"width": r_width, "length": r_length, "windows": 1, "doors": 1}
+
             return {
                 "houseType": property_type.capitalize(),
                 "budget": budget,
@@ -125,12 +160,7 @@ class LayoutEngine:
                 "windows": int(house_details.get("numWindows", 6) or 6),
                 "doors": int(house_details.get("numDoors", 8) or 8),
                 "blueprintUrl": blueprint_url or "",
-                "rooms": {
-                    "hall": {"width": 3.63, "length": 3.94, "windows": 2, "doors": 1},
-                    "master_bedroom": {"width": 4.0, "length": 4.5, "windows": 2, "doors": 1},
-                    "kitchen": {"width": 3.0, "length": 3.5, "windows": 1, "doors": 1},
-                    "bathroom": {"width": 1.8, "length": 2.2, "windows": 1, "doors": 1}
-                }
+                "rooms": rooms
             }
 
     async def generate_common_layout(

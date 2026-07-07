@@ -143,7 +143,18 @@ const getFurnishedTemplateObjects = (
   return objects;
 };
 
-const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
+const getObjectPositionForRoom = (room: string) => {
+  const r = room.toLowerCase();
+  if (r.includes("hall") || r.includes("living")) return "20% 30%";
+  if (r.includes("master")) return "80% 80%";
+  if (r.includes("second")) return "20% 80%";
+  if (r.includes("kids") || r.includes("kid")) return "80% 30%";
+  if (r.includes("kitchen")) return "70% 20%";
+  if (r.includes("bathroom") || r.includes("bath")) return "40% 70%";
+  return "center";
+};
+
+const getStyleCardInfo = (budgetTier: string, roomType: string, customAmount?: string) => {
   let budgetVal = 10;
   if (budgetTier === "5L") budgetVal = 5;
   else if (budgetTier === "20L") budgetVal = 20;
@@ -153,10 +164,13 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     if (!isNaN(numeric)) budgetVal = numeric;
   }
 
+  // Format roomType for pollinations prompt (e.g. Master Bedroom -> master_bedroom, Hall -> hall)
+  const roomLabel = roomType.toLowerCase().replace(" / ", "_").replace(" ", "_");
+
   return [
     {
       name: "Modern",
-      image: "https://image.pollinations.ai/prompt/modern_interior_design_style_living_room_concept?width=400&height=300&nologo=true&seed=100",
+      image: `https://image.pollinations.ai/prompt/modern_interior_design_style_${roomLabel}_concept?width=400&height=300&nologo=true&seed=100`,
       description: "Clean lines, geometric shapes, simple color palettes, and industrial materials like metal, glass, and steel.",
       budget: `₹ ${(budgetVal * 0.9).toFixed(1)}L - ${(budgetVal * 1.1).toFixed(1)}L`,
       colors: "White, Grey, Wood accents, Black",
@@ -165,7 +179,7 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     },
     {
       name: "Scandinavian",
-      image: "https://image.pollinations.ai/prompt/scandinavian_interior_design_style_cozy_living_room?width=400&height=300&nologo=true&seed=200",
+      image: `https://image.pollinations.ai/prompt/scandinavian_interior_design_style_cozy_${roomLabel}?width=400&height=300&nologo=true&seed=200`,
       description: "Focuses on functionality, simplicity, and natural beauty. Emphasizes warm wood tones, organic shapes, and natural light.",
       budget: `₹ ${(budgetVal * 0.85).toFixed(1)}L - ${(budgetVal * 1.05).toFixed(1)}L`,
       colors: "Oak, White, Soft pastel accents, Fabric grey",
@@ -174,7 +188,7 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     },
     {
       name: "Modern Luxury",
-      image: "https://image.pollinations.ai/prompt/modern_luxury_interior_design_style_high_end_living_room?width=400&height=300&nologo=true&seed=300",
+      image: `https://image.pollinations.ai/prompt/modern_luxury_interior_design_style_high_end_${roomLabel}?width=400&height=300&nologo=true&seed=300`,
       description: "Bespoke high-end finishes, custom-built panels, premium marble surfaces, gold or brass accents, and grand custom furniture.",
       budget: `₹ ${(budgetVal * 1.2).toFixed(1)}L - ${(budgetVal * 1.5).toFixed(1)}L`,
       colors: "Marble Calacatta, Polished Gold, Dark Veneer, Charcoal",
@@ -183,7 +197,7 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     },
     {
       name: "Japandi",
-      image: "https://image.pollinations.ai/prompt/japandi_interior_design_style_minimalist_living_room?width=400&height=300&nologo=true&seed=400",
+      image: `https://image.pollinations.ai/prompt/japandi_interior_design_style_minimalist_${roomLabel}?width=400&height=300&nologo=true&seed=400`,
       description: "A hybrid of Japanese minimalism and Scandinavian warmth. Natural raw wood, low furniture, paper lamps, and clay planters.",
       budget: `₹ ${(budgetVal * 0.9).toFixed(1)}L - ${(budgetVal * 1.1).toFixed(1)}L`,
       colors: "Light Wood, Beige, Sand, Oatmeal, Terracotta",
@@ -192,7 +206,7 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     },
     {
       name: "Industrial",
-      image: "https://image.pollinations.ai/prompt/industrial_loft_interior_design_style_living_room?width=400&height=300&nologo=true&seed=500",
+      image: `https://image.pollinations.ai/prompt/industrial_loft_interior_design_style_${roomLabel}?width=400&height=300&nologo=true&seed=500`,
       description: "Exposed architectural features such as brick walls, concrete structures, black steel framing, and rustic dark timbers.",
       budget: `₹ ${(budgetVal * 0.95).toFixed(1)}L - ${(budgetVal * 1.15).toFixed(1)}L`,
       colors: "Concrete grey, Black metal, Leather brown, Dark Walnut",
@@ -201,7 +215,7 @@ const getStyleCardInfo = (budgetTier: string, customAmount?: string) => {
     },
     {
       name: "Contemporary",
-      image: "https://image.pollinations.ai/prompt/contemporary_interior_design_style_living_room?width=400&height=300&nologo=true&seed=600",
+      image: `https://image.pollinations.ai/prompt/contemporary_interior_design_style_${roomLabel}?width=400&height=300&nologo=true&seed=600`,
       description: "Curvaceous shapes, neutral tone palette with bold statement light fixtures, following current modern-day trends.",
       budget: `₹ ${(budgetVal * 1.0).toFixed(1)}L - ${(budgetVal * 1.25).toFixed(1)}L`,
       colors: "Cream, Taupe, Charcoal, Statement accents",
@@ -275,6 +289,21 @@ export default function UploadPage() {
   const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
   const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
   const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
+  const [housePlanUrl, setHousePlanUrl] = useState<string | null>(null);
+  const [scratchRoomWidth, setScratchRoomWidth] = useState<string>("3.63");
+  const [scratchRoomLength, setScratchRoomLength] = useState<string>("3.94");
+  const [isRoomBlueprintCorrect, setIsRoomBlueprintCorrect] = useState<boolean>(true);
+  const [roomBlueprintFile, setRoomBlueprintFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (housePlanFile) {
+      const url = URL.createObjectURL(housePlanFile);
+      setHousePlanUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setHousePlanUrl(null);
+    }
+  }, [housePlanFile]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -320,6 +349,9 @@ export default function UploadPage() {
         dimensionsEachRoom,
         numWindows,
         numDoors,
+        selectedRoomToDesign,
+        roomWidth: scratchRoomWidth,
+        roomLength: scratchRoomLength,
         ...(propertyType === "independent" ? { numFloors, roomsPerFloor, purposeEachFloor, rooftop, parking, garden } : {})
       };
 
@@ -330,7 +362,9 @@ export default function UploadPage() {
       formData.append("property_type", propertyType);
       formData.append("budget", finalBudget);
       formData.append("house_details", JSON.stringify(detailsObj));
-      if (housePlanFile) {
+      if (!isRoomBlueprintCorrect && roomBlueprintFile) {
+        formData.append("house_plan_file", roomBlueprintFile);
+      } else if (housePlanFile) {
         formData.append("house_plan_file", housePlanFile);
       }
 
@@ -361,7 +395,7 @@ export default function UploadPage() {
 
   const triggerScratchGeneration = async () => {
     setIsGeneratingScratch(true);
-    setScratchStep(6); // Move to Step 6 loading & renders grid
+    setScratchStep(4); // Move to Step 4 loading & renders grid
     try {
       const pId = projectId || generateUUID();
       const finalBudget = budgetSelection === "Custom" ? customBudget : budgetSelection;
@@ -634,6 +668,15 @@ export default function UploadPage() {
     const savedSelectedScratchDesignId = sessionStorage.getItem("homeverse_selected_scratch_design_id");
     if (savedSelectedScratchDesignId) setSelectedScratchDesignId(savedSelectedScratchDesignId);
 
+    const savedRoomWidth = sessionStorage.getItem("homeverse_scratch_room_width");
+    if (savedRoomWidth) setScratchRoomWidth(savedRoomWidth);
+
+    const savedRoomLength = sessionStorage.getItem("homeverse_scratch_room_length");
+    if (savedRoomLength) setScratchRoomLength(savedRoomLength);
+
+    const savedIsRoomBlueprintCorrect = sessionStorage.getItem("homeverse_is_room_blueprint_correct");
+    if (savedIsRoomBlueprintCorrect) setIsRoomBlueprintCorrect(savedIsRoomBlueprintCorrect === "true");
+
     setIsReady(true);
   }, []);
 
@@ -878,6 +921,21 @@ export default function UploadPage() {
     if (!isReady) return;
     sessionStorage.setItem("homeverse_selected_scratch_design_id", selectedScratchDesignId);
   }, [selectedScratchDesignId, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_scratch_room_width", scratchRoomWidth);
+  }, [scratchRoomWidth, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_scratch_room_length", scratchRoomLength);
+  }, [scratchRoomLength, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_is_room_blueprint_correct", isRoomBlueprintCorrect ? "true" : "false");
+  }, [isRoomBlueprintCorrect, isReady]);
 
   // Update project title and room type in the database
   const handleUpdateProjectDetails = async (newTitle: string, newRoomType: string) => {
@@ -1324,7 +1382,10 @@ export default function UploadPage() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(obj)
+            body: JSON.stringify({
+              ...obj,
+              design_id: activeDesignId
+            })
           });
         } catch (err) {
           console.warn("Failed to seed object on backend:", err);
@@ -1475,7 +1536,10 @@ export default function UploadPage() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(obj)
+            body: JSON.stringify({
+              ...obj,
+              design_id: activeDesignId
+            })
           });
         } catch (err) {
           console.warn("Failed to seed blueprint object on backend:", err);
@@ -2314,10 +2378,10 @@ export default function UploadPage() {
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">
-                        Design Wizard: Step {scratchStep} of 6
+                        Design Wizard: Step {scratchStep} of 4
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5, 6].map((s) => (
+                        {[1, 2, 3, 4].map((s) => (
                           <div
                             key={s}
                             className={`w-3.5 h-1.5 rounded-full transition-all ${
@@ -2337,7 +2401,7 @@ export default function UploadPage() {
                       <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
                         {/* Property Type Selection */}
                         <div className="space-y-1.5">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono block">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
                             Property Type
                           </label>
                           <div className="grid grid-cols-2 gap-2">
@@ -2372,11 +2436,11 @@ export default function UploadPage() {
                           <div className="space-y-3 animate-fadeIn border-l-2 border-blue-900/40 pl-2">
                             <div className="grid grid-cols-2 gap-2">
                               <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">No. of Bedrooms</label>
+                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Bedrooms</label>
                                 <input type="number" min="0" value={numBedrooms} onChange={(e) => setNumBedrooms(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
                               </div>
                               <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-450 font-mono">No. of Bathrooms</label>
+                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Bathrooms</label>
                                 <input type="number" min="0" value={numBathrooms} onChange={(e) => setNumBathrooms(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
                               </div>
                             </div>
@@ -2487,6 +2551,40 @@ export default function UploadPage() {
                           </div>
                         )}
 
+                        {/* Target Room Selection */}
+                        <div className="space-y-1.5 pt-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Which room would you like to design / modify?
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { id: "Hall", label: "Hall / Living", icon: "📺" },
+                              { id: "Master Bedroom", label: "Master Bed", icon: "🛏️" },
+                              { id: "Second Bedroom", label: "Second Bed", icon: "💤" },
+                              { id: "Kids Bedroom", label: "Kids Room", icon: "🧸" },
+                              { id: "Kitchen", label: "Kitchen", icon: "🍳" },
+                              { id: "Bathroom", label: "Bathroom", icon: "🚿" }
+                            ].map((room) => (
+                              <button
+                                type="button"
+                                key={room.id}
+                                onClick={() => {
+                                  setSelectedRoomToDesign(room.id);
+                                  setRoomType(room.id);
+                                }}
+                                className={`p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-[9px] flex flex-col justify-center items-center gap-1.5 h-16 ${
+                                  selectedRoomToDesign === room.id
+                                    ? "bg-blue-955/40 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
+                                    : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                }`}
+                              >
+                                <span className="text-base">{room.icon}</span>
+                                <span className="leading-tight">{room.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <div className="space-y-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
                             House Plan Blueprint / Screenshot (Upload or paste)
@@ -2518,7 +2616,7 @@ export default function UploadPage() {
                                 <span className="text-base">📄</span>
                                 <div className="truncate">
                                   <p className="font-bold text-[10px] text-slate-300 truncate leading-tight">{housePlanFile.name}</p>
-                                  <p className="text-[8px] text-slate-550 font-sans">
+                                  <p className="text-[8px] text-slate-555 font-sans">
                                     {(housePlanFile.size / 1024).toFixed(1)} KB • {housePlanFile.type.split("/")[1]?.toUpperCase() || "File"}
                                   </p>
                                 </div>
@@ -2536,51 +2634,198 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {/* STEP 2: Budget Selection */}
+                    {/* STEP 2: Room blueprint, dimensions & Budget Selection */}
                     {scratchStep === 2 && (
                       <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
                         <div className="text-center space-y-1 py-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Design Budget Tier</h3>
-                          <p className="text-[10px] text-slate-500 font-sans">Select a matching budget target for spatial furnishing suggestions.</p>
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Room Details & Budget</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Verify your room blueprint, room dimensions, and selected budget.</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {["5L", "10L", "20L", "50L", "Custom"].map((tier) => (
-                            <button
-                              type="button"
-                              key={tier}
-                              onClick={() => {
-                                setBudgetSelection(tier);
-                                if (tier !== "Custom") setCustomBudget("");
-                              }}
-                              className={`p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs h-16 flex flex-col justify-center items-center gap-1 ${
-                                budgetSelection === tier
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-400"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <span>{tier === "Custom" ? "✏️ Custom" : `₹ ${tier}`}</span>
-                              <span className="text-[8px] font-sans text-slate-500 font-normal">
-                                {tier === "5L" && "Budget Friendly"}
-                                {tier === "10L" && "Economy Modern"}
-                                {tier === "20L" && "Premium Styling"}
-                                {tier === "50L" && "Luxury Finish"}
-                                {tier === "Custom" && "Specify Amount"}
-                              </span>
-                            </button>
-                          ))}
+
+                        {/* Room Blueprint Verification */}
+                        <div className="space-y-2">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Extracted {selectedRoomToDesign} Blueprint
+                          </label>
+                          
+                          {housePlanFile ? (
+                            <div className="space-y-3">
+                              <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
+                                {!isRoomBlueprintCorrect && roomBlueprintFile ? (
+                                  <img
+                                    src={URL.createObjectURL(roomBlueprintFile)}
+                                    alt="Uploaded Room Blueprint"
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="relative w-full h-full">
+                                    <img
+                                      src={housePlanUrl || ""}
+                                      alt="Cutout blueprint"
+                                      className="w-full h-full object-none transition-all duration-500"
+                                      style={{
+                                        objectPosition: getObjectPositionForRoom(selectedRoomToDesign),
+                                        transform: "scale(2.2)",
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 border-2 border-dashed border-blue-500/60 pointer-events-none" />
+                                    <div className="absolute top-2 left-2 bg-blue-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
+                                      AI Auto-Cutout
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex flex-col gap-1.5 bg-slate-900/40 p-2.5 rounded-xl border border-slate-850">
+                                <span className="text-[9px] text-slate-400 font-medium">Is this cutout the correct blueprint of the {selectedRoomToDesign}?</span>
+                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsRoomBlueprintCorrect(true);
+                                      setRoomBlueprintFile(null);
+                                    }}
+                                    className={`py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                                      isRoomBlueprintCorrect
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200"
+                                    }`}
+                                  >
+                                    ✓ Yes, looks correct
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsRoomBlueprintCorrect(false)}
+                                    className={`py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                                      !isRoomBlueprintCorrect
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200"
+                                    }`}
+                                  >
+                                    ❌ No, it's incorrect
+                                  </button>
+                                </div>
+                              </div>
+
+                              {!isRoomBlueprintCorrect && (
+                                <div className="space-y-1.5 animate-fadeIn border-l-2 border-amber-500/40 pl-2">
+                                  <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                                    Upload Room-Specific Blueprint
+                                  </label>
+                                  <input
+                                    type="file"
+                                    id="room-blueprint-upload"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const files = e.target.files;
+                                      if (files && files.length > 0) {
+                                        setRoomBlueprintFile(files[0]);
+                                      }
+                                    }}
+                                  />
+                                  {!roomBlueprintFile ? (
+                                    <div 
+                                      onClick={() => document.getElementById("room-blueprint-upload")?.click()}
+                                      className="border border-dashed border-slate-800 hover:border-blue-500/50 rounded-xl p-3 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-455 cursor-pointer hover:bg-slate-900/10 transition-all group"
+                                    >
+                                      <Upload className="w-4 h-4 text-slate-500 group-hover:text-blue-450 group-hover:scale-105 transition-all mb-1" />
+                                      <span className="font-medium text-slate-350">Click to upload Room Blueprint</span>
+                                    </div>
+                                  ) : (
+                                    <div className="border border-slate-800 rounded-xl p-2 bg-slate-905/60 flex items-center justify-between text-[10px] text-slate-200">
+                                      <span className="truncate max-w-[150px] font-bold text-slate-300">{roomBlueprintFile.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setRoomBlueprintFile(null)}
+                                        className="text-red-405 hover:text-red-300 font-bold cursor-pointer"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="border border-dashed border-slate-800 rounded-xl p-4 bg-slate-950 text-center text-[10px] text-slate-500">
+                              No house blueprint uploaded. You can upload a room blueprint or skip.
+                            </div>
+                          )}
                         </div>
-                        {budgetSelection === "Custom" && (
-                          <div className="space-y-1 animate-fadeIn">
-                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Enter Custom Budget</label>
+
+                        {/* Room Dimensions Input */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Room Dimensions
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[8px] text-slate-505 font-mono uppercase">Width (m)</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="1"
+                                value={scratchRoomWidth}
+                                onChange={(e) => setScratchRoomWidth(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[8px] text-slate-555 font-mono uppercase">Length (m)</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="1"
+                                value={scratchRoomLength}
+                                onChange={(e) => setScratchRoomLength(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Budget Selection */}
+                        <div className="space-y-2">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Design Budget Tier
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {["5L", "10L", "20L", "50L", "Custom"].map((tier) => (
+                              <button
+                                type="button"
+                                key={tier}
+                                onClick={() => {
+                                  setBudgetSelection(tier);
+                                  if (tier !== "Custom") setCustomBudget("");
+                                }}
+                                className={`p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-[10px] flex flex-col justify-center items-center gap-0.5 ${
+                                  budgetSelection === tier
+                                    ? "bg-blue-955/40 border-blue-500 text-blue-400"
+                                    : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                }`}
+                              >
+                                <span>{tier === "Custom" ? "✏️ Custom" : `₹ ${tier}`}</span>
+                                <span className="text-[7px] font-sans text-slate-500 font-normal">
+                                  {tier === "5L" && "Friendly"}
+                                  {tier === "10L" && "Economy"}
+                                  {tier === "20L" && "Premium"}
+                                  {tier === "50L" && "Luxury"}
+                                  {tier === "Custom" && "Specify"}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                          {budgetSelection === "Custom" && (
                             <input
                               type="text"
                               value={customBudget}
                               onChange={(e) => setCustomBudget(e.target.value)}
                               placeholder="e.g. 15 Lakhs or 75 Lakhs"
-                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none mt-2 animate-fadeIn"
                             />
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -2645,91 +2890,8 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {/* STEP 4: Select Room to Design */}
+                    {/* STEP 4: Generation & Layout Locked Comparison Render */}
                     {scratchStep === 4 && (
-                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
-                        <div className="text-center space-y-1 py-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Which room would you like to design?</h3>
-                          <p className="text-[10px] text-slate-500 font-sans">We will map the 3D layout coordinates and styles for this selected space.</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { id: "Hall", label: "Hall / Living Room", icon: "📺" },
-                            { id: "Master Bedroom", label: "Master Bedroom", icon: "🛏️" },
-                            { id: "Second Bedroom", label: "Second Bedroom", icon: "💤" },
-                            { id: "Kids Bedroom", label: "Kids Room", icon: "🧸" },
-                            { id: "Kitchen", label: "Kitchen", icon: "🍳" },
-                            { id: "Bathroom", label: "Bathroom", icon: "Shower" }
-                          ].map((room) => (
-                            <button
-                              type="button"
-                              key={room.id}
-                              onClick={() => setSelectedRoomToDesign(room.id)}
-                              className={`p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs h-16 flex flex-col justify-center items-center gap-1 ${
-                                selectedRoomToDesign === room.id
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                              }`}
-                            >
-                              <span className="text-lg">{room.icon === "Shower" ? "🚿" : room.icon}</span>
-                              <span>{room.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* STEP 5: Style Cards Preview */}
-                    {scratchStep === 5 && (
-                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
-                        <div className="text-center space-y-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Select Design Style</h3>
-                          <p className="text-[10px] text-slate-500 font-sans">Choose your preferred setup style. Renders are generated matching this specific style tier.</p>
-                        </div>
-                        <div className="space-y-3">
-                          {getStyleCardInfo(budgetSelection, customBudget).map((style) => (
-                            <button
-                              type="button"
-                              key={style.name}
-                              onClick={() => setSelectedStyle(style.name)}
-                              className={`text-left w-full flex gap-3 transition-all p-3 rounded-2xl overflow-hidden cursor-pointer border ${
-                                selectedStyle === style.name
-                                  ? "bg-slate-905/60 border-blue-500 shadow-md shadow-blue-500/10"
-                                  : "bg-slate-955/60 border-slate-850 hover:border-slate-800 hover:bg-slate-950/20"
-                              }`}
-                            >
-                              <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-900 bg-slate-950">
-                                <img src={style.image} alt={style.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div className="flex-1 flex flex-col justify-between h-20">
-                                <div>
-                                  <div className="flex items-center justify-between">
-                                    <h4 className={`font-bold text-xs leading-none ${selectedStyle === style.name ? "text-blue-400" : "text-slate-200"}`}>{style.name}</h4>
-                                    <span className="text-[8px] bg-blue-900/30 px-1.5 py-0.5 rounded font-mono font-bold text-blue-400">
-                                      Est: {style.budget}
-                                    </span>
-                                  </div>
-                                  <p className="text-[9.5px] text-slate-400 font-sans leading-normal mt-1 line-clamp-2">{style.description}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1.5 border-t border-slate-900/40 pt-1 text-[8px] leading-tight">
-                                  <div>
-                                    <span className="text-slate-550 block font-mono">COLORS:</span>
-                                    <span className="text-slate-300 font-medium truncate block">{style.colors}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-500 block font-mono font-bold">PROS:</span>
-                                    <span className="text-emerald-400/90 leading-tight truncate block">{style.pros}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* STEP 6: Generation & Layout Locked Comparison Render */}
-                    {scratchStep === 6 && (
                       <div className="space-y-4 animate-fadeIn">
                         {isGeneratingScratch && scratchDesigns.length === 0 ? (
                           <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[320px] animate-fadeIn">
@@ -2841,7 +3003,7 @@ export default function UploadPage() {
                         onClick={() => setScratchStep(2)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
                       >
-                        Continue to Budget <ArrowRight className="w-3.5 h-3.5" />
+                        Continue to Room Details <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
 
@@ -2859,34 +3021,14 @@ export default function UploadPage() {
                       <button
                         type="button"
                         disabled={!masterHouseJson}
-                        onClick={() => setScratchStep(4)}
+                        onClick={triggerScratchGeneration}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs disabled:opacity-50 disabled:cursor-not-allowed animate-fadeIn"
                       >
-                        Choose Room to Design <ArrowRight className="w-3.5 h-3.5" />
+                        Generate Locked Layout & 6 Renders <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
 
-                    {scratchStep === 4 && (
-                      <button
-                        type="button"
-                        onClick={() => setScratchStep(5)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
-                      >
-                        Review Style Options <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {scratchStep === 5 && (
-                      <button
-                        type="button"
-                        onClick={triggerScratchGeneration}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-pulse animate-fadeIn"
-                      >
-                        Generate Locked Layout & 6 Styles <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {scratchStep === 6 && !isGeneratingScratch && (
+                    {scratchStep === 4 && !isGeneratingScratch && (
                       <button
                         type="button"
                         onClick={handleCreateFromScratch}
@@ -3024,7 +3166,7 @@ export default function UploadPage() {
                           <div>
                             <p className="text-xs font-bold text-slate-300">Set Up House Geometry</p>
                             <p className="text-[9px] text-slate-555 max-w-[200px] mt-1 leading-relaxed">
-                              Enter your apartment or independent house details on the left, then click continue.
+                              Enter your property details, select the room to modify, and upload a house plan blueprint.
                             </p>
                           </div>
                         </div>
@@ -3034,12 +3176,12 @@ export default function UploadPage() {
                       return (
                         <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
                           <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
-                            <DollarSign className="w-6 h-6 text-slate-650" />
+                            <Layers className="w-6 h-6 text-slate-650" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-300">Set Design Budget Tier</p>
+                            <p className="text-xs font-bold text-slate-300">Room Details & Budget</p>
                             <p className="text-[9px] text-slate-555 max-w-[200px] mt-1 leading-relaxed">
-                              Choose a budget style class to align material presets and furnishing tiers.
+                              Verify your room blueprint cutout, adjust dimensions, and select the design budget tier.
                             </p>
                           </div>
                         </div>
@@ -3047,7 +3189,7 @@ export default function UploadPage() {
                     }
                     if (scratchStep === 3) {
                       return (
-                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
+                        <div className="flex flex-col items-center justify-center text-slate-505 p-6 text-center space-y-3 animate-fadeIn">
                           <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
                             <Layers className="w-6 h-6 text-slate-655" />
                           </div>
@@ -3060,46 +3202,7 @@ export default function UploadPage() {
                         </div>
                       );
                     }
-                    if (scratchStep === 4) {
-                      return (
-                        <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3 animate-fadeIn">
-                          <div className="w-16 h-16 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center bg-slate-900/20">
-                            <Home className="w-6 h-6 text-slate-650" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-300">Select Initial Target Room</p>
-                            <p className="text-[9px] text-slate-550 max-w-[200px] mt-1 leading-relaxed">
-                              Select which room you want to design first (e.g. Hall, Master Bedroom, Kitchen).
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    if (scratchStep === 5) {
-                      const matchedStyle = styles.find((s) => s.name === selectedStyle);
-                      const displayImg = matchedStyle?.img || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=600";
-                      
-                      return (
-                        <div className="relative w-full h-full animate-fadeIn group">
-                          <img
-                            src={displayImg}
-                            alt={`${selectedStyle} Preset Preview`}
-                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
-                          />
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-955 via-slate-955/85 to-transparent p-4 pt-10">
-                            <div className="flex flex-wrap gap-1.5 items-center mb-1">
-                              <span className="text-[8px] bg-blue-500/10 border border-blue-500/25 text-blue-400 font-bold font-mono px-2 py-0.5 rounded uppercase">
-                                {selectedStyle} Theme (Preset Preview)
-                              </span>
-                            </div>
-                            <p className="text-[9.5px] text-slate-300 leading-normal line-clamp-2">
-                              {matchedStyle?.desc || "A custom designer layout preset view."}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    if (scratchStep === 6 && scratchDesigns.length === 0) {
+                    if (scratchStep === 4 && scratchDesigns.length === 0) {
                       return (
                         <div className="flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn">
                           <div className="w-14 h-14 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 relative">

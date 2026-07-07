@@ -5,14 +5,17 @@ from app.config import settings
 engine = None
 
 try:
-    # Attempt connecting to PostgreSQL
+    # Attempt connecting to the configured database URL
     engine = create_engine(settings.DATABASE_URL)
     # Test connection
     with engine.connect() as conn:
         pass
-    print("Database connection: PostgreSQL (Connected successfully)")
+    if "postgresql" in settings.DATABASE_URL:
+        print("Database connection: PostgreSQL (Connected successfully)")
+    else:
+        print(f"Database connection: {settings.DATABASE_URL.split('://')[0].upper()} (Connected successfully)")
 except Exception as e:
-    print(f"Warning: PostgreSQL connection failed ({e}). Falling back to local SQLite database...")
+    print(f"Warning: Connection to {settings.DATABASE_URL} failed ({e}). Falling back to local SQLite database...")
     engine = create_engine("sqlite:///./homeverse.db", connect_args={"check_same_thread": False})
     print("Database connection: SQLite (Initialized at ./homeverse.db)")
 
