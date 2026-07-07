@@ -68,6 +68,7 @@ function StudioContent() {
 
   const [user, setUser] = useState<any | null>(null);
   const designId = searchParams.get("designId");
+  const [designDirection, setDesignDirection] = useState<string | null>(null);
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [hasLoadedFromDb, setHasLoadedFromDb] = useState(false);
   const [roomType, setRoomType] = useState<string>("Living Room");
@@ -107,6 +108,9 @@ function StudioContent() {
       const res = await fetch(`http://localhost:8080/api/designs/${designId}`);
       if (res.ok) {
         const designData = await res.json();
+        if (designData && designData.direction) {
+          setDesignDirection(designData.direction);
+        }
         let currentObjects = [];
         if (designData && designData.objects && designData.objects.length > 0) {
           const mappedObjects = designData.objects.map((obj: any) => ({
@@ -173,6 +177,14 @@ function StudioContent() {
                   } else if (struct.room_width && struct.room_depth) {
                     parsedWidth = Number(struct.room_width);
                     parsedDepth = Number(struct.room_depth);
+                  }
+                  
+                  // Swap dimensions if layout direction is East or West
+                  const dir = designData?.direction || struct.mainDoor || "South";
+                  if (dir === "East" || dir === "West") {
+                    const temp = parsedWidth;
+                    parsedWidth = parsedDepth;
+                    parsedDepth = temp;
                   }
                   
                   setRoomWidth(parsedWidth);
@@ -899,8 +911,15 @@ function StudioContent() {
         }
       }
 
-      currentStruct.room_width = width;
-      currentStruct.room_depth = depth;
+      let dbWidth = width;
+      let dbDepth = depth;
+      if (designDirection === "East" || designDirection === "West") {
+        dbWidth = depth;
+        dbDepth = width;
+      }
+
+      currentStruct.room_width = dbWidth;
+      currentStruct.room_depth = dbDepth;
 
       await fetch(`http://localhost:8080/api/projects/${activeProjId}`, {
         method: "PUT",

@@ -18,10 +18,12 @@ class LayoutEngine:
         property_type: str,
         budget: str,
         house_details: Dict[str, Any],
-        blueprint_url: Optional[str] = None
+        blueprint_url: Optional[str] = None,
+        blueprint_bytes: Optional[bytes] = None,
+        blueprint_mime_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Uses Gemini to parse user inputs (e.g. details form, room dimensions) and return a clean, structured Master House Model JSON.
+        Uses Gemini to parse user inputs (e.g. details form, room dimensions) and the uploaded blueprint image to return a clean, structured Master House Model JSON.
         """
         api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -32,13 +34,20 @@ class LayoutEngine:
         genai.configure(api_key=api_key)
 
         prompt = f"""
-        You are an AI Architect. Convert the following unstructured user-supplied housing information into a single clean, validated Master House Model JSON object.
+        You are an AI Architect. Convert the following unstructured user-supplied housing information and the attached blueprint/floorplan image into a single clean, validated Master House Model JSON object.
         
         User input details:
         - Property Type: {property_type}
         - Budget selection: {budget}
         - House details provided: {json.dumps(house_details, indent=2)}
         - Blueprint Image URL: {blueprint_url or "None"}
+
+        If a blueprint/floorplan image is attached:
+        - Carefully analyze the architectural drawing.
+        - Identify the layout of the rooms (e.g., Living Room/Hall, Master Bedroom, Kitchen, Dining Room, Bathroom).
+        - Detect wall boundaries, door openings, window placements, and relative room sizes.
+        - Extract/estimate the dimensions of each room in meters based on the drawing.
+        - Ensure that the rooms and their dimensions in the generated JSON reflect the actual layout and structure shown in the blueprint.
 
         Standardize the keys to match the following structure:
         {{
@@ -63,7 +72,7 @@ class LayoutEngine:
           }},
           "rooms": {{
              // Generate estimated or parsed dimensions (width and length in meters, door count, window count) 
-             // for each primary room based on the total dimensions and dimensionsEachRoom inputs.
+             // for each primary room based on the total dimensions, blueprint image structure, and dimensionsEachRoom inputs.
              // Ensure at least "hall", "master_bedroom", "kitchen", "bathroom" are present with realistic dimensions.
              "hall": {{
                 "width": 3.63,
@@ -96,7 +105,7 @@ class LayoutEngine:
         - Look at the user's `dimensionsEachRoom` text ("{house_details.get('dimensionsEachRoom', '')}") and try to parse custom width/length for Hall, Bedroom, Kitchen, Dining, Bathroom.
         - The user has selected the specific room "{house_details.get('selectedRoomToDesign', '')}" to design/modify, and specified its dimensions as "{house_details.get('roomWidth', '')} x {house_details.get('roomLength', '')} meters". You MUST set this room's dimensions to match these values exactly in the "rooms" dictionary.
         - If the user enters dimensions in feet (e.g., 10x12, 10 ft * 12 ft), convert them to meters (multiply feet by 0.3048).
-        - If not specified, estimate typical realistic room dimensions in meters that fit within the total house footprint.
+        - If not specified, estimate typical realistic room dimensions in meters that fit within the total house footprint and match the attached blueprint layout.
         - Ensure all width and length fields are floats in meters.
         - Make sure "rooms" contains standardized keys: "hall", "master_bedroom", "second_bedroom", "kids_bedroom", "dining", "kitchen", "bathroom".
 
@@ -104,9 +113,17 @@ class LayoutEngine:
         """
 
         try:
+            contents = []
+            if blueprint_bytes and blueprint_mime_type:
+                contents.append({
+                    "mime_type": blueprint_mime_type,
+                    "data": blueprint_bytes
+                })
+            contents.append(prompt)
+
             model = genai.GenerativeModel("gemini-2.5-flash")
             response = await model.generate_content_async(
-                prompt,
+                contents,
                 generation_config={"response_mime_type": "application/json"}
             )
             result = json.loads(response.text)

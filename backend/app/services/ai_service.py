@@ -1388,6 +1388,162 @@ DIRECTION_ROTATION_OFFSET = {
 }
 
 
+def get_rotation_offset_for_door(direction: str) -> float:
+    d = direction.lower()
+    if "north" in d:
+        return 3.141592653589793
+    elif "east" in d:
+        return 1.5707963267948966
+    elif "west" in d:
+        return -1.5707963267948966
+    else: # South or default
+        return 0.0
+
+
+def get_room_dimensions_from_analysis(structural_analysis: dict, room_type: str) -> tuple:
+    if not structural_analysis:
+        return 3.63, 3.94
+        
+    # Try the rooms dictionary first
+    rooms = structural_analysis.get("rooms", {})
+    if rooms:
+        room_key = room_type.lower().replace(" / ", "_").replace(" ", "_")
+        if "hall" in room_key or "living" in room_key:
+            room_key = "hall"
+        elif "master" in room_key:
+            room_key = "master_bedroom"
+        elif "second" in room_key:
+            room_key = "second_bedroom"
+        elif "kid" in room_key:
+            room_key = "kids_bedroom"
+        elif "bath" in room_key:
+            room_key = "bathroom"
+        elif "kitchen" in room_key:
+            room_key = "kitchen"
+        elif "dining" in room_key:
+            room_key = "dining"
+        elif "office" in room_key:
+            room_key = "office"
+            
+        r_info = rooms.get(room_key)
+        if isinstance(r_info, dict):
+            w = r_info.get("width") or r_info.get("width_m") or r_info.get("w")
+            l = r_info.get("length") or r_info.get("length_m") or r_info.get("l")
+            if w and l:
+                try:
+                    return float(w), float(l)
+                except:
+                    pass
+
+    # Try raw keys at root
+    if "room_width" in structural_analysis and "room_depth" in structural_analysis:
+        try:
+            return float(structural_analysis["room_width"]), float(structural_analysis["room_depth"])
+        except:
+            pass
+
+    # Try dimensionsEachRoom
+    each_room = structural_analysis.get("dimensionsEachRoom", {})
+    if each_room:
+        room_dim = each_room.get(room_type) or each_room.get(room_type.lower())
+        if isinstance(room_dim, dict):
+            w = room_dim.get("width") or room_dim.get("width_m") or room_dim.get("w")
+            l = room_dim.get("length") or room_dim.get("length_m") or room_dim.get("l")
+            if w and l:
+                try:
+                    return float(w), float(l)
+                except:
+                    pass
+        elif isinstance(room_dim, str):
+            import re
+            m = re.findall(r"(\d+(?:\.\d+)?)\s*[xX*×]\s*(\d+(?:\.\d+)?)", room_dim)
+            if m:
+                try:
+                    return float(m[0][0]), float(m[0][1])
+                except:
+                    pass
+                    
+    h_dim = structural_analysis.get("dimensionsHouse", {})
+    if isinstance(h_dim, dict) and h_dim.get("width") and h_dim.get("length"):
+        try:
+            return float(h_dim.get('width')), float(h_dim.get('length'))
+        except:
+            pass
+    elif isinstance(h_dim, str):
+        import re
+        m = re.findall(r"(\d+(?:\.\d+)?)\s*[xX*×]\s*(\d+(?:\.\d+)?)", h_dim)
+        if m:
+            try:
+                return float(m[0][0]), float(m[0][1])
+            except:
+                pass
+        
+    return 3.63, 3.94
+
+
+def calculate_image_dimensions(width: float, length: float, direction: str) -> tuple:
+    direction_lower = direction.lower()
+    if "east" in direction_lower or "west" in direction_lower:
+        aspect = length / width if width > 0 else 1.0
+    else:
+        aspect = width / length if length > 0 else 1.0
+        
+    if aspect >= 1.0:
+        w = 1024
+        h = int(1024 / aspect)
+        h = max(512, min(1024, (h // 64) * 64))
+    else:
+        h = 1024
+        w = int(1024 * aspect)
+        w = max(512, min(1024, (w // 64) * 64))
+        
+    return w, h
+
+
+def rotate_layout_objects(objects: list, direction: str, layout_variant: str = None) -> list:
+    offset = get_rotation_offset_for_door(direction)
+    if offset == 0.0 and (layout_variant != "Cosy Corner Concept"):
+        return objects
+        
+    import math
+    rotated_objects = []
+    for obj in objects:
+        obj_type = obj.get("object_type", "")
+        # Floor and wall are not rotated/translated
+        if obj_type in ["floor", "wall"]:
+            rotated_objects.append(obj)
+            continue
+            
+        x = obj.get("position_x", 0.0)
+        y = obj.get("position_y", 0.0)
+        z = obj.get("position_z", 0.0)
+        rot = obj.get("rotation", 0.0)
+        
+        # Apply layout offset for Cosy Corner Concept
+        if layout_variant == "Cosy Corner Concept":
+            x += 0.6
+            
+        # Rotate around (0.0, -3.0)
+        cx, cz = 0.0, -3.0
+        dx = x - cx
+        dz = z - cz
+        
+        cos_theta = math.cos(offset)
+        sin_theta = math.sin(offset)
+        
+        new_dx = dx * cos_theta - dz * sin_theta
+        new_dz = dx * sin_theta + dz * cos_theta
+        
+        new_obj = obj.copy()
+        new_obj["position_x"] = cx + new_dx
+        new_obj["position_z"] = cz + new_dz
+        new_obj["rotation"] = rot + offset
+        
+        rotated_objects.append(new_obj)
+        
+    return rotated_objects
+
+
 def map_wall_to_direction(wall: str) -> str:
     wall_lower = wall.lower()
     if wall_lower in ["north", "east", "west", "south"]:
@@ -2003,18 +2159,7 @@ class AIService:
                 "objects": default_objects
             }
 
-        # Create design entry in database
-        design = DesignModel(
-            project_id=project_id,
-            style=style,
-            image_url=""
-        )
-        db.add(design)
-        db.commit()
-        db.refresh(design)
-
-        # Generate Pollinations AI Image dynamically
-        description = result.get("description", "")
+        # Parse door direction
         door_direction = "North"
         if project.structural_analysis:
             try:
@@ -2040,6 +2185,21 @@ class AIService:
             except Exception as e:
                 print(f"Error parsing door direction: {e}")
 
+        # Create design entry in database
+        design = DesignModel(
+            project_id=project_id,
+            style=style,
+            direction=door_direction,
+            layout_variant="dynamic",
+            image_url=""
+        )
+        db.add(design)
+        db.commit()
+        db.refresh(design)
+
+        # Generate Pollinations AI Image dynamically
+        description = result.get("description", "")
+
         # Determine door wall and camera view direction based on the main door facing direction
         door_wall = "South"  # default: door is on the front wall
         camera_view = "North"  # default: camera looks straight back into the room
@@ -2057,6 +2217,16 @@ class AIService:
         elif "west" in door_direction_lower:
             door_wall = "West"
             camera_view = "East"
+
+        # Calculate image dimensions based on room dimensions aspect ratio
+        try:
+            struct_data = json.loads(project.structural_analysis) if project.structural_analysis else {}
+            room_w, room_l = get_room_dimensions_from_analysis(struct_data, room_type)
+        except Exception as e:
+            print(f"Error parsing room dimensions for image size: {e}")
+            room_w, room_l = 3.63, 3.94
+        
+        img_width, img_height = calculate_image_dimensions(room_w, room_l, door_direction)
 
         layout_str = description
         if color_palette:
@@ -2079,7 +2249,7 @@ Composition (matching sample_hall.png):
         local_path = os.path.join("static/generated", local_filename)
 
         encoded_prompt = urllib.parse.quote(image_prompt)
-        pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux"
+        pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_width}&height={img_height}&nologo=true&private=true&model=flux"
 
         # Return Pollinations URL immediately so the API responds instantly, and cache the file in a background thread
         design.image_url = pollinations_url
@@ -2110,9 +2280,10 @@ Composition (matching sample_hall.png):
         db.commit()
         db.refresh(design)
 
-        # Save 3D objects
+        # Save 3D objects (rotated to align with the camera perspective)
         objects = result.get("objects", [])
-        for obj_info in objects:
+        rotated_objects = rotate_layout_objects(objects, door_direction)
+        for obj_info in rotated_objects:
             obj = ObjectModel(
                 design_id=design.id,
                 object_type=obj_info.get("object_type", "sofa"),
@@ -2172,6 +2343,13 @@ Composition (matching sample_hall.png):
         os.makedirs("static/generated", exist_ok=True)
         semaphore = asyncio.Semaphore(4)  # tune based on Pollinations rate limits
 
+        # Calculate image dimensions based on room dimensions aspect ratio
+        try:
+            room_w, room_l = get_room_dimensions_from_analysis(structural_analysis, room_type)
+        except Exception as e:
+            print(f"Error parsing room dimensions for style variants: {e}")
+            room_w, room_l = 3.63, 3.94
+
         async def fetch_one(design, direction, layout):
             async with semaphore:
                 prompt = build_direction_layout_prompt(style, room_type, direction, layout, gemini_desc)
@@ -2179,9 +2357,10 @@ Composition (matching sample_hall.png):
                 # Distinct seed per direction/layout so Pollinations doesn't return
                 # the same cached image for every combo.
                 seed = abs(hash(f"{style}-{direction}-{layout}")) % 100000
+                img_width, img_height = calculate_image_dimensions(room_w, room_l, direction)
                 pollinations_url = (
                     f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-                    f"?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
+                    f"?width={img_width}&height={img_height}&nologo=true&private=true&model=flux&seed={seed}"
                 )
                 local_filename = f"{design.id}.jpg"
                 local_path = os.path.join("static/generated", local_filename)
@@ -2221,19 +2400,15 @@ Composition (matching sample_hall.png):
             ]
 
         for design, (direction, layout) in zip(designs, combos):
-            rotation_offset = DIRECTION_ROTATION_OFFSET.get(direction, 0.0)
-            # Nudge the "Cosy Corner Concept" layout sideways so it's not identical
-            # to "Balanced Center Setup" — replace with real Gemini-driven layouts
-            # for production-quality distinct arrangements.
-            x_offset = 0.6 if layout == "Cosy Corner Concept" else 0.0
-            for obj_info in base_objects:
+            rotated_objects = rotate_layout_objects(base_objects, direction, layout)
+            for obj_info in rotated_objects:
                 obj = ObjectModel(
                     design_id=design.id,
                     object_type=obj_info.get("object_type", "sofa"),
-                    position_x=obj_info.get("position_x", 0.0) + (x_offset if obj_info.get("object_type") not in ["floor", "wall"] else 0.0),
+                    position_x=obj_info.get("position_x", 0.0),
                     position_y=obj_info.get("position_y", 0.0),
                     position_z=obj_info.get("position_z", 0.0),
-                    rotation=(obj_info.get("rotation", 0.0) + rotation_offset) if obj_info.get("object_type") not in ["floor", "wall"] else obj_info.get("rotation", 0.0),
+                    rotation=obj_info.get("rotation", 0.0),
                     scale=obj_info.get("scale", 1.0),
                     material=obj_info.get("material", "#a78bfa")
                 )

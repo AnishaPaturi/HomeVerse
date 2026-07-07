@@ -11,6 +11,8 @@ class Design(Base):
     style = Column(String, nullable=False)
     image_url = Column(String, nullable=False)
     selected = Column(Boolean, default=False)
+    direction = Column(String, nullable=True)
+    layout_variant = Column(String, nullable=True)
 
     project = relationship("Project", back_populates="designs")
     objects = relationship("Object", back_populates="design", cascade="all, delete-orphan")

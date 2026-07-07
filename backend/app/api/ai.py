@@ -541,6 +541,10 @@ async def initialize_scratch_designs(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate layout: {e}")
 
+    main_door = house_model.get("mainDoor", "North")
+    if "kitchen" in room_type.lower():
+        main_door = house_model.get("kitchen", "East")
+
     styles = ["Modern", "Scandinavian", "Modern Luxury", "Japandi", "Industrial", "Contemporary"]
     
     STYLE_MATERIALS = {
@@ -573,12 +577,16 @@ async def initialize_scratch_designs(
             return mapping["bed"]
         return mapping.get("accent", generic_material)
 
+    from app.services.ai_service import rotate_layout_objects
+
     created_designs = []
     for style_name in styles:
         # Create Design Model record
         design = DesignModel(
             project_id=project_id,
             style=style_name,
+            direction=main_door,
+            layout_variant="common",
             image_url="" # Empty for now
         )
         db.add(design)
@@ -587,7 +595,8 @@ async def initialize_scratch_designs(
 
         # Create Object Models
         objects = common_layout.get("objects", [])
-        for obj_info in objects:
+        rotated_objects = rotate_layout_objects(objects, main_door)
+        for obj_info in rotated_objects:
             style_mat = map_generic_to_style_material(obj_info.get("material", "wood_base"), style_name)
             obj = ObjectModel(
                 design_id=design.id,
@@ -736,6 +745,34 @@ async def render_scratch_design(
     style_name = design.style
     room_dims = extract_room_dimensions(house_model, room_type)
     house_type = house_model.get("houseType") or house_model.get("property_type") or "Apartment"
+
+    # Get door direction to set up camera perspective
+    door_dir = getattr(design, "direction", None)
+    if not door_dir:
+        door_dir = house_model.get("mainDoor", "North")
+        if "kitchen" in room_type.lower():
+            door_dir = house_model.get("kitchen", "East")
+
+    door_wall = "South"
+    camera_view = "North"
+    door_dir_lower = door_dir.lower()
+    if "north" in door_dir_lower:
+        door_wall = "North"
+        camera_view = "South"
+    elif "south" in door_dir_lower:
+        door_wall = "South"
+        camera_view = "North"
+    elif "east" in door_dir_lower:
+        door_wall = "East"
+        camera_view = "West"
+    elif "west" in door_dir_lower:
+        door_wall = "West"
+        camera_view = "East"
+
+    from app.services.ai_service import calculate_image_dimensions, get_room_dimensions_from_analysis
+    
+    room_w, room_l = get_room_dimensions_from_analysis(house_model, room_type)
+    img_width, img_height = calculate_image_dimensions(room_w, room_l, door_dir)
     
     furniture_items = ROOM_FURNITURE.get(room_type, ["Sofa", "Center Table", "Lights", "Decor"])
     furniture_list = "\n".join([f"• {item}" for item in furniture_items])
@@ -774,7 +811,8 @@ Else
 → Premium Roller Blinds
 
 Camera & Rendering:
-- View: Door View
+- Camera at entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room (door perspective).
+- Part of open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view.
 - Angle: Eye Level
 - Camera: 24mm Lens
 - Light: Natural Daylight
@@ -785,7 +823,7 @@ Only generate ONE image."""
     clean_prompt = " ".join(image_prompt.splitlines())
     encoded_prompt = urllib.parse.quote(clean_prompt)
     seed = abs(hash(f"{style_name}-{design.project_id}")) % 100000
-    pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=600&nologo=true&private=true&model=flux&seed={seed}"
+    pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_width}&height={img_height}&nologo=true&private=true&model=flux&seed={seed}"
 
     design.image_url = pollinations_url
     db.commit()

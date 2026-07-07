@@ -14,6 +14,8 @@ class DesignCreate(DesignBase):
 class Design(DesignBase):
     id: UUID
     project_id: UUID
+    direction: Optional[str] = None
+    layout_variant: Optional[str] = None
     objects: List[Object] = []
 
     class Config:
