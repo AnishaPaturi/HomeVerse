@@ -2131,33 +2131,18 @@ export default function UploadPage() {
                                 <input type="text" value={dimensionsHouse} onChange={(e) => setDimensionsHouse(e.target.value)} placeholder="e.g. 30 ft * 40 ft" className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
-                                <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                  <option value="North">North</option>
-                                  <option value="East">East</option>
-                                  <option value="West">West</option>
-                                  <option value="South">South</option>
-                                  <option value="North East">North East</option>
-                                  <option value="South East">South East</option>
-                                  <option value="North West">North West</option>
-                                  <option value="South West">South West</option>
-                                </select>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Kitchen Direction</label>
-                                <select value={kitchenDoorDirection} onChange={(e) => setKitchenDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                  <option value="North">North</option>
-                                  <option value="East">East</option>
-                                  <option value="West">West</option>
-                                  <option value="South">South</option>
-                                  <option value="North East">North East</option>
-                                  <option value="South East">South East</option>
-                                  <option value="North West">North West</option>
-                                  <option value="South West">South West</option>
-                                </select>
-                              </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
+                              <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
+                                <option value="North">North</option>
+                                <option value="East">East</option>
+                                <option value="West">West</option>
+                                <option value="South">South</option>
+                                <option value="North East">North East</option>
+                                <option value="South East">South East</option>
+                                <option value="North West">North West</option>
+                                <option value="South West">South West</option>
+                              </select>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="flex flex-col gap-1">
@@ -2217,33 +2202,18 @@ export default function UploadPage() {
                                 </select>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
-                                <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                  <option value="North">North</option>
-                                  <option value="East">East</option>
-                                  <option value="West">West</option>
-                                  <option value="South">South</option>
-                                  <option value="North East">North East</option>
-                                  <option value="South East">South East</option>
-                                  <option value="North West">North West</option>
-                                  <option value="South West">South West</option>
-                                </select>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Kitchen Direction</label>
-                                <select value={kitchenDoorDirection} onChange={(e) => setKitchenDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                  <option value="North">North</option>
-                                  <option value="East">East</option>
-                                  <option value="West">West</option>
-                                  <option value="South">South</option>
-                                  <option value="North East">North East</option>
-                                  <option value="South East">South East</option>
-                                  <option value="North West">North West</option>
-                                  <option value="South West">South West</option>
-                                </select>
-                              </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
+                              <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
+                                <option value="North">North</option>
+                                <option value="East">East</option>
+                                <option value="West">West</option>
+                                <option value="South">South</option>
+                                <option value="North East">North East</option>
+                                <option value="South East">South East</option>
+                                <option value="North West">North West</option>
+                                <option value="South West">South West</option>
+                              </select>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="flex flex-col gap-1">
@@ -2955,7 +2925,7 @@ export default function UploadPage() {
                           </h3>
                           
                           <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                            Layout matching your home specifications. Main Door facing <span className="font-mono text-slate-350">{mainDoorDirection}</span>, Kitchen Door facing <span className="font-mono text-slate-350">{kitchenDoorDirection}</span>.
+                            Layout matching your home specifications. Main Door facing <span className="font-mono text-slate-350">{mainDoorDirection}</span>.
                           </p>
                         </div>
                       </div>

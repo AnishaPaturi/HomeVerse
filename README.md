@@ -85,7 +85,7 @@ A conversational sidebar allows users to modify the room using natural language:
 
 ### "Start from Scratch" Home Configurator Wizard
 For users designing a space from scratch, HomeVerse provides an interactive 5-step configurator wizard:
-1. **House Geometry**: Select between Apartment or Independent House. Specify detailed structural information including bedrooms, bathrooms, main door direction, kitchen door direction, balconies, house dimensions, individual room dimensions, windows, doors, and upload a floor plan blueprint.
+1. **House Geometry**: Select between Apartment or Independent House. Specify detailed structural information including bedrooms, bathrooms, main door direction, balconies, house dimensions, individual room dimensions, windows, doors, and upload a floor plan blueprint.
 2. **Budget Tiering**: Choose a budget class (Economy, Mid-Range, Luxury) to align material presets and furnishing suggestions.
 3. **Target Room Selection**: Select the first room to design (e.g. Hall, Master Bedroom, Second Bedroom, Kids Bedroom, Dining Room, Kitchen, Foyer, Bathroom).
 4. **Parallel Style Generation**: The backend triggers 6 parallel Pollinations AI image renders and Gemini coordinate model runs (generating Modern, Scandinavian, Modern Luxury, Japandi, Industrial, and Contemporary designs simultaneously) in under 6 seconds.
@@ -296,11 +296,13 @@ Here is a chronological overview of the development lifecycle for **HomeVerse**:
 * Integrated keydown listeners for Backspace and Delete to remove selected objects on the fly.
 * Added Step 5 layout templates and house facing direction selectors to pre-populate fully furnished rooms on client project setup.
 
-### ⚡ Phase 4: Dynamic Custom Generation & Async Caching (Week 6) — Completed
+### ⚡ Phase 4: Dynamic Custom Generation, Caching & Form Simplification (Week 6) — Completed
 * Shifted from static pre-generation to on-demand generation based on user's exact customized options.
 * Created a dynamic design selections form allowing the user to select or input custom room types (such as Loft Gym or Attic Studio) and custom styles (such as Mid-Century Modern or Industrial).
-* Added optional color palettes, materials, and additional custom requirements/notes inputs to guide style outputs.
-* Cut layout/design generation response times to ~1.5s by handing off the image URL instantly to the browser and executing the download/caching block in a background thread.
+* Simplified the configurator wizard form by removing redundant direction questions (e.g. Kitchen Direction) and focusing purely on the critical Main Door Direction.
+* Fixed rendering generation bugs by properly retrieving structural analysis specifications from SQLite/PostgreSQL JSON fields.
+* Standardized room name keys (e.g. mapping `"Hall"` -> `"Living_Room"`) to eliminate cache misses for template and reference style renders.
+* Cut layout/design generation response times to ~1.5s by handing off the image URL instantly to the browser and caching files locally, updating database records with the local path for maximum speed and reliability.
 * Created a generated designs list carousel in the client to allow previewing and switching between multiple custom generated designs.
 
 ### 👥 Phase 5: Collaborative Design & Realism (Week 7+) — Planned
