@@ -744,21 +744,48 @@ function RealisticChair3D({ material, isSelected, onClick }: { material: string;
 }
 
 function RealisticSofa3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/sofa.glb");
-  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-
-  React.useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && material.startsWith("#")) {
-        child.material = child.material.clone();
-        child.material.color = new THREE.Color(material);
-      }
-    });
-  }, [clonedScene, material]);
+  const color = material.startsWith("#") ? material : "#cbd5e1";
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
+      {/* legs */}
+      <mesh position={[-0.95, 0.075, -0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.95, 0.075, -0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[-0.95, 0.075, 0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.95, 0.075, 0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.15]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.6} />
+      </mesh>
+
+      {/* Cushion */}
+      <mesh position={[0, 0.3, 0]}>
+        <boxGeometry args={[2.0, 0.3, 0.9]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      {/* Back support */}
+      <mesh position={[0, 0.65, -0.35]}>
+        <boxGeometry args={[2.0, 0.6, 0.2]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      {/* Armrests */}
+      <mesh position={[-1.05, 0.45, 0]}>
+        <boxGeometry args={[0.2, 0.6, 0.9]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      <mesh position={[1.05, 0.45, 0]}>
+        <boxGeometry args={[0.2, 0.6, 0.9]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+
       {isSelected && (
         <mesh position={[0, 0.475, 0]}>
           <boxGeometry args={[2.3, 1.0, 1.1]} />
@@ -770,21 +797,33 @@ function RealisticSofa3D({ material, isSelected, onClick }: { material: string; 
 }
 
 function RealisticTable3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/table.glb");
-  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-
-  React.useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && material.startsWith("#")) {
-        child.material = child.material.clone();
-        child.material.color = new THREE.Color(material);
-      }
-    });
-  }, [clonedScene, material]);
+  const color = material.startsWith("#") ? material : "#78350f";
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[3.0, 3.0, 3.0]} position={[0, 0.2, 0]} />
+      {/* Tabletop */}
+      <mesh position={[0, 0.44, 0]}>
+        <boxGeometry args={[1.2, 0.08, 0.7]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      {/* Legs */}
+      <mesh position={[-0.5, 0.2, -0.25]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.4]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.5, 0.2, -0.25]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.4]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[-0.5, 0.2, 0.25]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.4]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
+      </mesh>
+      <mesh position={[0.5, 0.2, 0.25]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.4]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
+      </mesh>
+
       {isSelected && (
         <mesh position={[0, 0.24, 0]}>
           <boxGeometry args={[1.3, 0.5, 0.8]} />
@@ -796,24 +835,29 @@ function RealisticTable3D({ material, isSelected, onClick }: { material: string;
 }
 
 function RealisticDesk3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/desk.glb");
-  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-
-  React.useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && material.startsWith("#")) {
-        child.material = child.material.clone();
-        child.material.color = new THREE.Color(material);
-      }
-    });
-  }, [clonedScene, material]);
+  const color = material.startsWith("#") ? material : "#8b5a2b";
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
+      {/* Desktop */}
+      <mesh position={[0, 0.72, 0]}>
+        <boxGeometry args={[1.5, 0.06, 0.8]} />
+        <meshStandardMaterial color={color} roughness={0.4} />
+      </mesh>
+      {/* Left Cabinet */}
+      <mesh position={[-0.6, 0.33, 0]}>
+        <boxGeometry args={[0.3, 0.66, 0.76]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      {/* Right Cabinet */}
+      <mesh position={[0.6, 0.33, 0]}>
+        <boxGeometry args={[0.3, 0.66, 0.76]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+
       {isSelected && (
         <mesh position={[0, 0.39, 0]}>
-          <boxGeometry args={[1.5, 0.82, 0.9]} />
+          <boxGeometry args={[1.55, 0.82, 0.85]} />
           <meshBasicMaterial color="#3b82f6" wireframe transparent opacity={0.4} />
         </mesh>
       )}
@@ -822,21 +866,35 @@ function RealisticDesk3D({ material, isSelected, onClick }: { material: string; 
 }
 
 function RealisticBed3D({ material, isSelected, onClick }: { material: string; isSelected: boolean; onClick: () => void }) {
-  const { scene } = useGLTF("/models/bed.glb");
-  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-
-  React.useEffect(() => {
-    clonedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && material.startsWith("#")) {
-        child.material = child.material.clone();
-        child.material.color = new THREE.Color(material);
-      }
-    });
-  }, [clonedScene, material]);
+  const color = material.startsWith("#") ? material : "#cbd5e1";
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      <primitive object={clonedScene} scale={[1.0, 1.0, 1.0]} position={[0, 0, 0]} />
+      {/* Mattress */}
+      <mesh position={[0, 0.25, 0]}>
+        <boxGeometry args={[1.6, 0.35, 2.0]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </mesh>
+      {/* Headboard */}
+      <mesh position={[0, 0.65, -1.025]}>
+        <boxGeometry args={[1.7, 0.8, 0.15]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
+      </mesh>
+      {/* Pillows */}
+      <mesh position={[-0.4, 0.45, -0.7]}>
+        <boxGeometry args={[0.5, 0.1, 0.35]} />
+        <meshStandardMaterial color="#fafafa" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.4, 0.45, -0.7]}>
+        <boxGeometry args={[0.5, 0.1, 0.35]} />
+        <meshStandardMaterial color="#fafafa" roughness={0.9} />
+      </mesh>
+      {/* Blanket */}
+      <mesh position={[0, 0.435, 0.25]}>
+        <boxGeometry args={[1.62, 0.02, 1.4]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+
       {isSelected && (
         <mesh position={[0, 0.45, 0]}>
           <boxGeometry args={[1.8, 1.1, 2.2]} />

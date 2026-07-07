@@ -248,16 +248,57 @@ class LayoutEngine:
             return result
         except Exception as e:
             print(f"Error generating common layout: {e}")
-            # Fallback mock layout
+            # Fallback mock layout based on room type
+            r_type = room_type.lower()
+            z_center = -3.0
+            
+            # Base floor and wall
+            objs = [
+                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": z_center, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+                {"object_type": "wall", "position_x": 0.0, "position_y": 1.3, "position_z": z_center - (length/2), "rotation": 0.0, "scale": 1.0, "material": "plaster_base"}
+            ]
+            
+            if "bed" in r_type:
+                objs.extend([
+                    {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 3.14, "scale": 1.0, "material": "wood_base"},
+                    {"object_type": "chair", "position_x": 1.2, "position_y": 0.0, "position_z": z_center + 0.2, "rotation": 1.57, "scale": 0.9, "material": "fabric_base"},
+                    {"object_type": "lamp", "position_x": -1.2, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
+                ])
+            elif "kitchen" in r_type:
+                objs.extend([
+                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.1, "material": "marble_base"},
+                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
+                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 1.57, "scale": 0.9, "material": "wood_base"}
+                ])
+            elif "dining" in r_type:
+                objs.extend([
+                    {"object_type": "dining_table", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
+                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 1.57, "scale": 0.9, "material": "wood_base"}
+                ])
+            elif "office" in r_type or "study" in r_type or "work" in r_type:
+                objs.extend([
+                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 3.14, "scale": 1.0, "material": "wood_base"},
+                    {"object_type": "chair", "position_x": 0.0, "position_y": 0.0, "position_z": z_center + 0.5, "rotation": 0.0, "scale": 0.9, "material": "fabric_base"},
+                    {"object_type": "lamp", "position_x": -0.5, "position_y": 0.75, "position_z": z_center - 0.2, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
+                ])
+            elif "bath" in r_type:
+                objs.extend([
+                    {"object_type": "mirror", "position_x": 0.0, "position_y": 1.2, "position_z": z_center - (length/2) + 0.05, "rotation": 0.0, "scale": 1.0, "material": "metal_base"},
+                    {"object_type": "stool", "position_x": 0.0, "position_y": 0.0, "position_z": z_center, "rotation": 0.0, "scale": 1.0, "material": "wood_base"}
+                ])
+            else:
+                # Default to Living Room / Hall
+                objs.extend([
+                    {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "fabric_base"},
+                    {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": z_center + 0.8, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+                    {"object_type": "lamp", "position_x": -1.5, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
+                ])
+                
             return {
                 "layout_description": f"A default parsed layout for {room_type}.",
                 "camera_angle": "Door Perspective",
-                "objects": [
-                    {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
-                    {"object_type": "wall", "position_x": 0.0, "position_y": 1.3, "position_z": -3.0 - (length/2), "rotation": 0.0, "scale": 1.0, "material": "plaster_base"},
-                    {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "fabric_base"},
-                    {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": -2.0, "rotation": 0.0, "scale": 1.0, "material": "wood_base"}
-                ]
+                "objects": objs
             }
 
 layout_engine = LayoutEngine()

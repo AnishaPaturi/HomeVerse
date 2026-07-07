@@ -539,6 +539,101 @@ export default function UploadPage() {
         setSelectedFile({ name: savedFileName } as any);
       }
     }
+
+    // Load Scratch config states
+    const savedActiveMode = sessionStorage.getItem("homeverse_active_mode");
+    if (savedActiveMode) setActiveMode(savedActiveMode as any);
+
+    const savedScratchStep = sessionStorage.getItem("homeverse_scratch_step");
+    if (savedScratchStep) setScratchStep(parseInt(savedScratchStep));
+
+    const savedPropertyType = sessionStorage.getItem("homeverse_property_type");
+    if (savedPropertyType) setPropertyType(savedPropertyType as any);
+
+    const savedApartmentType = sessionStorage.getItem("homeverse_apartment_type");
+    if (savedApartmentType) setApartmentType(savedApartmentType as any);
+
+    const savedCommunityBlock = sessionStorage.getItem("homeverse_community_block");
+    if (savedCommunityBlock) setCommunityBlock(savedCommunityBlock);
+
+    const savedHasFloorPlan = sessionStorage.getItem("homeverse_has_floor_plan");
+    if (savedHasFloorPlan) setHasFloorPlan(savedHasFloorPlan as any);
+
+    const savedSquareFootage = sessionStorage.getItem("homeverse_square_footage");
+    if (savedSquareFootage) setSquareFootage(parseInt(savedSquareFootage));
+
+    const savedDimensionsInput = sessionStorage.getItem("homeverse_dimensions_input");
+    if (savedDimensionsInput) setDimensionsInput(savedDimensionsInput);
+
+    const savedHouseFacing = sessionStorage.getItem("homeverse_house_facing");
+    if (savedHouseFacing) setHouseFacing(savedHouseFacing);
+
+    const savedSelectedLayoutTemplate = sessionStorage.getItem("homeverse_selected_layout_template");
+    if (savedSelectedLayoutTemplate) setSelectedLayoutTemplate(savedSelectedLayoutTemplate);
+
+    const savedNumBedrooms = sessionStorage.getItem("homeverse_num_bedrooms");
+    if (savedNumBedrooms) setNumBedrooms(savedNumBedrooms);
+
+    const savedMainDoorDirection = sessionStorage.getItem("homeverse_main_door_direction");
+    if (savedMainDoorDirection) setMainDoorDirection(savedMainDoorDirection);
+
+    const savedNumBathrooms = sessionStorage.getItem("homeverse_num_bathrooms");
+    if (savedNumBathrooms) setNumBathrooms(savedNumBathrooms);
+
+    const savedNumBalconies = sessionStorage.getItem("homeverse_num_balconies");
+    if (savedNumBalconies) setNumBalconies(savedNumBalconies);
+
+    const savedDimensionsHouse = sessionStorage.getItem("homeverse_dimensions_house");
+    if (savedDimensionsHouse) setDimensionsHouse(savedDimensionsHouse);
+
+    const savedDimensionsEachRoom = sessionStorage.getItem("homeverse_dimensions_each_room");
+    if (savedDimensionsEachRoom) setDimensionsEachRoom(savedDimensionsEachRoom);
+
+    const savedNumWindows = sessionStorage.getItem("homeverse_num_windows");
+    if (savedNumWindows) setNumWindows(savedNumWindows);
+
+    const savedNumDoors = sessionStorage.getItem("homeverse_num_doors");
+    if (savedNumDoors) setNumDoors(savedNumDoors);
+
+    const savedNumFloors = sessionStorage.getItem("homeverse_num_floors");
+    if (savedNumFloors) setNumFloors(savedNumFloors);
+
+    const savedRoomsPerFloor = sessionStorage.getItem("homeverse_rooms_per_floor");
+    if (savedRoomsPerFloor) setRoomsPerFloor(savedRoomsPerFloor);
+
+    const savedRooftopDesign = sessionStorage.getItem("homeverse_rooftop_design");
+    if (savedRooftopDesign) setRooftopDesign(savedRooftopDesign);
+
+    const savedPurposeEachFloor = sessionStorage.getItem("homeverse_purpose_each_floor");
+    if (savedPurposeEachFloor) setPurposeEachFloor(savedPurposeEachFloor);
+
+    const savedRooftop = sessionStorage.getItem("homeverse_rooftop");
+    if (savedRooftop) setRooftop(savedRooftop);
+
+    const savedParking = sessionStorage.getItem("homeverse_parking");
+    if (savedParking) setParking(savedParking);
+
+    const savedGarden = sessionStorage.getItem("homeverse_garden");
+    if (savedGarden) setGarden(savedGarden);
+
+    const savedCustomBudget = sessionStorage.getItem("homeverse_custom_budget");
+    if (savedCustomBudget) setCustomBudget(savedCustomBudget);
+
+    const savedMasterHouseJson = sessionStorage.getItem("homeverse_master_house_json");
+    if (savedMasterHouseJson) setMasterHouseJson(JSON.parse(savedMasterHouseJson));
+
+    const savedBudgetSelection = sessionStorage.getItem("homeverse_budget_selection");
+    if (savedBudgetSelection) setBudgetSelection(savedBudgetSelection);
+
+    const savedSelectedRoomToDesign = sessionStorage.getItem("homeverse_selected_room_to_design");
+    if (savedSelectedRoomToDesign) setSelectedRoomToDesign(savedSelectedRoomToDesign);
+
+    const savedScratchDesigns = sessionStorage.getItem("homeverse_scratch_designs");
+    if (savedScratchDesigns) setScratchDesigns(JSON.parse(savedScratchDesigns));
+
+    const savedSelectedScratchDesignId = sessionStorage.getItem("homeverse_selected_scratch_design_id");
+    if (savedSelectedScratchDesignId) setSelectedScratchDesignId(savedSelectedScratchDesignId);
+
     setIsReady(true);
   }, []);
 
@@ -619,6 +714,170 @@ export default function UploadPage() {
       sessionStorage.removeItem("homeverse_file_name");
     }
   }, [selectedFile, isReady]);
+
+  // Scratch States Observers
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_active_mode", activeMode);
+  }, [activeMode, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_scratch_step", scratchStep.toString());
+  }, [scratchStep, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_property_type", propertyType);
+  }, [propertyType, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_apartment_type", apartmentType);
+  }, [apartmentType, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_community_block", communityBlock);
+  }, [communityBlock, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_has_floor_plan", hasFloorPlan);
+  }, [hasFloorPlan, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_square_footage", squareFootage.toString());
+  }, [squareFootage, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_dimensions_input", dimensionsInput);
+  }, [dimensionsInput, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_house_facing", houseFacing);
+  }, [houseFacing, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_selected_layout_template", selectedLayoutTemplate);
+  }, [selectedLayoutTemplate, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_bedrooms", numBedrooms);
+  }, [numBedrooms, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_main_door_direction", mainDoorDirection);
+  }, [mainDoorDirection, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_bathrooms", numBathrooms);
+  }, [numBathrooms, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_balconies", numBalconies);
+  }, [numBalconies, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_dimensions_house", dimensionsHouse);
+  }, [dimensionsHouse, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_dimensions_each_room", dimensionsEachRoom);
+  }, [dimensionsEachRoom, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_windows", numWindows);
+  }, [numWindows, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_doors", numDoors);
+  }, [numDoors, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_num_floors", numFloors);
+  }, [numFloors, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_rooms_per_floor", roomsPerFloor);
+  }, [roomsPerFloor, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_rooftop_design", rooftopDesign);
+  }, [rooftopDesign, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_purpose_each_floor", purposeEachFloor);
+  }, [purposeEachFloor, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_rooftop", rooftop);
+  }, [rooftop, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_parking", parking);
+  }, [parking, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_garden", garden);
+  }, [garden, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_custom_budget", customBudget);
+  }, [customBudget, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (masterHouseJson) {
+      sessionStorage.setItem("homeverse_master_house_json", JSON.stringify(masterHouseJson));
+    } else {
+      sessionStorage.removeItem("homeverse_master_house_json");
+    }
+  }, [masterHouseJson, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_budget_selection", budgetSelection);
+  }, [budgetSelection, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_selected_room_to_design", selectedRoomToDesign);
+  }, [selectedRoomToDesign, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (scratchDesigns.length > 0) {
+      sessionStorage.setItem("homeverse_scratch_designs", JSON.stringify(scratchDesigns));
+    } else {
+      sessionStorage.removeItem("homeverse_scratch_designs");
+    }
+  }, [scratchDesigns, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_selected_scratch_design_id", selectedScratchDesignId);
+  }, [selectedScratchDesignId, isReady]);
 
   // Update project title and room type in the database
   const handleUpdateProjectDetails = async (newTitle: string, newRoomType: string) => {

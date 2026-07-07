@@ -296,7 +296,7 @@ Here is a chronological overview of the development lifecycle for **HomeVerse**:
 * Integrated keydown listeners for Backspace and Delete to remove selected objects on the fly.
 * Added Step 5 layout templates and house facing direction selectors to pre-populate fully furnished rooms on client project setup.
 
-### ⚡ Phase 4: Dynamic Custom Generation, Caching & Form Simplification (Week 6) — Completed
+### ⚡ Phase 4: Dynamic Custom Generation, Caching, Model Upgrades & State Persistence (Week 6) — Completed
 * Shifted from static pre-generation to on-demand generation based on user's exact customized options.
 * Created a dynamic design selections form allowing the user to select or input custom room types (such as Loft Gym or Attic Studio) and custom styles (such as Mid-Century Modern or Industrial).
 * Simplified the configurator wizard form by removing redundant direction questions (e.g. Kitchen Direction) and focusing purely on the critical Main Door Direction.
@@ -304,6 +304,10 @@ Here is a chronological overview of the development lifecycle for **HomeVerse**:
 * Standardized room name keys (e.g. mapping `"Hall"` -> `"Living_Room"`) to eliminate cache misses for template and reference style renders.
 * Cut layout/design generation response times to ~1.5s by handing off the image URL instantly to the browser and caching files locally, updating database records with the local path for maximum speed and reliability.
 * Created a generated designs list carousel in the client to allow previewing and switching between multiple custom generated designs.
+* Fixed design preset style preview card images to dynamically query and reflect the selected room type instead of defaulting to a living room image.
+* Fixed the empty 3D room loading bug and replaced the placeholder duck GLB models with high-fidelity, custom-built procedurally drawn sofa, bed, table, and desk meshes in R3F that respond dynamically to material colors.
+* Added room-type aware dynamic backend fallbacks for layout engine coordinate generations when hitting Gemini API rate limits/quotas.
+* Integrated complete sessionStorage preservation and restoration of scratch configurator state variables to ensure seamless navigation back and forth between the upload page and the studio.
 
 ### 👥 Phase 5: Collaborative Design & Realism (Week 7+) — Planned
 * Immersive WebXR mobile AR viewer integrations.
