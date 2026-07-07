@@ -1857,7 +1857,8 @@ export default function CanvasContainer({
   const wallObj = objects.find((o) => o.object_type === "wall");
   
   // Custom material colors for floor types
-  const getFloorColor = (mat: string) => {
+  const getFloorColor = (mat: string | null | undefined) => {
+    if (!mat) return "#d7ccc8";
     switch (mat) {
       case "wood_light": return "#d7ccc8";
       case "wood_dark": return "#5c4033";
@@ -1867,7 +1868,8 @@ export default function CanvasContainer({
     }
   };
 
-  const getWallColor = (mat: string) => {
+  const getWallColor = (mat: string | null | undefined) => {
+    if (!mat) return "#e2e8f0";
     return mat.startsWith("#") ? mat : "#e2e8f0";
   };
 

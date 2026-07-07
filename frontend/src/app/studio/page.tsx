@@ -117,7 +117,7 @@ function StudioContent() {
             position_z: obj.position_z,
             rotation: obj.rotation,
             scale: obj.scale,
-            material: obj.material
+            material: obj.material || ""
           }));
           setObjects(mappedObjects);
           setHasLoadedFromDb(true);
@@ -131,12 +131,54 @@ function StudioContent() {
             const projRes = await fetch(`http://localhost:8080/api/projects/${designData.project_id}`);
             if (projRes.ok) {
               const projectData = await projRes.json();
+              
+              if (projectData && projectData.room_type) {
+                setRoomType(projectData.room_type);
+              }
+
+              let parsedWidth = 10;
+              let parsedDepth = 10;
+
               if (projectData && projectData.structural_analysis) {
                 try {
                   const struct = JSON.parse(projectData.structural_analysis);
-                  if (struct.room_width) setRoomWidth(Number(struct.room_width));
-                  if (struct.room_depth) setRoomDepth(Number(struct.room_depth));
-                  if (struct.source === "scratch") {
+                  
+                  // Extract dimensions for the active room type
+                  const roomKey = (projectData.room_type || "Hall").toLowerCase().replace(" / ", "_").replace(" ", "_");
+                  let standardKey = "hall";
+                  if (roomKey.includes("hall") || roomKey.includes("living")) {
+                    standardKey = "hall";
+                  } else if (roomKey.includes("master")) {
+                    standardKey = "master_bedroom";
+                  } else if (roomKey.includes("second")) {
+                    standardKey = "second_bedroom";
+                  } else if (roomKey.includes("kids") || roomKey.includes("kid")) {
+                    standardKey = "kids_bedroom";
+                  } else if (roomKey.includes("kitchen")) {
+                    standardKey = "kitchen";
+                  } else if (roomKey.includes("bathroom") || roomKey.includes("bath")) {
+                    standardKey = "bathroom";
+                  } else if (roomKey.includes("dining")) {
+                    standardKey = "dining";
+                  } else if (roomKey.includes("office") || roomKey.includes("study")) {
+                    standardKey = "office";
+                  } else {
+                    standardKey = roomKey;
+                  }
+
+                  if (struct.rooms && struct.rooms[standardKey]) {
+                    const rData = struct.rooms[standardKey];
+                    if (rData.width) parsedWidth = Number(rData.width);
+                    if (rData.length) parsedDepth = Number(rData.length);
+                  } else if (struct.room_width && struct.room_depth) {
+                    parsedWidth = Number(struct.room_width);
+                    parsedDepth = Number(struct.room_depth);
+                  }
+                  
+                  setRoomWidth(parsedWidth);
+                  setRoomDepth(parsedDepth);
+
+                  if (struct.source === "scratch" || struct.houseType || struct.rooms) {
                     setIsScratchMode(true);
                     setActiveLeftTab("advisor");
                   }
@@ -153,15 +195,15 @@ function StudioContent() {
                   setBgImageUrl(projectData.thumbnail);
                 }
               }
+              
               if (projectData && projectData.room_type) {
-                setRoomType(projectData.room_type);
                 if (currentObjects.length === 0) {
                   const struct = projectData.structural_analysis ? JSON.parse(projectData.structural_analysis) : {};
-                  const isScratch = struct.source === "scratch";
+                  const isScratch = struct.source === "scratch" || struct.houseType || struct.rooms;
                   const initialObjs = isScratch
                     ? [
                         { id: "floor-1", object_type: "floor", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0, material: initialStyle === "Luxury" ? "granite" : "wood_light" },
-                        { id: "wall-1", object_type: "wall", position_x: 0, position_y: 1.5, position_z: -(struct.room_depth ? Number(struct.room_depth)/2 : 5) - 2.5, rotation: 0, scale: 1.0, material: initialStyle === "Minimalist" ? "#ffffff" : "#f1f5f9" }
+                        { id: "wall-1", object_type: "wall", position_x: 0, position_y: 1.5, position_z: -(parsedDepth ? Number(parsedDepth)/2 : 5) - 2.5, rotation: 0, scale: 1.0, material: initialStyle === "Minimalist" ? "#ffffff" : "#f1f5f9" }
                       ]
                     : getInitialObjectsForRoomType(projectData.room_type, initialStyle);
                   setObjects(initialObjs);
@@ -183,7 +225,7 @@ function StudioContent() {
                           position_z: obj.position_z,
                           rotation: obj.rotation,
                           scale: obj.scale,
-                          material: obj.material
+                          material: obj.material || ""
                         })
                       });
                       if (resSave.ok) {
@@ -196,7 +238,7 @@ function StudioContent() {
                           position_z: savedData.position_z,
                           rotation: savedData.rotation,
                           scale: savedData.scale,
-                          material: savedData.material
+                          material: savedData.material || ""
                         });
                       }
                     }
