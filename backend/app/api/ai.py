@@ -327,6 +327,9 @@ async def generate_scratch_designs(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    project.room_type = room_type
+    db.commit()
+
     if not project.structural_analysis:
         raise HTTPException(status_code=400, detail="House model not found. Please create the house model first.")
 
@@ -516,6 +519,10 @@ async def initialize_scratch_designs(
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    # Update project's room type to the user's selected room
+    project.room_type = room_type
+    db.commit()
 
     if not project.structural_analysis:
         raise HTTPException(status_code=400, detail="House model not found. Please create the house model first.")
