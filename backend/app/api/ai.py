@@ -257,6 +257,7 @@ async def create_house_model(
         db.refresh(project)
 
     blueprint_url = None
+    file_bytes = None
     if house_plan_file:
         try:
             file_bytes = await house_plan_file.read()
@@ -297,7 +298,9 @@ async def create_house_model(
         property_type=property_type,
         budget=budget,
         house_details=details_dict,
-        blueprint_url=blueprint_url
+        blueprint_url=blueprint_url,
+        blueprint_bytes=file_bytes,
+        blueprint_mime_type=house_plan_file.content_type if house_plan_file else None
     )
 
     project.structural_analysis = json.dumps(master_json)
