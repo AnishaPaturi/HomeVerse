@@ -118,21 +118,62 @@ Step inside the designed space with video game controls:
 
 ---
 
-## 🏗️ Technical Architecture
+## 🏗️ Technical Architecture (V2 Production Upgrades)
+
+HomeVerse now features a fully decoupled, production-grade **V2 Microservices & Multi-Agent Architecture** modeled after advanced spatial design platforms.
 
 ```mermaid
 graph TD
-    A[Frontend: Next.js + TS] --> B[3D Engine: R3F / Three.js]
-    A --> C[Backend: FastAPI / Python]
-    C --> D[Database: SQLite / Local DB]
-    C --> E[Local Static Files Storage]
-    C --> F[AI Layer]
-    F --> F1[Structural & Light Analysis]
-    F --> F2[On-Demand Dynamic Generation]
-    F --> F3[Flux: Fast Style Gen via CDN]
-    F --> F4[LLMs: Gemini 3.5 Flash]
-    C -->|Async Cache Thread| E
+    A[Frontend: Next.js + TS] -->|HTTP / WebSockets| G[V2 API Gateway / Router]
+    G -->|Orchestrate| O[AI Orchestrator]
+    
+    subgraph Collaborative Agentic Pipeline
+        O -->|Decompose| Planner[Planner Agent]
+        Planner -->|Parallel Run| Layout[Layout Agent]
+        Planner -->|Parallel Run| Style[Style Agent]
+        Planner -->|Parallel Run| Budget[Budget Agent]
+        
+        Layout & Style & Budget -->|Placement & Physics| Furniture[Furniture Agent]
+        Furniture -->|Denoise & DIT| Rendering[Rendering Agent]
+        Rendering -->|Visual & Spatial Audit| Critic[QA / Critic Agent]
+        
+        Critic -->|Self-Repair Loop| Furniture
+    end
+    
+    G -->|Interactive Sync| WS[WebSocket Collaboration Hub]
+    G -->|Node Mutations| Copilot[V2 AI Copilot Service]
+    
+    A --> B[3D Engine: R3F / Three.js Viewport]
+    O --> D[Database: PostgreSQL / SQLite Fallback]
+    O --> S[Storage: AWS S3 / MinIO Cloud Buckets]
 ```
+
+### 1. 10-Stage AI Rendering Pipeline Visualizer
+The front-end rendering workflow has been updated from a simple loading spinner to an interactive **AI Rendering Pipeline Console** that tracks the exact stages of our back-end microservices in real-time:
+* **Connection Routing**: Gateway handshake.
+* **Image Scan**: Vision LLM wall, floor, and light detection.
+* **Depth & Masks**: Running Depth Anything V2 + Segment Anything 2 (SAM 2).
+* **Scene Graph Compiles**: Coordinates layout alignment.
+* **Denoising**: Denoising and diffusion checks.
+* **Storage & DB Sync**: Uploading assets to cloud storage and mapping coordinates to the database.
+
+### 2. Live "Structured Digital Twin" Dashboard
+In the Three.js viewport, the new **Twin** panel enables users to interact directly with the room coordinates:
+* **Scene Graph Tree**: A live interactive coordinate database tree.
+* **Spatial Spacing & Lighting Audit**: Computes collision warnings and spacing clearance distances dynamically (e.g. Sofa-to-Table gap) and analyzes room wattage light density.
+* **Sourcing Cost List**: Compiles product list prices in real-time.
+* **CAD Exporters**: Allows one-click downloads for Three.js JSON scenes, Blender Python reconstruction scripts, and Unity prefab configuration YAMLs.
+
+---
+
+## 📚 Portfolio Resources & Documentation
+
+We have prepared university-grade engineering reference manuals mapping out every mathematical formula, vision model configuration, and backend optimization detail for this platform:
+* **[HomeVerse Engineering Bible](file:///C:/Users/anish/.gemini/antigravity-cli/brain/79de387d-0abf-4533-90b8-ecc031d4f825/homeverse_engineering_bible.md)**: Details the complete 18-part curriculum and a structured **Day 1 to Day 200 Mentorship Roadmap** to build and scale this spatial OS.
+* **[HomeVerse V2 Architecture Guide](file:///C:/Users/anish/.gemini/antigravity-cli/brain/79de387d-0abf-4533-90b8-ecc031d4f825/homeverse_v2_architecture.md)**: Deep-dive specifications on our microservices routing parameters and database schemas.
+* **[HomeVerse V2 Agents Guide](file:///C:/Users/anish/.gemini/antigravity-cli/brain/79de387d-0abf-4533-90b8-ecc031d4f825/homeverse_v2_agents.md)**: Highlights the execution sequence and self-repair critique loops of our multi-agent framework.
+
+---
 
 ### Frontend
 * **Core Framework**: Next.js (TypeScript)
@@ -187,7 +228,13 @@ HomeVerse/
 │       ├── db/           # Connection sessions & ORM aggregation
 │       ├── models/       # SQLAlchemy models
 │       ├── schemas/      # Pydantic validation schemas
-│       └── services/     # AI service clients
+│       ├── services/     # AI service clients
+│       └── v2/           # V2 Microservices Pipeline & Agentic OS
+│           ├── database/ # PostgreSQL connection managers
+│           ├── storage/  # AWS S3 / MinIO storage clients
+│           ├── gateway/  # Unified microservices router
+│           ├── websocket/# Real-time co-design collaboration
+│           └── ai/       # Multi-agent services (Planner, Layout, Style, Budget, Furniture, Rendering, Critic)
 ```
 
 ---
