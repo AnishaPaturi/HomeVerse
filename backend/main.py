@@ -52,6 +52,10 @@ app.include_router(designs.router, prefix="/api/designs", tags=["Designs"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(recommend.router, tags=["default"])
 
+# V2 Microservices Pipeline Router
+from app.v2.gateway import router as v2_router
+app.include_router(v2_router.router, prefix="/api/v2", tags=["V2 Pipeline"])
+
 from fastapi.staticfiles import StaticFiles
 import os
 
