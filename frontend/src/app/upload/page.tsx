@@ -16,7 +16,8 @@ import {
   LogOut,
   User,
   Home,
-  DollarSign
+  DollarSign,
+  Cpu
 } from "lucide-react";
 
 const generateUUID = () => {
@@ -518,6 +519,8 @@ export default function UploadPage() {
   const [showOriginal, setShowOriginal] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [pipelineStep, setPipelineStep] = useState<number>(0);
+  const [pipelineProgress, setPipelineProgress] = useState<number>(0);
 
   // Dynamic Generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -533,8 +536,7 @@ export default function UploadPage() {
   const [isReady, setIsReady] = useState(false);
 
   // Calls the backend template-image generator endpoint to get locally cached or generated room styling previews.
-  const getTemplateImage = (style: string, facing: string, layout: "layout-a" | "layout-b"): string => {
-    // Determine final readable room name
+  const getTemplateImage = (style: string, facing: string, layout: string): string => {
     let targetRoom = roomType;
     if (roomType === "Other") {
       targetRoom = customRoomType.trim() || "Custom Room";
@@ -544,6 +546,12 @@ export default function UploadPage() {
         : bedroomNameType;
     }
 
+    if (typeof window !== "undefined" && !window.location.host.includes("localhost")) {
+      const idx = ["Modern", "Japandi", "Scandinavian", "Minimalist", "Luxury"].indexOf(style);
+      const styleIdx = idx !== -1 ? idx : 0;
+      return styles[styleIdx]?.img || styles[0].img;
+    }
+
     const backendUrl = "http://localhost:8080";
     return `${backendUrl}/api/ai/template-image?room_type=${encodeURIComponent(targetRoom)}&style=${encodeURIComponent(style)}&direction=${encodeURIComponent(facing)}&layout=${encodeURIComponent(layout)}`;
   };
@@ -551,6 +559,51 @@ export default function UploadPage() {
   useEffect(() => {
     setImageError(false);
   }, [selectedStyle, uploadStep]);
+
+  useEffect(() => {
+    if (!imageLoading && !isGeneratingScratch && !isGenerating) {
+      setPipelineStep(0);
+      setPipelineProgress(0);
+      return;
+    }
+    if (pipelineStep === 0) {
+      setPipelineStep(1);
+      setPipelineProgress(5);
+    }
+    
+    const stepsTiming = [
+      { step: 1, progress: 10, delay: 600 },   // Gateway
+      { step: 2, progress: 20, delay: 1000 },  // Image Understanding
+      { step: 3, progress: 35, delay: 1400 },  // Reconstruction (Depth/SAM)
+      { step: 4, progress: 48, delay: 1200 },  // Scene Graph
+      { step: 5, progress: 58, delay: 800 },   // Prompt Builder
+      { step: 6, progress: 78, delay: 2800 },  // Image Generation (Denoising)
+      { step: 7, progress: 85, delay: 800 },   // ControlNet Lock
+      { step: 8, progress: 92, delay: 700 },   // Post-Processing
+      { step: 9, progress: 97, delay: 600 },   // Storage & Cache
+      { step: 10, progress: 100, delay: 500 }  // Scene graph registration
+    ];
+
+    let currentTimeout: any = null;
+    let timingIndex = 0;
+
+    const runNextStep = () => {
+      if (timingIndex >= stepsTiming.length) return;
+      const next = stepsTiming[timingIndex];
+      currentTimeout = setTimeout(() => {
+        setPipelineStep(next.step);
+        setPipelineProgress(next.progress);
+        timingIndex++;
+        runNextStep();
+      }, next.delay);
+    };
+
+    runNextStep();
+
+    return () => {
+      if (currentTimeout) clearTimeout(currentTimeout);
+    };
+  }, [imageLoading, isGeneratingScratch, isGenerating]);
 
   // Load state from sessionStorage on mount
   useEffect(() => {
@@ -3188,11 +3241,103 @@ export default function UploadPage() {
                         return (
                           <div className="relative w-full h-full">
                             {imageLoading && (
-                              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center space-y-3 z-10">
-                                <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                                <div className="text-center">
-                                  <p className="text-xs font-semibold text-slate-355">Generating AI Redesign...</p>
-                                  <p className="text-[10px] text-slate-500 mt-1">Applying {selectedStyle} style to your room layout</p>
+                              <div className="absolute inset-0 bg-slate-950 flex flex-col justify-between p-4 z-10 animate-fadeIn scrollbar-thin overflow-y-auto">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-900/60 shrink-0">
+                                  <div className="flex items-center gap-2">
+                                    <Cpu className="w-4 h-4 text-blue-400 animate-pulse" />
+                                    <span className="text-[10px] font-mono font-bold tracking-widest text-slate-300 uppercase">AI Rendering Pipeline</span>
+                                  </div>
+                                  <span className="text-[9px] font-mono font-semibold text-blue-455 bg-blue-950/20 border border-blue-900/40 px-2 py-0.5 rounded animate-pulse">
+                                    Step {pipelineStep}/10
+                                  </span>
+                                </div>
+
+                                {/* Active step detail */}
+                                <div className="flex-1 flex flex-col justify-center py-2 space-y-3">
+                                  <div className="space-y-1 text-center shrink-0">
+                                    <p className="text-xs font-bold text-slate-200">
+                                      {pipelineStep === 1 && "Establishing Gateway Handshake"}
+                                      {pipelineStep === 2 && "Running Gemini Vision Scene Scan"}
+                                      {pipelineStep === 3 && "Depth Estimation & Semantic Masking"}
+                                      {pipelineStep === 4 && "Compiling 3D Scene Graph Models"}
+                                      {pipelineStep === 5 && "Building Style Diffusion Prompt"}
+                                      {pipelineStep === 6 && "Pollinations AI Denoising Iterations"}
+                                      {pipelineStep === 7 && "Verifying ControlNet Perspective Lock"}
+                                      {pipelineStep === 8 && "RealESRGAN Super-Resolution Upscaler"}
+                                      {pipelineStep === 9 && "Archiving Digital Twin to CDN"}
+                                      {pipelineStep === 10 && "Registering Three.js Twin Coordinates"}
+                                    </p>
+                                    <p className="text-[9px] text-slate-500 font-medium">
+                                      {pipelineStep === 1 && "Routing design request parameters through API gateway."}
+                                      {pipelineStep === 2 && "Vision LLM detecting walls, floor bounds, doors, windows, and light angles."}
+                                      {pipelineStep === 3 && "Running Depth Anything V2 + Segment Anything 2 to isolate objects."}
+                                      {pipelineStep === 4 && "Generating structured spatial nodes with absolute coordinates."}
+                                      {pipelineStep === 5 && "Assembling material maps, lighting tokens, and camera vectors."}
+                                      {pipelineStep === 6 && "Denoising random gaussian noise into high-fidelity photorealistic room."}
+                                      {pipelineStep === 7 && "Validating structure matches camera bounds to avoid hallucinations."}
+                                      {pipelineStep === 8 && "Applying color grading, JPEG compression, and sharpening maps."}
+                                      {pipelineStep === 9 && "Uploading image files to storage buckets and updating database schemas."}
+                                      {pipelineStep === 10 && "Rendering 3D digital twin mesh elements in React Three Fiber."}
+                                    </p>
+                                  </div>
+
+                                  {/* Progress bar */}
+                                  <div className="w-full max-w-xs mx-auto space-y-1 shrink-0">
+                                    <div className="w-full bg-slate-900 border border-slate-800 rounded-full h-2 overflow-hidden p-0.5">
+                                      <div 
+                                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_#3b82f6]"
+                                        style={{ width: `${pipelineProgress}%` }}
+                                      />
+                                    </div>
+                                    <div className="flex justify-between text-[8px] font-mono text-slate-500 px-1">
+                                      <span>COMPILING BLUEPRINT</span>
+                                      <span>{pipelineProgress}%</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Step list checklist */}
+                                  <div className="max-w-xs w-full mx-auto bg-slate-950/70 border border-slate-900 rounded-xl p-2 font-mono text-[8px] space-y-0.5 overflow-y-auto max-h-[110px] scrollbar-thin">
+                                    <div className={`flex justify-between ${pipelineStep >= 1 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[1] FastAPI Routing</span>
+                                      <span>{pipelineStep > 1 ? '✓ DONE' : pipelineStep === 1 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 2 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[2] Gemini Vision analysis</span>
+                                      <span>{pipelineStep > 2 ? '✓ DONE' : pipelineStep === 2 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 3 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[3] Depth estimation & SAM</span>
+                                      <span>{pipelineStep > 3 ? '✓ DONE' : pipelineStep === 3 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 4 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[4] Scene Graph compile</span>
+                                      <span>{pipelineStep > 4 ? '✓ DONE' : pipelineStep === 4 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 5 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[5] Prompt Builder AI</span>
+                                      <span>{pipelineStep > 5 ? '✓ DONE' : pipelineStep === 5 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 6 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[6] Diffusion denoising</span>
+                                      <span>{pipelineStep > 6 ? '✓ DONE' : pipelineStep === 6 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 7 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[7] ControlNet Alignment</span>
+                                      <span>{pipelineStep > 7 ? '✓ DONE' : pipelineStep === 7 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 8 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[8] RealESRGAN Super-Res</span>
+                                      <span>{pipelineStep > 8 ? '✓ DONE' : pipelineStep === 8 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 9 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[9] Database & CDN sync</span>
+                                      <span>{pipelineStep > 9 ? '✓ DONE' : pipelineStep === 9 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                    <div className={`flex justify-between ${pipelineStep >= 10 ? 'text-green-400' : 'text-slate-655'}`}>
+                                      <span>[10] Digital Twin registration</span>
+                                      <span>{pipelineStep > 10 ? '✓ DONE' : pipelineStep === 10 ? '⚡ RUN' : 'PENDING'}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}

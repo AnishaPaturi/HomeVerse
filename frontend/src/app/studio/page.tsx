@@ -329,7 +329,7 @@ function StudioContent() {
   const [walkthroughMode, setWalkthroughMode] = useState(false);
 
   // AI Recommendations tab states
-  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D" | "advisor">("library");
+  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D" | "advisor" | "twin">("library");
   const [recommendQuery, setRecommendQuery] = useState(initialStyle);
   const [recommendLimit, setRecommendLimit] = useState(5);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -1335,10 +1335,10 @@ function StudioContent() {
         {/* Left Toolbar: Object catalog */}
         <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0">
           {/* Sidebar Tabs */}
-          <div className="grid grid-cols-4 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="grid grid-cols-5 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
             <button
               onClick={() => setActiveLeftTab("library")}
-              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "library"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1348,7 +1348,7 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("advisor")}
-              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "advisor"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1358,23 +1358,33 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("recommendations")}
-              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "recommendations"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              AI Shop
+              Shop
             </button>
             <button
               onClick={() => setActiveLeftTab("imgTo3D")}
-              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "imgTo3D"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Img-3D
+            </button>
+            <button
+              onClick={() => setActiveLeftTab("twin")}
+              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+                activeLeftTab === "twin"
+                  ? "bg-blue-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Twin
             </button>
           </div>
 
@@ -2310,6 +2320,323 @@ function StudioContent() {
                       )}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {activeLeftTab === "twin" && (
+              <div className="space-y-4 flex flex-col h-full animate-fadeIn">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-550 block font-mono">Structured Digital Twin</span>
+                    <span className="text-[8px] font-mono text-blue-450 bg-blue-950/20 border border-blue-900/30 px-1.5 py-0.5 rounded font-bold">CAD_V2</span>
+                  </div>
+
+                  {/* 3D Scene Graph Viewer */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] uppercase font-mono font-bold tracking-wider text-slate-500 block">Scene Graph Tree</label>
+                    <div className="bg-slate-950 border border-slate-900 rounded-xl p-2.5 max-h-[130px] overflow-y-auto space-y-1 font-mono text-[9px] scrollbar-thin">
+                      <div className="text-slate-400 font-semibold flex items-center gap-1.5">
+                        <span>📁</span>
+                        <span>Room [Root]</span>
+                        <span className="text-[7px] text-slate-600">({roomWidth}m × {roomDepth}m × 2.6m)</span>
+                      </div>
+                      {objects.map((obj) => (
+                        <div
+                          key={obj.id}
+                          onClick={() => setSelectedObjectId(obj.id)}
+                          className={`flex items-center justify-between pl-3 pr-1.5 py-1 rounded transition-colors cursor-pointer group ${
+                            selectedObjectId === obj.id
+                              ? "bg-blue-650/15 border border-blue-900/40 text-blue-400 font-bold"
+                              : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+                            <span className="text-slate-600">├─ 📦</span>
+                            <span className="capitalize font-sans truncate">{obj.object_type.replace("_", " ")}</span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[7px] text-slate-650">
+                              [{obj.position_x.toFixed(1)}, {obj.position_y.toFixed(1)}, {obj.position_z.toFixed(1)}]
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Spacing & Lighting Analytics */}
+                  <div className="space-y-1">
+                    <label className="text-[8px] uppercase font-mono font-bold tracking-wider text-slate-500 block">Spatial & Lighting Audit</label>
+                    <div className="bg-slate-950/60 border border-slate-900 rounded-xl p-2.5 space-y-2 text-[9px]">
+                      {/* Spacing check */}
+                      {(() => {
+                        const sofa = objects.find(o => o.object_type === "sofa");
+                        const table = objects.find(o => o.object_type === "coffee_table");
+                        let spacingText = "No sofa + coffee table in scene to analyze clearance.";
+                        let spacingColor = "text-slate-500";
+                        let statusIcon = "ℹ️";
+                        
+                        if (sofa && table) {
+                          const dist = Math.sqrt(
+                            Math.pow(sofa.position_x - table.position_x, 2) + 
+                            Math.pow(sofa.position_z - table.position_z, 2)
+                          );
+                          if (dist < 0.6) {
+                            spacingText = `Sofa/Table clearance: ${dist.toFixed(2)}m (Too narrow! < 0.6m)`;
+                            spacingColor = "text-amber-450";
+                            statusIcon = "⚠️";
+                          } else if (dist > 1.3) {
+                            spacingText = `Sofa/Table clearance: ${dist.toFixed(2)}m (Too far! > 1.3m)`;
+                            spacingColor = "text-blue-400";
+                            statusIcon = "ℹ️";
+                          } else {
+                            spacingText = `Sofa/Table clearance: ${dist.toFixed(2)}m (Optimal clearance)`;
+                            spacingColor = "text-emerald-450";
+                            statusIcon = "✓";
+                          }
+                        }
+                        return (
+                          <div className="flex items-start gap-1.5">
+                            <span className={`shrink-0 font-bold ${spacingColor}`}>{statusIcon}</span>
+                            <span className={`leading-normal ${spacingColor}`}>{spacingText}</span>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Lighting density check */}
+                      {(() => {
+                        const lampsCount = objects.filter(o => o.object_type === "lamp").length;
+                        const area = roomWidth * roomDepth;
+                        const wSqFt = (lampsCount * 40) / (area * 10.76); // mock 40W per lamp
+                        let lightText = "";
+                        let lightColor = "text-slate-500";
+                        let lightIcon = "ℹ️";
+
+                        if (lampsCount === 0) {
+                          lightText = "No lamps placed. Add lighting fixtures to audit.";
+                          lightColor = "text-amber-500";
+                          lightIcon = "⚠️";
+                        } else if (wSqFt < 0.8) {
+                          lightText = `${lampsCount} lamp(s) placed (${wSqFt.toFixed(2)} W/sqft). Dim atmosphere.`;
+                          lightColor = "text-blue-400";
+                        } else if (wSqFt > 2.0) {
+                          lightText = `${lampsCount} lamp(s) placed (${wSqFt.toFixed(2)} W/sqft). Excessively bright.`;
+                          lightColor = "text-amber-450";
+                          lightIcon = "⚠️";
+                        } else {
+                          lightText = `${lampsCount} lamp(s) placed (${wSqFt.toFixed(2)} W/sqft). Optimal light density.`;
+                          lightColor = "text-emerald-450";
+                          lightIcon = "✓";
+                        }
+                        return (
+                          <div className="flex items-start gap-1.5 border-t border-slate-900 pt-1.5">
+                            <span className={`shrink-0 font-bold ${lightColor}`}>{lightIcon}</span>
+                            <span className={`leading-normal ${lightColor}`}>{lightText}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Shopping List & Cost */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-[8px] uppercase font-mono font-bold tracking-wider text-slate-500">
+                      <span>Live Sourcing List</span>
+                      <span className="text-emerald-450 text-[9px] font-bold">
+                        Total: ${objects.reduce((sum, obj) => {
+                          const getPrice = (type: string) => {
+                            switch (type.toLowerCase()) {
+                              case "sofa": return 899;
+                              case "coffee_table": return 249;
+                              case "desk": return 399;
+                              case "chair": return 120;
+                              case "bed": return 1299;
+                              case "lamp": return 89;
+                              case "wardrobe": return 750;
+                              case "curtains": return 150;
+                              case "blinds": return 110;
+                              case "rug": return 199;
+                              case "dining_table": return 549;
+                              case "tv": return 650;
+                              default: return 0; // floor/wall structural
+                            }
+                          };
+                          return sum + getPrice(obj.object_type);
+                        }, 0).toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="bg-slate-950 border border-slate-900 rounded-xl p-2.5 max-h-[120px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                      {objects.filter(o => !["floor", "wall"].includes(o.object_type)).map((obj) => {
+                        const getPrice = (type: string) => {
+                          switch (type.toLowerCase()) {
+                            case "sofa": return 899;
+                            case "coffee_table": return 249;
+                            case "desk": return 399;
+                            case "chair": return 120;
+                            case "bed": return 1299;
+                            case "lamp": return 89;
+                            case "wardrobe": return 750;
+                            case "curtains": return 150;
+                            case "blinds": return 110;
+                            case "rug": return 199;
+                            case "dining_table": return 549;
+                            case "tv": return 650;
+                            default: return 99;
+                          }
+                        };
+                        const price = getPrice(obj.object_type);
+                        return (
+                          <div key={obj.id} className="flex justify-between items-center border-b border-slate-900/50 pb-1 text-[9px] text-slate-400">
+                            <div>
+                              <span className="capitalize font-bold text-slate-300">{obj.object_type.replace("_", " ")}</span>
+                              <span className="text-[7px] text-slate-550 block capitalize">{obj.material || "standard theme"}</span>
+                            </div>
+                            <span className="text-emerald-450/90 font-mono font-semibold">${price}</span>
+                          </div>
+                        );
+                      })}
+                      {objects.filter(o => !["floor", "wall"].includes(o.object_type)).length === 0 && (
+                        <p className="text-[8px] text-slate-600 py-2 text-center font-mono">No catalog assets placed.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CAD Scene Exporter Controls */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[8px] uppercase font-mono font-bold tracking-wider text-slate-500 block">CAD Digital Twin Exporters</span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => {
+                          const fileData = {
+                            metadata: {
+                              format: "Three.js SceneGraph V4",
+                              exported_at: new Date().toISOString(),
+                              generator: "HomeVerse CAD Engine"
+                            },
+                            room: {
+                              width: roomWidth,
+                              depth: roomDepth,
+                              height: 2.6,
+                              style: initialStyle
+                            },
+                            scene_graph: objects.map(o => ({
+                              id: o.id,
+                              type: o.object_type,
+                              position: [o.position_x, o.position_y, o.position_z],
+                              rotation: o.rotation,
+                              scale: o.scale,
+                              material: o.material
+                            }))
+                          };
+                          const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fileData, null, 2));
+                          const link = document.createElement("a");
+                          link.setAttribute("href", dataUri);
+                          link.setAttribute("download", `homeverse_threejs_twin_${designId || "export"}.json`);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.remove();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Download className="w-2.5 h-2.5" /> Three.js
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const blenderScript = `
+# ==========================================
+# HomeVerse Digital Twin Blender Reconstruction
+# Exported: ${new Date().toLocaleString()}
+# ==========================================
+import bpy
+
+# Clear existing objects
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(use_global=False)
+
+# Recreate room floor
+bpy.ops.mesh.primitive_plane_add(size=1.0, calc_uvs=True, enter_editmode=False, align='WORLD', location=(0, 0, 0))
+floor = bpy.context.active_object
+floor.name = "Floor_Slab"
+floor.scale = (${roomWidth}, ${roomDepth}, 1)
+
+# Placed furniture instances
+${objects.filter(o => !["floor", "wall"].includes(o.object_type)).map(o => `
+# Placed ${o.object_type}
+bpy.ops.mesh.primitive_cube_add(size=1.0, location=(${o.position_x}, ${o.position_y}, ${o.position_z}))
+item = bpy.context.active_object
+item.name = "${o.object_type}_twin"
+item.scale = (${o.scale}, ${o.scale}, ${o.scale})
+item.rotation_euler = (0, 0, ${o.rotation})
+`).join('\n')}
+`;
+                          const dataUri = "data:text/plain;charset=utf-8," + encodeURIComponent(blenderScript);
+                          const link = document.createElement("a");
+                          link.setAttribute("href", dataUri);
+                          link.setAttribute("download", `homeverse_blender_reconstruct.py`);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.remove();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Download className="w-2.5 h-2.5 text-orange-400" /> Blender
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const unityPrefabYaml = `
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &100000
+GameObject:
+  m_Name: Room_Digital_Twin
+  m_Component:
+    - component: {fileID: 400000}
+--- !u!4 &400000
+Transform:
+  m_GameObject: {fileID: 100000}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+${objects.filter(o => !["floor", "wall"].includes(o.object_type)).map((o, idx) => `
+--- !u!1 &20000${idx}
+GameObject:
+  m_Name: ${o.object_type}_instance
+  m_Component:
+    - component: {fileID: 40000${idx}}
+--- !u!4 &40000${idx}
+Transform:
+  m_GameObject: {fileID: 20000${idx}}
+  m_LocalPosition: {x: ${o.position_x}, y: ${o.position_y}, z: ${o.position_z}}
+  m_LocalRotation: {x: 0, y: ${Math.sin(o.rotation/2)}, z: 0, w: ${Math.cos(o.rotation/2)}}
+  m_LocalScale: {x: ${o.scale}, y: ${o.scale}, z: ${o.scale}}
+`).join('\n')}
+`;
+                          const dataUri = "data:text/yaml;charset=utf-8," + encodeURIComponent(unityPrefabYaml);
+                          const link = document.createElement("a");
+                          link.setAttribute("href", dataUri);
+                          link.setAttribute("download", `homeverse_unity_prefab.yaml`);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.remove();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Download className="w-2.5 h-2.5 text-blue-400" /> Unity
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          window.print();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <FileText className="w-2.5 h-2.5 text-emerald-450" /> Report
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
