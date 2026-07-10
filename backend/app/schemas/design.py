@@ -19,6 +19,8 @@ class Design(DesignBase):
     image_url_left: Optional[str] = None
     image_url_right: Optional[str] = None
     image_url_back: Optional[str] = None
+    image_url_front: Optional[str] = None
+
     objects: List[Object] = []
 
 

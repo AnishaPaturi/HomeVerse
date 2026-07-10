@@ -789,6 +789,8 @@ async def render_scratch_design(
         camera_desc = f"Camera is positioned near the right wall, looking straight across the room towards the left wall. Show the left wall and the furniture aligned to it."
     elif view_direction == "right":
         camera_desc = f"Camera is positioned near the left wall, looking straight across the room towards the right wall. Show the right wall and the furniture aligned to it."
+    elif view_direction == "front_wall":
+        camera_desc = f"Camera is positioned inside the room looking directly back at the front entrance wall ({door_dir} facing wall). Show the front wall design, main entrance door, and surrounding wall decor."
     else:
         # "front" view (default)
         camera_desc = f"Camera is positioned at the entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room (door perspective). Part of open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view."
@@ -848,6 +850,8 @@ Only generate ONE image."""
         design.image_url_right = pollinations_url
     elif view_direction == "back":
         design.image_url_back = pollinations_url
+    elif view_direction == "front_wall":
+        design.image_url_front = pollinations_url
     else:
         design.image_url = pollinations_url
     db.commit()
@@ -870,6 +874,8 @@ Only generate ONE image."""
                     design.image_url_right = local_url
                 elif view_direction == "back":
                     design.image_url_back = local_url
+                elif view_direction == "front_wall":
+                    design.image_url_front = local_url
                 else:
                     design.image_url = local_url
                 db.commit()
@@ -882,6 +888,8 @@ Only generate ONE image."""
         "image_url": design.image_url,
         "image_url_left": design.image_url_left,
         "image_url_right": design.image_url_right,
-        "image_url_back": design.image_url_back
+        "image_url_back": design.image_url_back,
+        "image_url_front": design.image_url_front
     }
+
 

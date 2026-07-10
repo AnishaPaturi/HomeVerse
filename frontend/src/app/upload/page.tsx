@@ -287,11 +287,13 @@ export default function UploadPage() {
     image_url_left?: string;
     image_url_right?: string;
     image_url_back?: string;
+    image_url_front?: string;
     status?: "waiting" | "generating" | "completed" | "failed";
   }>>([]);
   const [scratchLayoutDesc, setScratchLayoutDesc] = useState<string>("");
-  const [selectedDirection, setSelectedDirection] = useState<"front" | "left" | "right" | "back">("front");
+  const [selectedDirection, setSelectedDirection] = useState<"front" | "left" | "right" | "back" | "front_wall">("front");
   const [isGeneratingDirection, setIsGeneratingDirection] = useState<boolean>(false);
+
 
   const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
   const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
@@ -1279,7 +1281,7 @@ export default function UploadPage() {
     router.push(`/studio?style=${selectedStyle}&designId=${selectedScratchDesignId}`);
   };
 
-  const handleSelectDirection = async (direction: "front" | "left" | "right" | "back") => {
+  const handleSelectDirection = async (direction: "front" | "left" | "right" | "back" | "front_wall") => {
     setSelectedDirection(direction);
     
     // Find active design
@@ -1292,6 +1294,7 @@ export default function UploadPage() {
     else if (direction === "left") existingUrl = activeDesign.image_url_left || "";
     else if (direction === "right") existingUrl = activeDesign.image_url_right || "";
     else if (direction === "back") existingUrl = activeDesign.image_url_back || "";
+    else if (direction === "front_wall") existingUrl = activeDesign.image_url_front || "";
 
     // If it exists and has already been cached, skip regeneration
     if (existingUrl && !existingUrl.includes("pollinations.ai")) {
@@ -1327,6 +1330,7 @@ export default function UploadPage() {
       setIsGeneratingDirection(false);
     }
   };
+
 
 
   const nextScratchStep = () => {
@@ -3335,33 +3339,34 @@ export default function UploadPage() {
                     if (selectedDirection === "left") displayImg = activeDesign.image_url_left || "";
                     else if (selectedDirection === "right") displayImg = activeDesign.image_url_right || "";
                     else if (selectedDirection === "back") displayImg = activeDesign.image_url_back || "";
+                    else if (selectedDirection === "front_wall") displayImg = activeDesign.image_url_front || "";
 
                     const isDirectionGenerating = isGeneratingDirection || (selectedDirection !== "front" && !displayImg);
 
                     if (isDirectionGenerating) {
                       return (
-                        <div className="relative w-full h-full flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn bg-slate-950/80">
+                        <div className="relative w-full h-full flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn bg-slate-955/80">
                           {/* Direction selection controls still visible during generation */}
                           <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-full p-1 flex gap-1 shadow-lg">
-                            {(["front", "left", "right", "back"] as const).map((dir) => (
+                            {(["front", "front_wall", "left", "right", "back"] as const).map((dir) => (
                               <button
                                 key={dir}
                                 onClick={() => handleSelectDirection(dir)}
                                 disabled={isGeneratingDirection}
-                                className={`px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                                className={`px-2 py-1 rounded-full text-[8px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
                                   selectedDirection === dir
                                     ? "bg-blue-600 text-white shadow-sm"
                                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                                 }`}
                               >
-                                {dir === "front" ? "Door View" : dir === "back" ? "Opposite View" : `${dir} Wall`}
+                                {dir === "front" ? "Door View" : dir === "front_wall" ? "Front Wall" : dir === "back" ? "Opposite View" : `${dir} Wall`}
                               </button>
                             ))}
                           </div>
                           
                           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                           <div>
-                            <p className="text-xs font-bold text-slate-350">Rendering {selectedDirection === "front" ? "Door View" : selectedDirection === "back" ? "Opposite View" : `${selectedDirection} Wall`} view...</p>
+                            <p className="text-xs font-bold text-slate-350">Rendering {selectedDirection === "front" ? "Door View" : selectedDirection === "front_wall" ? "Front Wall" : selectedDirection === "back" ? "Opposite View" : `${selectedDirection} Wall`} view...</p>
                             <p className="text-[9px] text-slate-500 mt-1">Generating from specified camera perspective in {selectedStyle} Style</p>
                           </div>
                         </div>
@@ -3372,21 +3377,22 @@ export default function UploadPage() {
                       <div className="relative w-full h-full animate-fadeIn group">
                         {/* Direction selection controls */}
                         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10 bg-slate-955/85 backdrop-blur-md border border-slate-800 rounded-full p-1 flex gap-1 shadow-lg">
-                          {(["front", "left", "right", "back"] as const).map((dir) => (
+                          {(["front", "front_wall", "left", "right", "back"] as const).map((dir) => (
                             <button
                               key={dir}
                               onClick={() => handleSelectDirection(dir)}
                               disabled={isGeneratingDirection}
-                              className={`px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                              className={`px-2 py-1 rounded-full text-[8px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
                                 selectedDirection === dir
                                   ? "bg-blue-600 text-white shadow-sm"
                                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                               }`}
                             >
-                              {dir === "front" ? "Door View" : dir === "back" ? "Opposite View" : `${dir} Wall`}
+                                {dir === "front" ? "Door View" : dir === "front_wall" ? "Front Wall" : dir === "back" ? "Opposite View" : `${dir} Wall`}
                             </button>
                           ))}
                         </div>
+
 
                         <img
                           src={displayImg}

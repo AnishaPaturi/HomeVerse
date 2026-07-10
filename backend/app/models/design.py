@@ -16,6 +16,8 @@ class Design(Base):
     image_url_left = Column(String, nullable=True)
     image_url_right = Column(String, nullable=True)
     image_url_back = Column(String, nullable=True)
+    image_url_front = Column(String, nullable=True)
+
 
 
     project = relationship("Project", back_populates="designs")
