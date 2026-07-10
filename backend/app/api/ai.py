@@ -721,11 +721,13 @@ async def render_scratch_design(
     layout_desc: str = Form(...),
     room_type: str = Form(...),
     budget: str = Form(...),
+    view_direction: str = Form("front"),
     db: Session = Depends(get_db)
 ):
     """
     Step 2 of progressive scratch design: Generates prompt and renders a single design style
     staggered to avoid rate limiting and allow immediate progressive loading in UI.
+    Supports 4 view directions: front (default), back, left, right.
     """
     from app.models.design import Design as DesignModel
     import httpx
@@ -780,6 +782,17 @@ async def render_scratch_design(
     furniture_items = ROOM_FURNITURE.get(room_type, ["Sofa", "Center Table", "Lights", "Decor"])
     furniture_list = "\n".join([f"• {item}" for item in furniture_items])
 
+    # Determine camera angle and perspective details based on view_direction
+    if view_direction == "back":
+        camera_desc = f"Camera is positioned at the back wall/window area, looking straight back towards the front entrance door ({door_dir} facing wall). Show the front wall design and entrance."
+    elif view_direction == "left":
+        camera_desc = f"Camera is positioned near the right wall, looking straight across the room towards the left wall. Show the left wall and the furniture aligned to it."
+    elif view_direction == "right":
+        camera_desc = f"Camera is positioned near the left wall, looking straight across the room towards the right wall. Show the right wall and the furniture aligned to it."
+    else:
+        # "front" view (default)
+        camera_desc = f"Camera is positioned at the entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room (door perspective). Part of open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view."
+
     image_prompt = f"""You are a professional architect and interior designer.
 
 Generate ONE photorealistic room only.
@@ -796,16 +809,17 @@ House Type:
 Design Style:
 {style_name} ({budget} tier)
 
+Layout & Furniture Placement:
+{layout_desc}
+
 Furniture Requirements:
 {furniture_list}
 
 Architecture Rules:
-- Follow uploaded blueprint exactly.
-- Do not modify walls.
-- Do not move doors.
-- Do not move windows.
-- Maintain walking space.
-- Furniture scale must match room dimensions.
+- Follow the layout description and floor plan exactly. Do not shift the location of windows, doors, or structural elements.
+- The furniture arrangement must remain locked exactly as described: do not move heavy furniture to other sides of the room.
+- Only modify the materials, finishes, textures, colors, and styling accessories to reflect the {style_name} design.
+- Do not modify or move structural walls.
 
 Window Rules:
 If French Window
@@ -814,8 +828,7 @@ Else
 → Premium Roller Blinds
 
 Camera & Rendering:
-- Camera at entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room (door perspective).
-- Part of open entrance door frame/jamb is visible in the foreground on the left edge of the frame to frame the view.
+- {camera_desc}
 - Angle: Eye Level
 - Camera: 24mm Lens
 - Light: Natural Daylight
@@ -825,14 +838,22 @@ Only generate ONE image."""
 
     clean_prompt = " ".join(image_prompt.splitlines())
     encoded_prompt = urllib.parse.quote(clean_prompt)
-    seed = abs(hash(f"{style_name}-{design.project_id}")) % 100000
+    seed = abs(hash(f"{style_name}-{design.project_id}-{view_direction}")) % 100000
     pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_width}&height={img_height}&nologo=true&private=true&model=flux&seed={seed}"
 
-    design.image_url = pollinations_url
+    # Temporarily set URL to prevent empty loading states
+    if view_direction == "left":
+        design.image_url_left = pollinations_url
+    elif view_direction == "right":
+        design.image_url_right = pollinations_url
+    elif view_direction == "back":
+        design.image_url_back = pollinations_url
+    else:
+        design.image_url = pollinations_url
     db.commit()
 
     # Download & cache locally in background
-    local_filename = f"{design.id}.jpg"
+    local_filename = f"{design.id}_{view_direction}.jpg"
     local_path = os.path.join("static/generated", local_filename)
     os.makedirs("static/generated", exist_ok=True)
 
@@ -842,13 +863,25 @@ Only generate ONE image."""
             if response.status_code == 200:
                 with open(local_path, "wb") as f:
                     f.write(response.content)
-                design.image_url = f"http://localhost:8080/static/generated/{local_filename}"
+                local_url = f"http://localhost:8080/static/generated/{local_filename}"
+                if view_direction == "left":
+                    design.image_url_left = local_url
+                elif view_direction == "right":
+                    design.image_url_right = local_url
+                elif view_direction == "back":
+                    design.image_url_back = local_url
+                else:
+                    design.image_url = local_url
                 db.commit()
     except Exception as e:
-        print(f"Failed to cache image for design {design.id}: {e}")
+        print(f"Failed to cache image for design {design.id} view {view_direction}: {e}")
 
     return {
         "id": str(design.id),
         "style": design.style,
-        "image_url": design.image_url
+        "image_url": design.image_url,
+        "image_url_left": design.image_url_left,
+        "image_url_right": design.image_url_right,
+        "image_url_back": design.image_url_back
     }
+

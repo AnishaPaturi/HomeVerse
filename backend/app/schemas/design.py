@@ -16,7 +16,11 @@ class Design(DesignBase):
     project_id: UUID
     direction: Optional[str] = None
     layout_variant: Optional[str] = None
+    image_url_left: Optional[str] = None
+    image_url_right: Optional[str] = None
+    image_url_back: Optional[str] = None
     objects: List[Object] = []
+
 
     class Config:
         from_attributes = True

@@ -284,8 +284,15 @@ export default function UploadPage() {
     id: string;
     style: string;
     image_url: string;
+    image_url_left?: string;
+    image_url_right?: string;
+    image_url_back?: string;
     status?: "waiting" | "generating" | "completed" | "failed";
   }>>([]);
+  const [scratchLayoutDesc, setScratchLayoutDesc] = useState<string>("");
+  const [selectedDirection, setSelectedDirection] = useState<"front" | "left" | "right" | "back">("front");
+  const [isGeneratingDirection, setIsGeneratingDirection] = useState<boolean>(false);
+
   const [selectedScratchDesignId, setSelectedScratchDesignId] = useState<string>("");
   const [isGeneratingScratch, setIsGeneratingScratch] = useState<boolean>(false);
   const [housePlanFile, setHousePlanFile] = useState<File | null>(null);
@@ -424,6 +431,8 @@ export default function UploadPage() {
 
       const initData = await initRes.json();
       const layoutDesc = initData.layout_desc;
+      setScratchLayoutDesc(layoutDesc);
+
       const initialDesigns = initData.designs.map((d: any, idx: number) => ({
         ...d,
         status: idx === 0 ? "generating" : "waiting"
@@ -677,8 +686,21 @@ export default function UploadPage() {
     const savedIsRoomBlueprintCorrect = sessionStorage.getItem("homeverse_is_room_blueprint_correct");
     if (savedIsRoomBlueprintCorrect) setIsRoomBlueprintCorrect(savedIsRoomBlueprintCorrect === "true");
 
+    const savedScratchLayoutDesc = sessionStorage.getItem("homeverse_scratch_layout_desc");
+    if (savedScratchLayoutDesc) setScratchLayoutDesc(savedScratchLayoutDesc);
+
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (scratchLayoutDesc) {
+      sessionStorage.setItem("homeverse_scratch_layout_desc", scratchLayoutDesc);
+    } else {
+      sessionStorage.removeItem("homeverse_scratch_layout_desc");
+    }
+  }, [scratchLayoutDesc, isReady]);
+
 
   // Save states to sessionStorage
   useEffect(() => {
@@ -1256,6 +1278,56 @@ export default function UploadPage() {
     // Redirect to studio with selected designId and style
     router.push(`/studio?style=${selectedStyle}&designId=${selectedScratchDesignId}`);
   };
+
+  const handleSelectDirection = async (direction: "front" | "left" | "right" | "back") => {
+    setSelectedDirection(direction);
+    
+    // Find active design
+    const activeDesign = scratchDesigns.find((d) => d.id === selectedScratchDesignId);
+    if (!activeDesign) return;
+
+    // Check if the image url for this direction is already generated
+    let existingUrl = "";
+    if (direction === "front") existingUrl = activeDesign.image_url;
+    else if (direction === "left") existingUrl = activeDesign.image_url_left || "";
+    else if (direction === "right") existingUrl = activeDesign.image_url_right || "";
+    else if (direction === "back") existingUrl = activeDesign.image_url_back || "";
+
+    // If it exists and has already been cached, skip regeneration
+    if (existingUrl && !existingUrl.includes("pollinations.ai")) {
+      return;
+    }
+
+    setIsGeneratingDirection(true);
+    try {
+      const finalBudget = budgetSelection === "Custom" ? customBudget : budgetSelection;
+      
+      const formData = new FormData();
+      formData.append("design_id", activeDesign.id);
+      formData.append("layout_desc", scratchLayoutDesc || "A standard interior layout.");
+      formData.append("room_type", selectedRoomToDesign);
+      formData.append("budget", finalBudget);
+      formData.append("view_direction", direction);
+
+      const renderRes = await fetch("http://localhost:8080/api/ai/render-scratch-design", {
+        method: "POST",
+        body: formData
+      });
+
+      if (renderRes.ok) {
+        const rendered = await renderRes.json();
+        // Update the scratchDesigns list with the new direction URL
+        setScratchDesigns((prev) =>
+          prev.map((d) => (d.id === activeDesign.id ? { ...d, ...rendered } : d))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to generate direction view:", err);
+    } finally {
+      setIsGeneratingDirection(false);
+    }
+  };
+
 
   const nextScratchStep = () => {
     setScratchStep((prev) => prev + 1);
@@ -2931,7 +3003,9 @@ export default function UploadPage() {
                                   onClick={() => {
                                     setSelectedScratchDesignId(design.id);
                                     setSelectedStyle(design.style);
+                                    setSelectedDirection("front");
                                   }}
+
                                   className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all cursor-pointer group ${
                                     selectedScratchDesignId === design.id
                                       ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
@@ -3257,10 +3331,63 @@ export default function UploadPage() {
                       );
                     }
 
-                    const displayImg = activeDesign.image_url;
+                    let displayImg = activeDesign.image_url;
+                    if (selectedDirection === "left") displayImg = activeDesign.image_url_left || "";
+                    else if (selectedDirection === "right") displayImg = activeDesign.image_url_right || "";
+                    else if (selectedDirection === "back") displayImg = activeDesign.image_url_back || "";
+
+                    const isDirectionGenerating = isGeneratingDirection || (selectedDirection !== "front" && !displayImg);
+
+                    if (isDirectionGenerating) {
+                      return (
+                        <div className="relative w-full h-full flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-4 animate-fadeIn bg-slate-950/80">
+                          {/* Direction selection controls still visible during generation */}
+                          <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10 bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-full p-1 flex gap-1 shadow-lg">
+                            {(["front", "left", "right", "back"] as const).map((dir) => (
+                              <button
+                                key={dir}
+                                onClick={() => handleSelectDirection(dir)}
+                                disabled={isGeneratingDirection}
+                                className={`px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                                  selectedDirection === dir
+                                    ? "bg-blue-600 text-white shadow-sm"
+                                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                                }`}
+                              >
+                                {dir === "front" ? "Door View" : dir === "back" ? "Opposite View" : `${dir} Wall`}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-350">Rendering {selectedDirection === "front" ? "Door View" : selectedDirection === "back" ? "Opposite View" : `${selectedDirection} Wall`} view...</p>
+                            <p className="text-[9px] text-slate-500 mt-1">Generating from specified camera perspective in {selectedStyle} Style</p>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div className="relative w-full h-full animate-fadeIn group">
+                        {/* Direction selection controls */}
+                        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 z-10 bg-slate-955/85 backdrop-blur-md border border-slate-800 rounded-full p-1 flex gap-1 shadow-lg">
+                          {(["front", "left", "right", "back"] as const).map((dir) => (
+                            <button
+                              key={dir}
+                              onClick={() => handleSelectDirection(dir)}
+                              disabled={isGeneratingDirection}
+                              className={`px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                                selectedDirection === dir
+                                  ? "bg-blue-600 text-white shadow-sm"
+                                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                              }`}
+                            >
+                              {dir === "front" ? "Door View" : dir === "back" ? "Opposite View" : `${dir} Wall`}
+                            </button>
+                          ))}
+                        </div>
+
                         <img
                           src={displayImg}
                           alt="Active Workspace Preview"
@@ -3283,7 +3410,7 @@ export default function UploadPage() {
                           
                           <h3 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                            {selectedStyle} Style Option Preview
+                            {selectedStyle} Style Option Preview ({selectedDirection === "front" ? "Door View" : selectedDirection === "back" ? "Opposite View" : `${selectedDirection} Wall`})
                           </h3>
                           
                           <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">

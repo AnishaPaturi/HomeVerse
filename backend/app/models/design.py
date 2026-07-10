@@ -13,6 +13,10 @@ class Design(Base):
     selected = Column(Boolean, default=False)
     direction = Column(String, nullable=True)
     layout_variant = Column(String, nullable=True)
+    image_url_left = Column(String, nullable=True)
+    image_url_right = Column(String, nullable=True)
+    image_url_back = Column(String, nullable=True)
+
 
     project = relationship("Project", back_populates="designs")
     objects = relationship("Object", back_populates="design", cascade="all, delete-orphan")

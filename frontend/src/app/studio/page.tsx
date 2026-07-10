@@ -202,11 +202,12 @@ function StudioContent() {
                   console.warn("Failed to parse structural analysis dimensions:", e);
                 }
               }
-              if (projectData && projectData.thumbnail) {
-                if (!projectData.thumbnail.includes("unsplash.com")) {
-                  setBgImageUrl(projectData.thumbnail);
-                }
+              if (projectData && projectData.thumbnail && !projectData.thumbnail.includes("unsplash.com")) {
+                setBgImageUrl(projectData.thumbnail);
+              } else if (designData && designData.image_url) {
+                setBgImageUrl(designData.image_url);
               }
+
               
               if (projectData && projectData.room_type) {
                 if (currentObjects.length === 0) {
