@@ -7,6 +7,7 @@ import CanvasContainer from "@/components/studio/CanvasContainer";
 import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
 import CopilotChat from "@/components/studio/CopilotChat";
+import VRPanoramaModal from "@/components/studio/VRPanoramaModal";
 
 interface RoomObject {
   id: string;
@@ -329,12 +330,19 @@ function StudioContent() {
   const [walkthroughMode, setWalkthroughMode] = useState(false);
 
   // AI Recommendations tab states
-  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D" | "advisor" | "twin">("library");
+  const [activeLeftTab, setActiveLeftTab] = useState<"library" | "recommendations" | "imgTo3D" | "advisor" | "twin" | "joyplan">("library");
   const [recommendQuery, setRecommendQuery] = useState(initialStyle);
   const [recommendLimit, setRecommendLimit] = useState(5);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendError, setRecommendError] = useState<string | null>(null);
+
+  // JoyPlan specific states
+  const [isVRModalOpen, setIsVRModalOpen] = useState(false);
+  const [joyplanLidarStatus, setJoyplanLidarStatus] = useState<"idle" | "scanning" | "completed">("idle");
+  const [joyplanLidarProgress, setJoyplanLidarProgress] = useState(0);
+  const [joyplanLidarPoints, setJoyplanLidarPoints] = useState(0);
+  const [joyplanLidarLogs, setJoyplanLidarLogs] = useState<string[]>([]);
 
   // Image-to-3D states
   const [imgTo3DFile, setImgTo3DFile] = useState<string | null>(null);
@@ -1335,10 +1343,10 @@ function StudioContent() {
         {/* Left Toolbar: Object catalog */}
         <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0">
           {/* Sidebar Tabs */}
-          <div className="grid grid-cols-5 gap-0.5 p-0.5 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
             <button
               onClick={() => setActiveLeftTab("library")}
-              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "library"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1348,7 +1356,7 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("advisor")}
-              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "advisor"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1358,7 +1366,7 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("recommendations")}
-              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "recommendations"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1368,7 +1376,7 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("imgTo3D")}
-              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "imgTo3D"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1378,13 +1386,23 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("twin")}
-              className={`flex items-center justify-center py-1.5 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "twin"
                   ? "bg-blue-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Twin
+            </button>
+            <button
+              onClick={() => setActiveLeftTab("joyplan")}
+              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+                activeLeftTab === "joyplan"
+                  ? "bg-amber-600 text-white shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              JoyPlan
             </button>
           </div>
 
@@ -2640,6 +2658,216 @@ Transform:
                 </div>
               </div>
             )}
+
+            {activeLeftTab === "joyplan" && (
+              <div className="space-y-4 flex flex-col h-full animate-fadeIn">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-amber-500 block font-mono">JoyPlan Renovation</span>
+                    <span className="text-[8px] font-mono text-amber-450 bg-amber-950/20 border border-amber-900/30 px-1.5 py-0.5 rounded font-bold">V1.5_PRO</span>
+                  </div>
+
+                  {/* 1. VR Panorama Card */}
+                  <div className="bg-gradient-to-br from-amber-950/10 to-slate-950 border border-amber-900/20 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 bg-amber-500/15 rounded text-amber-500">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-200">720° VR Panorama Mode</span>
+                    </div>
+                    <p className="text-[9px] text-slate-500 leading-normal">
+                      Instantly generate a 360-degree immersive WebGL virtual tour mapping your room's style design.
+                    </p>
+                    <button
+                      onClick={() => setIsVRModalOpen(true)}
+                      className="w-full py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-[9px] font-bold rounded-lg border border-amber-500/30 transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                    >
+                      <Play className="w-2.5 h-2.5 fill-current" /> Launch VR Panorama
+                    </button>
+                  </div>
+
+                  {/* 2. LiDAR Scanning Simulation */}
+                  <div className="bg-slate-950 border border-slate-900 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400">LiDAR Spatial Mapping</span>
+                      {joyplanLidarStatus === "scanning" && (
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </div>
+                    
+                    {joyplanLidarStatus === "idle" && (
+                      <>
+                        <p className="text-[9px] text-slate-500 leading-normal">
+                          Scan the space with your mobile LiDAR camera sensors to auto-calibrate floor walls and furniture meshes.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setJoyplanLidarStatus("scanning");
+                            setJoyplanLidarProgress(0);
+                            setJoyplanLidarPoints(0);
+                            setJoyplanLidarLogs(["Initializing LiDAR sensor...", "Aligning structural anchors..."]);
+                            
+                            const interval = setInterval(() => {
+                              setJoyplanLidarProgress((prev) => {
+                                if (prev >= 100) {
+                                  clearInterval(interval);
+                                  setJoyplanLidarStatus("completed");
+                                  setJoyplanLidarLogs((l) => [...l, "Spatial meshes successfully synced!"]);
+                                  return 100;
+                                }
+                                setJoyplanLidarPoints((p) => p + Math.floor(Math.random() * 4000) + 2000);
+                                if (prev === 20) setJoyplanLidarLogs((l) => [...l, "Mapping floor boundary..."]);
+                                if (prev === 50) setJoyplanLidarLogs((l) => [...l, "Detecting wall heights (~2.8m)..."]);
+                                if (prev === 80) setJoyplanLidarLogs((l) => [...l, "Optimizing 3D mesh wireframe..."]);
+                                return prev + 10;
+                              });
+                            }, 300);
+                          }}
+                          className="w-full py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 hover:text-white text-[9px] font-bold rounded-lg transition-all cursor-pointer"
+                        >
+                          Trigger Spatial LiDAR Scan
+                        </button>
+                      </>
+                    )}
+
+                    {joyplanLidarStatus === "scanning" && (
+                      <div className="space-y-1.5 font-mono text-[8px]">
+                        <div className="flex justify-between text-slate-400">
+                          <span>Scanning... {joyplanLidarProgress}%</span>
+                          <span>{joyplanLidarPoints.toLocaleString()} pts</span>
+                        </div>
+                        <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${joyplanLidarProgress}%` }} />
+                        </div>
+                        <div className="bg-black/40 p-1.5 rounded border border-slate-900 text-slate-500 max-h-[50px] overflow-y-auto scrollbar-none">
+                          {joyplanLidarLogs.slice(-2).map((log, idx) => (
+                            <div key={idx} className="truncate">{log}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {joyplanLidarStatus === "completed" && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-[8px] font-mono">
+                          <span className="text-emerald-450 font-bold">✓ SCAN COMPLETE</span>
+                          <span className="text-slate-500 font-semibold">{joyplanLidarPoints.toLocaleString()} vertices</span>
+                        </div>
+                        <p className="text-[9px] text-slate-500 leading-normal">
+                          Room structural dimensions updated. Mesh boundaries locked at 10.0m x 10.0m.
+                        </p>
+                        <button
+                          onClick={() => setJoyplanLidarStatus("idle")}
+                          className="w-full py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-slate-200 text-[8px] font-bold rounded-lg transition-all cursor-pointer"
+                        >
+                          Clear & Reset Scan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Drawing Set Exporter */}
+                  <div className="bg-slate-950 border border-slate-900 rounded-xl p-3 space-y-2">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">CAD & Drawings Suite</span>
+                    <p className="text-[9px] text-slate-500 leading-normal">
+                      Export standardized professional drawings for construction and modeling software.
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => {
+                          const mockCAD = {
+                            format: "DXF_R12",
+                            room_width: roomWidth,
+                            room_depth: roomDepth,
+                            layers: ["WALLS", "FURNITURE", "DIMENSIONS"],
+                            entities: objects.map(o => ({
+                              type: o.object_type,
+                              coordinates: [o.position_x, o.position_y, o.position_z],
+                              rotation: o.rotation
+                            }))
+                          };
+                          const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mockCAD, null, 2));
+                          const link = document.createElement("a");
+                          link.setAttribute("href", dataUri);
+                          link.setAttribute("download", `joyplan_dxf_layout.json`);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.remove();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-350 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <Download className="w-2.5 h-2.5 text-amber-500" /> Export DXF
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleGeneratePDFProposal();
+                        }}
+                        className="py-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-350 hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <FileText className="w-2.5 h-2.5 text-blue-500" /> Elevation PDF
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4. Cost Valuation Estimation */}
+                  <div className="bg-slate-950 border border-slate-900 rounded-xl p-3 space-y-2">
+                    <div className="flex justify-between items-center text-[9px] uppercase font-bold tracking-wider text-slate-400">
+                      <span>Valuation Summary</span>
+                      <span className="text-amber-500 font-extrabold">INR</span>
+                    </div>
+
+                    <div className="space-y-1.5 text-[9px] font-mono">
+                      {(() => {
+                        const items = objects.filter(o => !["floor", "wall"].includes(o.object_type));
+                        const sumUSD = items.reduce((sum, obj) => {
+                          const getPrice = (type: string) => {
+                            switch (type.toLowerCase()) {
+                              case "sofa": return 899;
+                              case "coffee_table": return 249;
+                              case "desk": return 399;
+                              case "chair": return 120;
+                              case "bed": return 1299;
+                              case "lamp": return 89;
+                              case "wardrobe": return 750;
+                              default: return 99;
+                            }
+                          };
+                          return sum + getPrice(obj.object_type);
+                        }, 0);
+                        
+                        const subtotalINR = sumUSD * 85;
+                        const gstINR = Math.round(subtotalINR * 0.18);
+                        const laborINR = Math.round(subtotalINR * 0.05 + 5000);
+                        const totalINR = subtotalINR + gstINR + laborINR;
+
+                        return (
+                          <>
+                            <div className="flex justify-between border-b border-slate-900 pb-1 text-slate-450">
+                              <span>BOM Items Subtotal:</span>
+                              <span>₹{subtotalINR.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-900 pb-1 text-slate-450">
+                              <span>Installation & Labor:</span>
+                              <span>₹{laborINR.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-900 pb-1 text-slate-450">
+                              <span>GST (18%):</span>
+                              <span>₹{gstINR.toLocaleString("en-IN")}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-200 font-bold pt-1 text-[10px]">
+                              <span>Grand Valuation:</span>
+                              <span className="text-amber-450 font-extrabold">₹{totalINR.toLocaleString("en-IN")}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t border-slate-900 space-y-3">
@@ -3186,6 +3414,11 @@ Transform:
           )}
         </div>
       )}
+      <VRPanoramaModal
+        isOpen={isVRModalOpen}
+        onClose={() => setIsVRModalOpen(false)}
+        initialStyle={initialStyle}
+      />
     </div>
   );
 }

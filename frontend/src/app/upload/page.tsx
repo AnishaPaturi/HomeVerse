@@ -1953,9 +1953,9 @@ export default function UploadPage() {
                           onChange={(e) => setRoomType(e.target.value)}
                           className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
                         >
-                          <option value="Living Room">Living Room</option>
-                          <option value="Bedroom">Bedroom</option>
-                          <option value="Home Office">Home Office</option>
+                          <option value="Living Room" className="bg-slate-900 text-slate-100">Living Room</option>
+                          <option value="Bedroom" className="bg-slate-900 text-slate-100">Bedroom</option>
+                          <option value="Home Office" className="bg-slate-900 text-slate-100">Home Office</option>
                         </select>
                       </div>
 
@@ -1968,13 +1968,13 @@ export default function UploadPage() {
                           onChange={(e) => setSelectedStyle(e.target.value)}
                           className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                         >
-                          <option value="Modern">Modern</option>
-                          <option value="Japandi">Japandi</option>
-                          <option value="Scandinavian">Scandinavian</option>
-                          <option value="Minimalist">Minimalist</option>
-                          <option value="Modern Luxury">Modern Luxury</option>
-                          <option value="Industrial">Industrial</option>
-                          <option value="Contemporary">Contemporary</option>
+                          <option value="Modern" className="bg-slate-900 text-slate-100">Modern</option>
+                          <option value="Japandi" className="bg-slate-900 text-slate-100">Japandi</option>
+                          <option value="Scandinavian" className="bg-slate-900 text-slate-100">Scandinavian</option>
+                          <option value="Minimalist" className="bg-slate-900 text-slate-100">Minimalist</option>
+                          <option value="Modern Luxury" className="bg-slate-900 text-slate-100">Modern Luxury</option>
+                          <option value="Industrial" className="bg-slate-900 text-slate-100">Industrial</option>
+                          <option value="Contemporary" className="bg-slate-900 text-slate-100">Contemporary</option>
                         </select>
                       </div>
                     </div>
@@ -2128,8 +2128,8 @@ export default function UploadPage() {
                             onChange={(e) => setRoomType(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
                           >
-                            <option value="Living Room">Living Room</option>
-                            <option value="Bedroom">Bedroom</option>
+                            <option value="Living Room" className="bg-slate-900 text-slate-100">Living Room</option>
+                            <option value="Bedroom" className="bg-slate-900 text-slate-100">Bedroom</option>
                           </select>
                         </div>
 
@@ -2142,13 +2142,13 @@ export default function UploadPage() {
                             onChange={(e) => setSelectedStyle(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 outline-none focus:border-blue-600 transition-colors cursor-pointer"
                           >
-                            <option value="Modern">Modern</option>
-                            <option value="Japandi">Japandi</option>
-                            <option value="Scandinavian">Scandinavian</option>
-                            <option value="Minimalist">Minimalist</option>
-                            <option value="Modern Luxury">Modern Luxury</option>
-                            <option value="Industrial">Industrial</option>
-                            <option value="Contemporary">Contemporary</option>
+                            <option value="Modern" className="bg-slate-900 text-slate-100">Modern</option>
+                            <option value="Japandi" className="bg-slate-900 text-slate-100">Japandi</option>
+                            <option value="Scandinavian" className="bg-slate-900 text-slate-100">Scandinavian</option>
+                            <option value="Minimalist" className="bg-slate-900 text-slate-100">Minimalist</option>
+                            <option value="Modern Luxury" className="bg-slate-900 text-slate-100">Modern Luxury</option>
+                            <option value="Industrial" className="bg-slate-900 text-slate-100">Industrial</option>
+                            <option value="Contemporary" className="bg-slate-900 text-slate-100">Contemporary</option>
                           </select>
                         </div>
                       </div>
@@ -2208,36 +2208,106 @@ export default function UploadPage() {
               {activeMode === "upload" && (
                 <div className="flex-1 flex flex-col justify-between h-full animate-fade-in">
                   {uploadStep === "idle" && (
-                    <div
-                      onDragEnter={handleDrag}
-                      onDragOver={handleDrag}
-                      onDragLeave={handleDrag}
-                      onDrop={handleDrop}
-                      className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer relative group flex-1 flex flex-col justify-center ${
-                        dragActive
-                          ? "border-blue-500 bg-blue-950/20"
-                          : "border-slate-800 bg-slate-900/10 hover:border-slate-700 hover:bg-slate-900/20"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        onChange={handleFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <div className="flex flex-col items-center justify-center space-y-4">
-                        <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 group-hover:border-blue-500/40 group-hover:bg-slate-900 transition-colors">
-                          <Upload className="w-7 h-7 text-blue-400 group-hover:scale-115 transition-transform" />
+                    <div className="space-y-4 flex-1 flex flex-col justify-between">
+                      <div
+                        onDragEnter={handleDrag}
+                        onDragOver={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer relative group flex-1 flex flex-col justify-center min-h-[160px] ${
+                          dragActive
+                            ? "border-blue-500 bg-blue-950/20"
+                            : "border-slate-800 bg-slate-900/10 hover:border-slate-700 hover:bg-slate-900/20"
+                        }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={handleFileChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <div className="p-3 bg-slate-955 rounded-xl border border-slate-850 group-hover:border-blue-500/40 group-hover:bg-slate-900 transition-colors">
+                            <Upload className="w-6 h-6 text-blue-400 group-hover:scale-115 transition-transform" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-200">Click to upload or drag & drop</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">PNG, JPG, or MP4 (Video walkthrough)</p>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                            <span className="flex items-center gap-1.5"><ImageIcon className="w-3 h-3 text-slate-500" /> Room Photo</span>
+                            <span className="text-slate-800">|</span>
+                            <span className="flex items-center gap-1.5"><Video className="w-3 h-3 text-slate-500" /> Video Scan</span>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-semibold text-slate-200">Click to upload or drag & drop</p>
-                          <p className="text-[10px] text-slate-500 mt-1">PNG, JPG, or MP4 (Video walkthrough)</p>
+                      </div>
+
+                      {/* Design Style Theme Options Selector in Idle state */}
+                      <div className="space-y-2.5 bg-slate-900/25 p-3.5 border border-slate-900/80 rounded-2xl">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3 text-blue-400" /> Select Design Style Theme
+                          </label>
+                          <span className="text-[9px] text-slate-400 font-mono">
+                            Selected: <strong className="text-blue-400 font-semibold">{selectedStyle === "Custom" && customStyleInput ? customStyleInput : selectedStyle}</strong>
+                          </span>
                         </div>
-                        <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                          <span className="flex items-center gap-1.5"><ImageIcon className="w-3 h-3 text-slate-500" /> Room Photo</span>
-                          <span className="text-slate-800">|</span>
-                          <span className="flex items-center gap-1.5"><Video className="w-3 h-3 text-slate-500" /> Video Scan</span>
+
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {styles.map((styleItem) => {
+                            const isSelected = selectedStyle === styleItem.name;
+                            return (
+                              <button
+                                key={styleItem.name}
+                                type="button"
+                                onClick={() => setSelectedStyle(styleItem.name)}
+                                className={`group relative rounded-xl overflow-hidden border p-1 text-left transition-all cursor-pointer flex flex-col justify-between h-16 ${
+                                  isSelected
+                                    ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300 shadow-md shadow-blue-500/10"
+                                    : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                                }`}
+                              >
+                                <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden bg-slate-900">
+                                  <img
+                                    src={styleItem.img}
+                                    alt={styleItem.name}
+                                    className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute top-0.5 right-0.5 bg-blue-600 text-white rounded-full p-0.5 shadow">
+                                      <Check className="w-2.5 h-2.5" />
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="font-bold text-[9px] truncate block px-0.5 leading-tight">{styleItem.name}</span>
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStyle("Custom")}
+                            className={`group relative rounded-xl border p-1.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center h-16 ${
+                              selectedStyle === "Custom"
+                                ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300 shadow-md shadow-blue-500/10"
+                                : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                            }`}
+                          >
+                            <span className="text-xs">✨</span>
+                            <span className="font-bold text-[8px] truncate block leading-tight mt-0.5">Custom Style...</span>
+                          </button>
                         </div>
+
+                        {selectedStyle === "Custom" && (
+                          <div className="animate-fadeIn pt-1">
+                            <input
+                              type="text"
+                              value={customStyleInput}
+                              onChange={(e) => setCustomStyleInput(e.target.value)}
+                              placeholder="Type custom style name (e.g. Bohemian, Art Deco)..."
+                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-655 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2328,16 +2398,16 @@ export default function UploadPage() {
                             }}
                             className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                           >
-                            <option value="Living Room">Living Room</option>
-                            <option value="Bedroom">Bedroom</option>
-                            <option value="Office">Home Office</option>
-                            <option value="Kitchen">Kitchen</option>
-                            <option value="Bathroom">Bathroom</option>
-                            <option value="Dining Room">Dining Room</option>
-                            <option value="Gym">Home Gym</option>
-                            <option value="Playroom">Kids Playroom</option>
-                            <option value="Library">Library / Study</option>
-                            <option value="Other">Other (Custom Type...)</option>
+                            <option value="Living Room" className="bg-slate-900 text-slate-100">Living Room</option>
+                            <option value="Bedroom" className="bg-slate-900 text-slate-100">Bedroom</option>
+                            <option value="Office" className="bg-slate-900 text-slate-100">Home Office</option>
+                            <option value="Kitchen" className="bg-slate-900 text-slate-100">Kitchen</option>
+                            <option value="Bathroom" className="bg-slate-900 text-slate-100">Bathroom</option>
+                            <option value="Dining Room" className="bg-slate-900 text-slate-100">Dining Room</option>
+                            <option value="Gym" className="bg-slate-900 text-slate-100">Home Gym</option>
+                            <option value="Playroom" className="bg-slate-900 text-slate-100">Kids Playroom</option>
+                            <option value="Library" className="bg-slate-900 text-slate-100">Library / Study</option>
+                            <option value="Other" className="bg-slate-900 text-slate-100">Other (Custom Type...)</option>
                           </select>
                         </div>
 
@@ -2357,24 +2427,75 @@ export default function UploadPage() {
                           </div>
                         )}
 
-                        {/* Style Select */}
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">
-                            Design Style Theme
-                          </label>
+                        {/* Style Select & Visual Theme Cards */}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-blue-400" /> Design Style Theme Options
+                            </label>
+                            <span className="text-[9px] text-blue-400 font-semibold font-mono">
+                              {selectedStyle === "Custom" && customStyleInput ? customStyleInput : selectedStyle}
+                            </span>
+                          </div>
+
+                          {/* Visual Interactive Theme Cards Grid */}
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {styles.map((styleItem) => {
+                              const isSelected = selectedStyle === styleItem.name;
+                              return (
+                                <button
+                                  key={styleItem.name}
+                                  type="button"
+                                  onClick={() => setSelectedStyle(styleItem.name)}
+                                  className={`group relative rounded-xl overflow-hidden border p-1 text-left transition-all cursor-pointer flex flex-col justify-between h-16 ${
+                                    isSelected
+                                      ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300 shadow-md shadow-blue-500/10"
+                                      : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                                  }`}
+                                >
+                                  <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden bg-slate-900">
+                                    <img
+                                      src={styleItem.img}
+                                      alt={styleItem.name}
+                                      className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                                    />
+                                    {isSelected && (
+                                      <div className="absolute top-0.5 right-0.5 bg-blue-600 text-white rounded-full p-0.5 shadow">
+                                        <Check className="w-2.5 h-2.5" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="font-bold text-[9px] truncate block px-0.5 leading-tight">{styleItem.name}</span>
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStyle("Custom")}
+                              className={`group relative rounded-xl border p-1.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center h-16 ${
+                                selectedStyle === "Custom"
+                                  ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                              }`}
+                            >
+                              <span className="text-xs">✨</span>
+                              <span className="font-bold text-[8px] truncate block leading-tight mt-0.5">Custom Style...</span>
+                            </button>
+                          </div>
+
                           <select
                             value={selectedStyle}
                             onChange={(e) => setSelectedStyle(e.target.value)}
                             className="w-full bg-slate-955 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none transition-colors cursor-pointer"
                           >
-                            <option value="Modern">Modern</option>
-                            <option value="Japandi">Japandi</option>
-                            <option value="Scandinavian">Scandinavian</option>
-                            <option value="Minimalist">Minimalist</option>
-                            <option value="Modern Luxury">Modern Luxury</option>
-                            <option value="Industrial">Industrial</option>
-                            <option value="Contemporary">Contemporary</option>
-                            <option value="Custom">Custom Style...</option>
+                            <option value="Modern" className="bg-slate-900 text-slate-100">Modern</option>
+                            <option value="Japandi" className="bg-slate-900 text-slate-100">Japandi</option>
+                            <option value="Scandinavian" className="bg-slate-900 text-slate-100">Scandinavian</option>
+                            <option value="Minimalist" className="bg-slate-900 text-slate-100">Minimalist</option>
+                            <option value="Modern Luxury" className="bg-slate-900 text-slate-100">Modern Luxury</option>
+                            <option value="Industrial" className="bg-slate-900 text-slate-100">Industrial</option>
+                            <option value="Contemporary" className="bg-slate-900 text-slate-100">Contemporary</option>
+                            <option value="Custom" className="bg-slate-900 text-slate-100">Custom Style...</option>
                           </select>
                         </div>
 
