@@ -1,14 +1,20 @@
 import os
 import json
-import google.generativeai as genai
-from typing import Dict, List, Any
+import traceback
+from typing import Dict, List, Any, Optional
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class CopilotService:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        pass
+
+    def _get_client(self) -> Optional[genai.Client]:
+        api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            return genai.Client(api_key=api_key)
+        return None
 
     async def execute_scene_command(
         self,
@@ -20,8 +26,9 @@ class CopilotService:
         Returns the updated Scene Graph.
         """
         nodes = current_scene.get("nodes", [])
+        client = self._get_client()
         
-        if not self.api_key:
+        if not client:
             # Fallback simple keyword mutations
             command_lower = command.lower()
             if "wall" in command_lower:
@@ -58,36 +65,36 @@ class CopilotService:
         3. "delete": Remove a node by its "id".
         
         Respond ONLY with a valid JSON object matching this schema:
-        {
+        {{
           "response": "Brief friendly message explaining what changes you made.",
           "mutations": [
-            {
+            {{
               "type": "update" | "add" | "delete",
               "node_id": "string (for update/delete)",
-              "properties": {
+              "properties": {{
                 "material": "string",
                 "position": [float, float, float],
                 "rotation": float,
                 "scale": float
-              },
-              "new_node": {
+              }},
+              "new_node": {{
                 "type": "string",
                 "position": [float, float, float],
                 "rotation": float,
                 "scale": float,
                 "material": "string"
-              }
-            }
+              }}
+            }}
           ]
-        }
+        }}
         Respond with raw JSON only. Do not include markdown blocks.
         """
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
             
@@ -120,7 +127,8 @@ class CopilotService:
                 "scene": current_scene
             }
         except Exception as e:
-            print(f"V2 Copilot command failed ({e}). Returning original scene.")
+            print(f"❌ V2 Copilot command failed ({e}). Returning original scene.")
+            traceback.print_exc()
             return {
                 "response": f"Encountered an issue executing request. Original scene retained.",
                 "scene": current_scene

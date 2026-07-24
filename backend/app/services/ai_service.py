@@ -1367,7 +1367,9 @@ from app.models.project import Project as ProjectModel
 from app.models.design import Design as DesignModel
 from app.models.object import Object as ObjectModel
 from app.config import settings
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+import traceback
 
 # ---------------------------------------------------------------------------
 # Direction / Layout constants used for the 8-images-per-style generation
@@ -1636,15 +1638,10 @@ class AIService:
         if not api_key:
             return True # Fallback to True if no key is set
 
-        import google.generativeai as genai
-        import json
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         contents = [
-            {
-                "mime_type": mime_type,
-                "data": file_bytes
-            },
+            types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
             """Analyze this uploaded file.
             Is this file an interior room of a house/building, a home area, a blueprint, a floor plan, or a blurred/out-of-focus photo of a room?
             Respond with a JSON object:
@@ -1662,15 +1659,16 @@ class AIService:
         ]
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
             return bool(result.get("is_valid", True))
         except Exception as e:
-            print(f"Gemini content validation failed: {e}. Defaulting to True.")
+            print(f"[WARNING] Gemini content validation failed: {e}. Defaulting to True.")
+            traceback.print_exc()
             return True
 
     async def analyze_room_upload(self, project_id: uuid.UUID, file: UploadFile, db: Session):
@@ -1690,7 +1688,7 @@ class AIService:
                 detail="GEMINI_API_KEY is not set. Please open the backend/.env file and fill in your actual Gemini API key to enable the real AI models."
             )
 
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         # Read the file bytes
         file_bytes = await file.read()
@@ -1706,16 +1704,7 @@ class AIService:
                 tmp_path = tmp.name
 
             try:
-                video_file = genai.upload_file(path=tmp_path)
-                while video_file.state.name == "PROCESSING":
-                    time.sleep(1)
-                    video_file = genai.get_file(video_file.name)
-
-                if video_file.state.name == "FAILED":
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to upload and process video in Gemini API."
-                    )
+                video_file = client.files.upload(file=tmp_path)
                 contents.append(video_file)
             finally:
                 try:
@@ -1724,10 +1713,7 @@ class AIService:
                     pass
         else:
             # Handle images
-            contents.append({
-                "mime_type": mime_type,
-                "data": file_bytes
-            })
+            contents.append(types.Part.from_bytes(data=file_bytes, mime_type=mime_type))
 
         prompt = """
         You are an AI Interior Designer and Architect.
@@ -1765,14 +1751,15 @@ class AIService:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
         except Exception as e:
-            print(f"Gemini API analysis failed: {e}. Falling back to default structural analysis.")
+            print(f"[ERROR] Gemini API analysis failed in analyze_room_upload: {e}. Falling back to default structural analysis.")
+            traceback.print_exc()
             # Heuristics based on filename or default
             filename_lower = file.filename.lower()
             detected_room_type = "Living Room"
@@ -1889,10 +1876,7 @@ class AIService:
 
         if sample_hall_bytes:
             contents.append("Below is the reference image (sample_hall.png). It represents the target composition and camera perspective you must match. Notice the camera is positioned at the entrance doorway threshold, and a portion of the entrance door frame/jamb is visible in the foreground on the left edge of the frame, looking straight into the room:")
-            contents.append({
-                "mime_type": "image/png",
-                "data": sample_hall_bytes
-            })
+            contents.append(types.Part.from_bytes(data=sample_hall_bytes, mime_type="image/png"))
 
         if original_file_path and os.path.exists(original_file_path):
             try:
@@ -1906,19 +1890,12 @@ class AIService:
 
                 # Check if it was a video walkthrough
                 if original_file_path.endswith((".mp4", ".mov", ".avi", ".mkv")):
-                    video_file = genai.upload_file(path=original_file_path)
-                    while video_file.state.name == "PROCESSING":
-                        time.sleep(1)
-                        video_file = genai.get_file(video_file.name)
-                    if video_file.state.name != "FAILED":
-                        contents.append("Below is the user's uploaded walkthrough video scan of their room:")
-                        contents.append(video_file)
+                    video_file = client.files.upload(file=original_file_path)
+                    contents.append("Below is the user's uploaded walkthrough video scan of their room:")
+                    contents.append(video_file)
                 else:
                     contents.append("Below is the user's uploaded floor plan / blueprint / room photo that defines the layout, walls, door locations, and window positions:")
-                    contents.append({
-                        "mime_type": mime_type,
-                        "data": file_bytes
-                    })
+                    contents.append(types.Part.from_bytes(data=file_bytes, mime_type=mime_type))
             except Exception as e:
                 print(f"Error loading original file for Gemini: {e}")
 
@@ -2069,14 +2046,15 @@ class AIService:
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
         except Exception as e:
-            print(f"Gemini API dynamic design generation failed: {e}. Falling back to default layout.")
+            print(f"[ERROR] Gemini API dynamic design generation failed: {e}. Falling back to default layout.")
+            traceback.print_exc()
             # Fallback based on room type
             default_objects = [
                 {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
@@ -2437,7 +2415,7 @@ Composition (matching sample_hall.png):
                 detail="GEMINI_API_KEY is not set. Please open the backend/.env file and fill in your actual Gemini API key to enable the real AI models."
             )
 
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         # Read the file bytes
         file_bytes = await file.read()
@@ -2453,16 +2431,7 @@ Composition (matching sample_hall.png):
                 tmp_path = tmp.name
 
             try:
-                video_file = genai.upload_file(path=tmp_path)
-                while video_file.state.name == "PROCESSING":
-                    time.sleep(1)
-                    video_file = genai.get_file(video_file.name)
-
-                if video_file.state.name == "FAILED":
-                    raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to upload and process video in Gemini API."
-                    )
+                video_file = client.files.upload(file=tmp_path)
                 contents.append(video_file)
             finally:
                 try:
@@ -2471,10 +2440,7 @@ Composition (matching sample_hall.png):
                     pass
         else:
             # Handle images
-            contents.append({
-                "mime_type": mime_type,
-                "data": file_bytes
-            })
+            contents.append(types.Part.from_bytes(data=file_bytes, mime_type=mime_type))
 
         prompt = """
         You are an AI Interior Designer and Architect.
@@ -2630,15 +2596,16 @@ Composition (matching sample_hall.png):
         contents.append(prompt)
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
         except Exception as e:
             # Check if it's a 429 rate limit or any other API error. Provide a fallback mock response.
-            print(f"Gemini API analysis failed: {e}. Falling back to mock room analysis.")
+            print(f"[ERROR] Gemini API analysis failed in analyze_and_generate_styles: {e}. Falling back to mock room analysis.")
+            traceback.print_exc()
             filename_lower = file.filename.lower()
             room_hint_lower = room_type_hint.lower()
             if "bed" in room_hint_lower or "bed" in filename_lower:
@@ -2964,7 +2931,7 @@ Composition (matching sample_hall.png):
                 detail="GEMINI_API_KEY is not set. Please open the backend/.env file and fill in your actual Gemini API key to enable the real AI models."
             )
 
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         # Fetch current objects in the design
         objects = db.query(ObjectModel).filter(ObjectModel.design_id == design_id).all()
@@ -3037,15 +3004,16 @@ Composition (matching sample_hall.png):
         """
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
         except Exception as e:
             # Handle rate limiting/API exceptions gracefully and use local fallback heuristics
-            print(f"Gemini API copilot command failed: {e}. Using local heuristic copilot engine instead.")
+            print(f"[ERROR] Gemini API copilot command failed: {e}. Using local heuristic copilot engine instead.")
+            traceback.print_exc()
 
             # Simple keyword-based logic to mock Gemini copilot decisions
             message_lower = message.lower()

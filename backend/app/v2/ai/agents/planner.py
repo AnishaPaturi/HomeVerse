@@ -1,14 +1,20 @@
 import os
 import json
-import google.generativeai as genai
-from typing import Dict, Any, List
+import traceback
+from typing import Dict, Any, List, Optional
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class PlannerAgent:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        pass
+
+    def _get_client(self) -> Optional[genai.Client]:
+        api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            return genai.Client(api_key=api_key)
+        return None
 
     async def create_execution_plan(
         self,
@@ -22,8 +28,9 @@ class PlannerAgent:
         Budget, Furniture, and Rendering agents.
         """
         user_input = f"Room: {room_type}, Style: {style}, Palette: {color_palette or 'Any'}, Context: {custom_prompt or 'None'}"
+        client = self._get_client()
         
-        if not self.api_key:
+        if not client:
             # Fallback local planning template
             return {
                 "user_intent": user_input,
@@ -62,14 +69,15 @@ class PlannerAgent:
         """
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             return json.loads(response.text)
         except Exception as e:
-            print(f"V2 Planner Agent failed ({e}). Returning default template plan.")
+            print(f"❌ V2 Planner Agent failed ({e}). Returning default template plan.")
+            traceback.print_exc()
             return {
                 "user_intent": user_input,
                 "subtasks": [

@@ -1,14 +1,20 @@
 import os
 import json
-import google.generativeai as genai
-from typing import Dict, Any, List
+import traceback
+from typing import Dict, Any, List, Optional
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class CriticAgent:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        pass
+
+    def _get_client(self) -> Optional[genai.Client]:
+        api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            return genai.Client(api_key=api_key)
+        return None
 
     async def audit_design_proposal(
         self,
@@ -23,12 +29,13 @@ class CriticAgent:
         """
         nodes = scene_graph.get("nodes", [])
         room_meta = scene_graph.get("room", {})
+        client = self._get_client()
         
         spacing_score = 100
         if len(physics_warnings) > 0:
             spacing_score = max(30, 100 - (len(physics_warnings) * 25))
             
-        if not self.api_key:
+        if not client:
             # Fallback simple scoring logic
             return {
                 "scores": {
@@ -78,14 +85,15 @@ class CriticAgent:
         """
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             return json.loads(response.text)
         except Exception as e:
-            print(f"V2 Critic Agent failed ({e}). Returning fallback score.")
+            print(f"❌ V2 Critic Agent failed ({e}). Returning fallback score.")
+            traceback.print_exc()
             return {
                 "scores": {
                     "spacing": spacing_score,

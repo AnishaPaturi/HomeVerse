@@ -1,17 +1,25 @@
 import os
 import json
 import uuid
-import google.generativeai as genai
+import traceback
 from typing import Dict, Any, Optional
 from fastapi import HTTPException
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class LayoutEngine:
     def __init__(self):
-        # Configure API key
+        pass
+
+    def _get_client(self) -> genai.Client:
         api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
+        if not api_key:
+            raise HTTPException(
+                status_code=400,
+                detail="GEMINI_API_KEY is not set."
+            )
+        return genai.Client(api_key=api_key)
 
     async def validate_and_create_house_json(
         self,
@@ -25,13 +33,7 @@ class LayoutEngine:
         """
         Uses Gemini to parse user inputs (e.g. details form, room dimensions) and the uploaded blueprint image to return a clean, structured Master House Model JSON.
         """
-        api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise HTTPException(
-                status_code=400,
-                detail="GEMINI_API_KEY is not set."
-            )
-        genai.configure(api_key=api_key)
+        client = self._get_client()
 
         prompt = f"""
         You are an AI Architect. Convert the following unstructured user-supplied housing information and the attached blueprint/floorplan image into a single clean, validated Master House Model JSON object.
@@ -115,21 +117,19 @@ class LayoutEngine:
         try:
             contents = []
             if blueprint_bytes and blueprint_mime_type:
-                contents.append({
-                    "mime_type": blueprint_mime_type,
-                    "data": blueprint_bytes
-                })
+                contents.append(types.Part.from_bytes(data=blueprint_bytes, mime_type=blueprint_mime_type))
             contents.append(prompt)
 
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
             return result
         except Exception as e:
-            print(f"Error creating house JSON with Gemini: {e}")
+            print(f"[ERROR] Error creating house JSON with Gemini: {e}")
+            traceback.print_exc()
             # Fallback house JSON parsing logic
             selected_room = house_details.get("selectedRoomToDesign", "Hall").lower().replace(" ", "_")
             if "hall" in selected_room or "living" in selected_room:
@@ -190,13 +190,7 @@ class LayoutEngine:
         Generates one common 3D room layout (furniture positioning, doors, windows, walls, floor)
         using the Master House Model JSON and specific architectural templates & rules.
         """
-        api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise HTTPException(
-                status_code=400,
-                detail="GEMINI_API_KEY is not set."
-            )
-        genai.configure(api_key=api_key)
+        client = self._get_client()
 
         # Standardize room key
         room_key = room_type.lower().replace(" / ", "_").replace(" ", "_")
@@ -286,15 +280,16 @@ class LayoutEngine:
         """
 
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
             return result
         except Exception as e:
-            print(f"Error generating common layout: {e}")
+            print(f"[ERROR] Error generating common layout in layout_engine: {e}")
+            traceback.print_exc()
             # Fallback mock layout based on room type
             r_type = room_type.lower()
             z_center = -3.0

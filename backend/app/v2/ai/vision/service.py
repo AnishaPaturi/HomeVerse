@@ -1,20 +1,27 @@
 import os
 import json
-import google.generativeai as genai
-from typing import Dict, Any
+import traceback
+from typing import Dict, Any, Optional
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class VisionService:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        pass
+
+    def _get_client(self) -> Optional[genai.Client]:
+        api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            return genai.Client(api_key=api_key)
+        return None
 
     async def analyze_room_photo(self, image_bytes: bytes, mime_type: str = "image/jpeg") -> Dict[str, Any]:
         """
         Uses Gemini Vision to perform high-fidelity structural, wall, window, door, and camera angle estimation.
         """
-        if not self.api_key:
+        client = self._get_client()
+        if not client:
             # Fallback mock analysis
             return {
                 "walls": [{"direction": "left", "material": "#f1f5f9"}, {"direction": "right", "material": "#f1f5f9"}],
@@ -54,21 +61,19 @@ class VisionService:
         """
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
             contents = [
-                {
-                    "mime_type": mime_type,
-                    "data": image_bytes
-                },
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 prompt
             ]
-            response = await model.generate_content_async(
-                contents,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             return json.loads(response.text)
         except Exception as e:
-            print(f"V2 Vision Service: Gemini analysis failed ({e}). Returning fallback layout.")
+            print(f"❌ V2 Vision Service: Gemini analysis failed ({e}). Returning fallback layout.")
+            traceback.print_exc()
             return {
                 "walls": [{"direction": "left", "material": "#f1f5f9"}, {"direction": "right", "material": "#f1f5f9"}],
                 "windows": [{"wall": "back", "type": "standard", "width_m": 1.5}],

@@ -1,14 +1,20 @@
 import os
 import json
-import google.generativeai as genai
-from typing import Dict, Any
+import traceback
+from typing import Dict, Any, Optional
 from app.config import settings
+from google import genai
+from google.genai import types
 
 class StyleAgent:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
+        pass
+
+    def _get_client(self) -> Optional[genai.Client]:
+        api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            return genai.Client(api_key=api_key)
+        return None
 
     async def execute_task(self, task_info: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -16,8 +22,9 @@ class StyleAgent:
         """
         style = task_info.get("parameters", {}).get("style", "Modern")
         palette = task_info.get("parameters", {}).get("palette")
+        client = self._get_client()
         
-        if not self.api_key:
+        if not client:
             # Fallback local style profile mapping
             profiles = {
                 "Modern": {
@@ -57,14 +64,15 @@ class StyleAgent:
         """
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = await model.generate_content_async(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             return json.loads(response.text)
         except Exception as e:
-            print(f"V2 Style Agent failed ({e}). Returning default Modern style.")
+            print(f"❌ V2 Style Agent failed ({e}). Returning default Modern style.")
+            traceback.print_exc()
             return {
                 "primary_color": "#1e293b",
                 "accent_color": "#3b82f6",

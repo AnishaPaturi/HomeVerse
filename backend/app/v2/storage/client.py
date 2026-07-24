@@ -1,7 +1,14 @@
 import os
-import boto3
-from botocore.exceptions import NoCredentialsError
 from typing import Optional
+
+try:
+    import boto3
+    from botocore.exceptions import NoCredentialsError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    boto3 = None
+    NoCredentialsError = Exception
+    BOTO3_AVAILABLE = False
 
 class StorageClient:
     def __init__(self):
@@ -12,7 +19,7 @@ class StorageClient:
         aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
         endpoint_url = os.getenv("AWS_S3_ENDPOINT_URL") # Useful for MinIO
         
-        if aws_access_key and aws_secret_key:
+        if BOTO3_AVAILABLE and aws_access_key and aws_secret_key:
             try:
                 self.s3_client = boto3.client(
                     's3',
