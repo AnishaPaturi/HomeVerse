@@ -176,29 +176,13 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#041a18]/95 via-[#041a18]/60 to-transparent" />
         </div>
 
-        {/* Floating 3D Chair Cutouts Overlapping Hero (Matching Reference Image) */}
-        <div className="absolute top-16 left-8 z-20 hidden lg:flex items-center gap-3 bg-[#062421]/90 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-500/40 shadow-2xl animate-float cursor-pointer" onClick={() => router.push("/upload")}>
+        {/* Floating Cutout A: Brass Pendant Hanging Lamp (Top-Right Empty Wall - Zero Text Overlap) */}
+        <div className="absolute top-4 right-10 z-20 pointer-events-none hidden xl:block animate-float">
           <img
-            src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=200"
-            alt="Beige Scandinavian Armchair"
-            className="w-16 h-16 object-cover rounded-xl border border-emerald-400/40"
+            src="/assets/cutouts/pendant_lamp.png"
+            alt="Brass Pendant Lamp"
+            className="w-48 h-48 sm:w-64 sm:h-64 object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]"
           />
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 block">3D MESH GENERATED</span>
-            <span className="text-xs font-serif font-bold text-white block">Beige Lounge Chair</span>
-            <span className="text-[10px] text-slate-400">Click to place in studio</span>
-          </div>
-        </div>
-
-        <div className="absolute bottom-24 right-12 z-20 hidden lg:flex items-center gap-3 bg-[#062421]/90 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-500/40 shadow-2xl animate-float-reverse cursor-pointer" onClick={() => router.push("/upload")}>
-          <div className="p-2.5 bg-[#0d9488]/20 border border-[#0d9488]/50 text-emerald-400 rounded-xl">
-            <Cpu className="w-6 h-6 animate-pulse" />
-          </div>
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-300 block">AI SPATIAL SCAN</span>
-            <span className="text-xs font-serif font-bold text-white block">99.4% Depth Accuracy</span>
-            <span className="text-[10px] text-slate-400">Gemini 2.5 Flash Engine</span>
-          </div>
         </div>
 
         {/* Hero Central Content */}
@@ -237,7 +221,7 @@ export default function HomePage() {
           {/* Centered Scroll Indicator */}
           <div className="w-full flex justify-center mt-16">
             <button
-              onClick={() => scrollToSection("features")}
+              onClick={() => scrollToSection("about")}
               className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white/80 hover:text-white hover:border-white transition-all cursor-pointer animate-bounce"
             >
               <ChevronDown className="w-5 h-5" />
@@ -247,8 +231,137 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- Platform Capabilities Grid (Explaining the Idea) ---------------------------------------------------------------- */}
-      <section id="features" className="relative py-24 px-8 bg-[#041c19] border-t border-emerald-950 relative z-10">
+      {/* ---------------------------------------------------------------- Floating Cutout B: Beige Armchairs & Plant (Left Outer Margin - Zero Text Overlap) ---------------------------------------------------------------- */}
+      <div className="relative z-30 max-w-7xl mx-auto px-8 -mt-24 pointer-events-none hidden xl:block">
+        <div className="absolute -top-28 -left-12 animate-float">
+          <img
+            src="/assets/cutouts/beige_armchair.png"
+            alt="Beige Scandinavian Armchair & Table"
+            className="w-60 h-60 sm:w-72 sm:h-72 object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.8)]"
+          />
+        </div>
+      </div>
+
+      {/* ---------------------------------------------------------------- About Us Section ---------------------------------------------------------------- */}
+      <section id="about" className="relative py-24 px-8 bg-[#041c19] border-t border-emerald-950 relative z-10">
+        
+        {/* Angular Green Background Accent Shapes */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-emerald-900/30 transform skew-x-12 translate-x-32" />
+          <div className="absolute bottom-0 left-0 w-1/3 h-full bg-teal-900/20 transform -skew-x-12 -translate-x-32" />
+        </div>
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+          
+          {/* Left Column: About Info & Metrics */}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-3">
+              <span className="text-xs uppercase font-bold tracking-widest text-[#0d9488] block">About Us</span>
+              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white">
+                Reimagining Interior Architecture with AI Precision
+              </h2>
+            </div>
+
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-light">
+              HomeVerse replaces static non-editable 2D concept images with real-time WebGL 3D digital twins. Drag and drop furniture, repaint walls, audit lighting clearance, and chat with an AI Design Copilot in seconds.
+            </p>
+
+            {/* 4 Stat Counter Metrics Grid */}
+            <div className="grid grid-cols-2 gap-6 pt-4 border-t border-emerald-900/40">
+              <div>
+                <div className="font-serif text-3xl sm:text-4xl font-bold text-white">255+</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wider mt-1">Projects Completed</div>
+              </div>
+              <div>
+                <div className="font-serif text-3xl sm:text-4xl font-bold text-white">255+</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wider mt-1">3D Assets Catalog</div>
+              </div>
+              <div>
+                <div className="font-serif text-3xl sm:text-4xl font-bold text-white">255+</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wider mt-1">AI Style Presets</div>
+              </div>
+              <div>
+                <div className="font-serif text-3xl sm:text-4xl font-bold text-white">255+</div>
+                <div className="text-[11px] text-slate-400 uppercase tracking-wider mt-1">Happy Homeowners</div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="pt-2">
+              <button
+                onClick={() => router.push(user ? "/upload" : "/login")}
+                className="inline-flex items-center gap-2 bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium text-xs uppercase tracking-wider px-7 py-3 rounded-full transition-all cursor-pointer shadow-lg shadow-[#0d9488]/20 hover:scale-105"
+              >
+                Launch Studio <ArrowUpRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: 4-Photo Collage Grid */}
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center relative">
+            
+            {/* Main Tall Image (Left of Collage) */}
+            <div className="sm:col-span-6 relative group overflow-hidden rounded-3xl border border-emerald-800/40 shadow-2xl">
+              <img
+                src="https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=800"
+                alt="3D Interior Render"
+                className="w-full h-[460px] object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+              />
+              
+              {/* Circular Floating Badge */}
+              <div className="absolute bottom-6 left-6 z-10 w-24 h-24 rounded-full border border-white/20 bg-white/10 backdrop-blur-md flex flex-col items-center justify-center text-center shadow-xl">
+                <span className="text-[9px] font-bold tracking-widest text-white uppercase leading-tight">CREATE 3D<br/>RENDERING</span>
+              </div>
+            </div>
+
+            {/* 2x2 Grid of Smaller Photos (Right of Collage) */}
+            <div className="sm:col-span-6 grid grid-cols-2 gap-4">
+              <div className="overflow-hidden rounded-2xl border border-emerald-800/40 shadow-lg group">
+                <img
+                  src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=400"
+                  alt="Console Table Setup"
+                  className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-emerald-800/40 shadow-lg group">
+                <img
+                  src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=400"
+                  alt="Emerald Wall Plants"
+                  className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-emerald-800/40 shadow-lg group">
+                <img
+                  src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=400"
+                  alt="Modern Armchair"
+                  className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-emerald-800/40 shadow-lg group">
+                <img
+                  src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=400"
+                  alt="Pendant Lamps"
+                  className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            </div>
+
+            {/* Floating Cutout C: Tan Leather Chair (Overlapping Image Bottom-Left Corner - Zero Text Overlap) */}
+            <div className="absolute -bottom-16 -left-16 z-30 pointer-events-none hidden xl:block animate-float">
+              <img
+                src="/assets/cutouts/tan_armchair.png"
+                alt="Tan Armchair Cutout"
+                className="w-56 h-56 sm:w-72 sm:h-72 object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]"
+              />
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- Platform Capabilities Grid ---------------------------------------------------------------- */}
+      <section id="features" className="relative py-24 px-8 bg-[#041a18] border-t border-emerald-950 relative z-10">
         <div className="max-w-7xl mx-auto space-y-16">
           
           <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -347,26 +460,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- How It Works Section (With Floating Cutouts) ---------------------------------------------------------------- */}
-      <section id="how-it-works" className="relative py-24 px-8 bg-[#062421] border-t border-emerald-900/40 relative z-10">
+      {/* ---------------------------------------------------------------- How It Works Section ---------------------------------------------------------------- */}
+      <section id="how-it-works" className="relative py-24 px-8 bg-[#062421] border-t border-emerald-900/40 relative z-10 overflow-hidden">
         
-        {/* Floating Cutout Overlap 1: Bright Teal Armchair (Right Margin - Matching Reference Image) */}
-        <div className="absolute right-6 top-16 z-20 hidden xl:flex items-center gap-3 bg-[#041a18]/95 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-500/40 shadow-2xl animate-float cursor-pointer" onClick={() => router.push("/upload")}>
+        {/* Floating Cutout D: Teal Velvet Armchair (Far Right Outer Margin - Zero Text Overlap) */}
+        <div className="absolute -right-4 top-16 z-30 pointer-events-none hidden xl:block animate-float-reverse">
           <img
-            src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=200"
-            alt="Teal Velvet Armchair"
-            className="w-16 h-16 object-cover rounded-xl border border-emerald-400/40"
+            src="/assets/cutouts/teal_chair.png"
+            alt="Teal Velvet Armchair Cutout"
+            className="w-72 h-72 sm:w-96 sm:h-96 object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]"
           />
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-teal-300 block">3D CATALOG ITEM</span>
-            <span className="text-xs font-serif font-bold text-white block">Teal Velvet Chair</span>
-            <span className="text-[10px] text-slate-400 font-light">Drag to place in 3D</span>
-          </div>
         </div>
 
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
-          {/* Left Column: Room Showcase Image with Floating Badge & Bottom-Left Cutout */}
+          {/* Left Column: Room Showcase Image */}
           <div className="lg:col-span-6 relative">
             <div className="relative overflow-hidden rounded-3xl border border-emerald-800/40 shadow-2xl group">
               <img
@@ -375,23 +483,9 @@ export default function HomePage() {
                 className="w-full h-[460px] object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
               />
               
-              {/* Floating Badge */}
-              <div className="absolute bottom-6 right-6 z-10 bg-[#062421]/90 backdrop-blur-md px-4 py-2 rounded-full border border-emerald-500/40 text-[10px] font-bold uppercase tracking-widest text-emerald-300 flex items-center gap-2 shadow-lg">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                CREATE 3D RENDERING
-              </div>
-            </div>
-
-            {/* Bottom-left Overlapping Wooden Accent Chair Cutout (Matching Reference Image) */}
-            <div className="absolute -bottom-6 -left-6 z-20 hidden sm:flex items-center gap-3 bg-[#041c19]/95 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-700/60 shadow-2xl animate-float-reverse">
-              <img
-                src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=150"
-                alt="Wooden Accent Chair"
-                className="w-14 h-14 object-cover rounded-xl"
-              />
-              <div>
-                <span className="text-[9px] uppercase font-bold text-emerald-400 block">REAL-TIME PREVIEW</span>
-                <span className="text-xs font-serif font-bold text-white">Accent Lounge Chair</span>
+              {/* Circular Floating Badge */}
+              <div className="absolute bottom-6 right-6 z-10 w-24 h-24 rounded-full border border-white/20 bg-white/10 backdrop-blur-md flex flex-col items-center justify-center text-center shadow-xl">
+                <span className="text-[9px] font-bold tracking-widest text-white uppercase leading-tight">CREATE 3D<br/>RENDERING</span>
               </div>
             </div>
           </div>
@@ -549,7 +643,7 @@ export default function HomePage() {
 
       {/* ---------------------------------------------------------------- Gallery / 360 Showcase Section ---------------------------------------------------------------- */}
       <section id="gallery" className="relative py-24 px-8 bg-[#041a18] border-t border-emerald-950 relative z-10">
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8 relative">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
@@ -602,25 +696,21 @@ export default function HomePage() {
                 360° Panoramas <span className="text-[10px] text-slate-400 font-normal">Coming Soon</span>
               </button>
             </div>
+
+            {/* Floating Cutout E: Potted Plant (Overlapping Gallery Image Bottom-Right Corner - Zero Text Overlap) */}
+            <div className="absolute bottom-2 right-2 z-20 pointer-events-none hidden lg:block animate-float">
+              <img
+                src="/assets/cutouts/potted_plant.png"
+                alt="Potted Plant Cutout"
+                className="w-48 h-48 sm:w-60 sm:h-60 object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.85)]"
+              />
+            </div>
           </div>
 
-        </div>
-
-        {/* Bottom-right Floating Planter Cutout Overlay (Matching Reference Image) */}
-        <div className="absolute bottom-6 right-8 z-20 hidden lg:flex items-center gap-3 bg-[#062421]/90 backdrop-blur-md p-3.5 rounded-2xl border border-emerald-700/50 shadow-2xl animate-float">
-          <img
-            src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=150"
-            alt="Potted Indoor Plant"
-            className="w-14 h-14 object-cover rounded-xl"
-          />
-          <div>
-            <span className="text-[9px] uppercase font-bold text-emerald-400 block">DECOR ASSET</span>
-            <span className="text-xs font-serif font-bold text-white">Fiddle Leaf Planter</span>
-          </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- Bottom Call to Action Banner (No Repetitive Contact Us) ---------------------------------------------------------------- */}
+      {/* ---------------------------------------------------------------- Bottom Call to Action Banner ---------------------------------------------------------------- */}
       <section className="py-20 px-8 bg-[#062421] border-t border-emerald-900/40 relative z-10">
         <div className="max-w-4xl mx-auto text-center space-y-6 bg-gradient-to-b from-[#041c19] to-[#041a18] p-12 rounded-3xl border border-emerald-700/40 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#0d9488]/10 rounded-full blur-[100px] pointer-events-none" />
