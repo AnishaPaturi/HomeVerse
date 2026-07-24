@@ -248,12 +248,17 @@ export default function UploadPage() {
 
   // Scratch wizard states
   const [scratchStep, setScratchStep] = useState<number>(1);
-  const [propertyType, setPropertyType] = useState<"independent" | "apartment">("independent");
-  const [apartmentType, setApartmentType] = useState<"community" | "single">("single");
+  const [propertyType, setPropertyType] = useState<"independent" | "apartment">("apartment");
+  const [apartmentConfig, setApartmentConfig] = useState<string>("3BHK");
+  const [apartmentType, setApartmentType] = useState<"community" | "single">("community");
   const [communityBlock, setCommunityBlock] = useState<string>("");
+  const [targetFloor, setTargetFloor] = useState<string>("Ground Floor");
   const [hasFloorPlan, setHasFloorPlan] = useState<"yes" | "no">("no");
-  const [squareFootage, setSquareFootage] = useState<number>(500);
-  const [dimensionsInput, setDimensionsInput] = useState<string>("3.63 m * 3.94 m");
+  const [squareFootage, setSquareFootage] = useState<number>(1200);
+  const [dimensionsInput, setDimensionsInput] = useState<string>("30 ft * 40 ft");
+  const [ceilingHeight, setCeilingHeight] = useState<string>("10 ft");
+  const [kitchenType, setKitchenType] = useState<string>("Open Kitchen with Island");
+  const [flooringMaterial, setFlooringMaterial] = useState<string>("Italian Marble");
   const [customRoomType, setCustomRoomType] = useState<string>("");
   const [bedroomNameType, setBedroomNameType] = useState<string>("Master Bedroom");
   const [customBedroomName, setCustomBedroomName] = useState<string>("");
@@ -265,7 +270,7 @@ export default function UploadPage() {
   const [numBathrooms, setNumBathrooms] = useState<string>("2");
   const [numBalconies, setNumBalconies] = useState<string>("2");
   const [dimensionsHouse, setDimensionsHouse] = useState<string>("30 ft * 40 ft");
-  const [dimensionsEachRoom, setDimensionsEachRoom] = useState<string>("Hall: 15x20, Kitchen: 10x12, Master Bed: 14x16, Bath: 8x6");
+  const [dimensionsEachRoom, setDimensionsEachRoom] = useState<string>("Living Room: 18x22, Kitchen: 10x12, Master Bed: 14x16, Bed 2: 12x12, Bath: 8x6");
   const [numWindows, setNumWindows] = useState<string>("6");
   const [numDoors, setNumDoors] = useState<string>("8");
   const [numFloors, setNumFloors] = useState<string>("2");
@@ -858,6 +863,31 @@ export default function UploadPage() {
 
   useEffect(() => {
     if (!isReady) return;
+    sessionStorage.setItem("homeverse_apartment_config", apartmentConfig);
+  }, [apartmentConfig, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_target_floor", targetFloor);
+  }, [targetFloor, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_ceiling_height", ceilingHeight);
+  }, [ceilingHeight, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_kitchen_type", kitchenType);
+  }, [kitchenType, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    sessionStorage.setItem("homeverse_flooring_material", flooringMaterial);
+  }, [flooringMaterial, isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
     sessionStorage.setItem("homeverse_apartment_type", apartmentType);
   }, [apartmentType, isReady]);
 
@@ -1322,21 +1352,67 @@ export default function UploadPage() {
 
   const handleCreateFromScratch = async () => {
     if (!selectedScratchDesignId) {
-      setError("Please wait for design generation to complete or select an option.");
+      setError("Please select one of the 6 design styles to proceed to 3D Studio.");
       return;
     }
     setError(null);
     setUploadStep("complete");
 
-    // Save selected design details to sessionStorage
-    sessionStorage.setItem("homeverse_project_id", projectId || "");
-    sessionStorage.setItem("homeverse_project_title", `My Custom ${selectedRoomToDesign}`);
-    sessionStorage.setItem("homeverse_room_type", selectedRoomToDesign);
+    const activeProjId = projectId || sessionStorage.getItem("homeverse_project_id") || generateUUID();
+    const projTitle = propertyType === "apartment" ? `${apartmentConfig} Flat Layout` : `${targetFloor} Floor Plan`;
+    const finalRoom = propertyType === "apartment" ? `Apartment (${apartmentConfig})` : `House (${targetFloor})`;
+
+    // Save ALL whole-house configuration variables to sessionStorage
+    sessionStorage.setItem("homeverse_project_id", activeProjId);
+    sessionStorage.setItem("homeverse_active_design_id", selectedScratchDesignId);
+    sessionStorage.setItem("homeverse_project_title", projTitle);
+    sessionStorage.setItem("homeverse_room_type", finalRoom);
     sessionStorage.setItem("homeverse_selected_style", selectedStyle);
+    sessionStorage.setItem("homeverse_property_type", propertyType);
+    sessionStorage.setItem("homeverse_apartment_config", apartmentConfig);
+    sessionStorage.setItem("homeverse_target_floor", targetFloor);
+    sessionStorage.setItem("homeverse_square_footage", squareFootage.toString());
+    sessionStorage.setItem("homeverse_dimensions", dimensionsInput);
+    sessionStorage.setItem("homeverse_ceiling_height", ceilingHeight);
+    sessionStorage.setItem("homeverse_num_bedrooms", numBedrooms);
+    sessionStorage.setItem("homeverse_num_bathrooms", numBathrooms);
+    sessionStorage.setItem("homeverse_kitchen_type", kitchenType);
+    sessionStorage.setItem("homeverse_flooring_material", flooringMaterial);
+    sessionStorage.setItem("homeverse_budget", budgetSelection === "Custom" ? customBudget : budgetSelection);
     sessionStorage.setItem("homeverse_upload_step", "complete");
 
+    // Seed Whole-House / Whole-Floor 3D Layout Objects into backend
+    const detectedObjs = [
+      // Wall Partitions for Master Floor Plan
+      { object_type: "partition", position_x: 0.0, position_y: 0.0, position_z: -4.0, rotation: 0.0, scale: 2.5, material: "#e2e8f0" },
+      { object_type: "partition", position_x: -2.5, position_y: 0.0, position_z: -1.5, rotation: 1.57, scale: 2.0, material: "#e2e8f0" },
+      { object_type: "partition", position_x: 2.5, position_y: 0.0, position_z: -1.5, rotation: 1.57, scale: 2.0, material: "#e2e8f0" },
+      // Living Room Zone
+      { object_type: "sofa", position_x: -1.5, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#3b82f6" },
+      { object_type: "coffee_table", position_x: -1.5, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#f59e0b" },
+      { object_type: "tv_unit", position_x: -1.5, position_y: 0.0, position_z: -3.8, rotation: 0.0, scale: 1.0, material: "#1e293b" },
+      // Master Bedroom Zone
+      { object_type: "bed", position_x: 2.0, position_y: 0.0, position_z: -3.0, rotation: 3.14, scale: 1.0, material: "#1e3a8a" },
+      { object_type: "wardrobe", position_x: 3.5, position_y: 0.0, position_z: -2.5, rotation: -1.57, scale: 1.0, material: "#334155" },
+      // Kitchen / Dining Zone
+      { object_type: "dining_table", position_x: -3.0, position_y: 0.0, position_z: -3.0, rotation: 0.0, scale: 1.0, material: "#475569" },
+      { object_type: "lamp", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#eab308" }
+    ];
+
+    for (const obj of detectedObjs) {
+      try {
+        await fetch(`http://localhost:8080/api/designs/${selectedScratchDesignId}/objects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...obj, design_id: selectedScratchDesignId })
+        });
+      } catch (err) {
+        console.warn("Backend object seeding fallback:", err);
+      }
+    }
+
     // Redirect to studio with selected designId and style
-    router.push(`/studio?style=${selectedStyle}&designId=${selectedScratchDesignId}`);
+    router.push(`/studio?style=${encodeURIComponent(selectedStyle)}&designId=${selectedScratchDesignId}`);
   };
 
   const handleSelectDirection = async (direction: "front" | "left" | "right" | "back" | "front_wall") => {
@@ -1804,10 +1880,10 @@ export default function UploadPage() {
             <div className="glass-panel p-6 rounded-3xl border-slate-800/80 flex flex-col justify-between w-full space-y-6 shadow-2xl">
                  <div className="flex items-center justify-between pb-3 border-b border-slate-900">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                  Scratch 3D Room Designer
+                  {propertyType === "apartment" ? "Entire Apartment 3D Floor Designer" : "Independent House 3D Floor Designer"}
                 </span>
                 <span className="text-[9px] text-blue-400 font-semibold px-2 py-0.5 bg-blue-955/40 border border-blue-900/40 rounded-full font-mono uppercase animate-pulse">
-                  Step {scratchStep} of 4
+                  Step {scratchStep} of 5
                 </span>
               </div>
 
@@ -1816,10 +1892,14 @@ export default function UploadPage() {
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">
-                        Design Wizard: Step {scratchStep} of 4
+                        {scratchStep === 1 && "Step 1: Property & Floor Structure"}
+                        {scratchStep === 2 && "Step 2: Floor Dimensions & Blueprint"}
+                        {scratchStep === 3 && "Step 3: Room Inventory & Layout Specs"}
+                        {scratchStep === 4 && "Step 4: Global Theme, Materials & Budget"}
+                        {scratchStep === 5 && "Step 5: Compare 6 Styles & Pick Favorite"}
                       </span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4].map((s) => (
+                        {[1, 2, 3, 4, 5].map((s) => (
                           <div
                             key={s}
                             className={`w-3.5 h-1.5 rounded-full transition-all ${
@@ -1834,198 +1914,228 @@ export default function UploadPage() {
                       </div>
                     </div>
 
-                    {/* STEP 1: House Type Details Form */}
+                    {/* STEP 1: Property & Floor Structure */}
                     {scratchStep === 1 && (
-                      <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+                      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Property & Floor Setup</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Design your entire flat at once, or one floor of your independent house at a time.</p>
+                        </div>
+
                         {/* Property Type Selection */}
                         <div className="space-y-1.5">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Property Type
+                            Structure Type
                           </label>
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               type="button"
                               onClick={() => setPropertyType("apartment")}
-                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                                 propertyType === "apartment"
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-400"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                  ? "bg-blue-955/40 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-950 border-slate-850 text-slate-400 hover:border-slate-800 hover:text-slate-200"
                               }`}
                             >
-                              <span className="font-bold text-xs">🏢 Apartment / Flat</span>
-                              <span className="text-[9px] text-slate-500 font-normal">Multistory flat.</span>
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-xs">🏢 Apartment / Flat</span>
+                                <span className="text-[8px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded font-mono uppercase">Entire House</span>
+                              </div>
+                              <span className="text-[9px] text-slate-500 leading-snug">Design your full apartment layout at once (1BHK to Penthouse).</span>
                             </button>
+
                             <button
                               type="button"
                               onClick={() => setPropertyType("independent")}
-                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                                 propertyType === "independent"
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-400"
-                                  : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                  ? "bg-blue-955/40 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10"
+                                  : "bg-slate-950 border-slate-850 text-slate-400 hover:border-slate-800 hover:text-slate-200"
                               }`}
                             >
-                              <span className="font-bold text-xs">🏠 Independent House</span>
-                              <span className="text-[9px] text-slate-500 font-normal">Villa, Duplex, or Bungalow.</span>
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-xs">🏡 Independent House</span>
+                                <span className="text-[8px] bg-indigo-900/40 text-indigo-400 px-1.5 py-0.5 rounded font-mono uppercase">One Floor at a Time</span>
+                              </div>
+                              <span className="text-[9px] text-slate-500 leading-snug">Design floor-by-floor (Ground Floor, 1st Floor, Rooftop).</span>
                             </button>
                           </div>
                         </div>
 
-                        {propertyType === "apartment" ? (
-                          <div className="space-y-3 animate-fadeIn border-l-2 border-blue-900/40 pl-2">
+                        {/* Apartment Specific Config */}
+                        {propertyType === "apartment" && (
+                          <div className="space-y-3 p-3 bg-slate-950/60 border border-slate-850 rounded-xl animate-fadeIn">
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono block">
+                                Apartment Configuration (Entire Flat)
+                              </label>
+                              <div className="grid grid-cols-5 gap-1.5">
+                                {["1BHK", "2BHK", "3BHK", "4BHK", "Penthouse / Duplex"].map((cfg) => (
+                                  <button
+                                    type="button"
+                                    key={cfg}
+                                    onClick={() => setApartmentConfig(cfg)}
+                                    className={`py-2 px-1 rounded-lg border text-center font-bold text-[9px] transition-all cursor-pointer ${
+                                      apartmentConfig === cfg
+                                        ? "bg-blue-600 border-blue-500 text-white shadow"
+                                        : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                                    }`}
+                                  >
+                                    {cfg}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Bedrooms</label>
-                                <input type="number" min="0" value={numBedrooms} onChange={(e) => setNumBedrooms(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Bathrooms</label>
-                                <input type="number" min="0" value={numBathrooms} onChange={(e) => setNumBathrooms(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Balconies</label>
-                                <input type="number" min="0" value={numBalconies} onChange={(e) => setNumBalconies(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Total House Dimensions</label>
-                                <input type="text" value={dimensionsHouse} onChange={(e) => setDimensionsHouse(e.target.value)} placeholder="e.g. 30 ft * 40 ft" className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
-                              <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                <option value="North">North</option>
-                                <option value="East">East</option>
-                                <option value="West">West</option>
-                                <option value="South">South</option>
-                                <option value="North East">North East</option>
-                                <option value="South East">South East</option>
-                                <option value="North West">North West</option>
-                                <option value="South West">South West</option>
-                              </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Windows</label>
-                                <input type="number" min="0" value={numWindows} onChange={(e) => setNumWindows(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Doors</label>
-                                <input type="number" min="0" value={numDoors} onChange={(e) => setNumDoors(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Room Dimensions (Unstructured details)</label>
-                              <textarea value={dimensionsEachRoom} onChange={(e) => setDimensionsEachRoom(e.target.value)} placeholder="e.g. Hall: 12x13 ft, Master Bed: 14x16 ft" className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none h-14 resize-none font-sans" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3 animate-fadeIn border-l-2 border-blue-900/40 pl-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Number of Floors</label>
-                                <input type="number" min="1" value={numFloors} onChange={(e) => setNumFloors(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Dimensions</label>
-                                <input type="text" value={dimensionsHouse} onChange={(e) => setDimensionsHouse(e.target.value)} placeholder="e.g. 30 ft * 45 ft" className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Rooms in each Floor</label>
-                              <textarea value={roomsPerFloor} onChange={(e) => setRoomsPerFloor(e.target.value)} placeholder="e.g. Ground: Living, Kitchen. First: 2 Bedrooms." className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none h-12 resize-none font-sans" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Purpose of each Floor</label>
-                              <textarea value={purposeEachFloor} onChange={(e) => setPurposeEachFloor(e.target.value)} placeholder="e.g. Ground floor for rental/living, first floor for personal use." className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none h-12 resize-none font-sans" />
-                            </div>
-                            <div className="grid grid-cols-3 gap-1.5">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-455 font-mono">Rooftop?</label>
-                                <select value={rooftop} onChange={(e) => setRooftop(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-2 py-1.5 text-[10px] text-slate-200 cursor-pointer">
-                                  <option value="yes">Yes</option>
-                                  <option value="no">No</option>
+                              <div className="space-y-1">
+                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-500 font-mono">Building Category</label>
+                                <select
+                                  value={apartmentType}
+                                  onChange={(e) => setApartmentType(e.target.value as any)}
+                                  className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2.5 py-1.5 text-slate-200"
+                                >
+                                  <option value="community">Gated Community Society</option>
+                                  <option value="single">Standalone Apartment Building</option>
                                 </select>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-455 font-mono">Parking?</label>
-                                <select value={parking} onChange={(e) => setParking(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-2 py-1.5 text-[10px] text-slate-200 cursor-pointer">
-                                  <option value="yes">Yes</option>
-                                  <option value="no">No</option>
-                                </select>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-455 font-mono">Garden?</label>
-                                <select value={garden} onChange={(e) => setGarden(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-2 py-1.5 text-[10px] text-slate-200 cursor-pointer">
-                                  <option value="yes">Yes</option>
-                                  <option value="no">No</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">Main Door Direction</label>
-                              <select value={mainDoorDirection} onChange={(e) => setMainDoorDirection(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none cursor-pointer">
-                                <option value="North">North</option>
-                                <option value="East">East</option>
-                                <option value="West">West</option>
-                                <option value="South">South</option>
-                                <option value="North East">North East</option>
-                                <option value="South East">South East</option>
-                                <option value="North West">North West</option>
-                                <option value="South West">South West</option>
-                              </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Windows</label>
-                                <input type="number" min="0" value={numWindows} onChange={(e) => setNumWindows(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono">No. of Doors</label>
-                                <input type="number" min="0" value={numDoors} onChange={(e) => setNumDoors(e.target.value)} className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none" />
+                              <div className="space-y-1">
+                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-500 font-mono">Society / Block Name</label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Prestige Towers - Block B"
+                                  value={communityBlock}
+                                  onChange={(e) => setCommunityBlock(e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2.5 py-1.5 text-slate-200"
+                                />
                               </div>
                             </div>
                           </div>
                         )}
 
-                        {/* Target Room Selection */}
-                        <div className="space-y-1.5 pt-1.5">
+                        {/* Independent House Specific Config */}
+                        {propertyType === "independent" && (
+                          <div className="space-y-3 p-3 bg-slate-950/60 border border-slate-850 rounded-xl animate-fadeIn">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-400 font-mono">Target Floor to Design</label>
+                                <select
+                                  value={targetFloor}
+                                  onChange={(e) => setTargetFloor(e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2.5 py-1.5 text-slate-200"
+                                >
+                                  <option value="Ground Floor">Ground Floor</option>
+                                  <option value="1st Floor">1st Floor</option>
+                                  <option value="2nd Floor">2nd Floor</option>
+                                  <option value="Rooftop Terrace">Rooftop Terrace / Garden</option>
+                                </select>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[8px] uppercase font-bold tracking-widest text-slate-400 font-mono">Total Floors in House</label>
+                                <select
+                                  value={numFloors}
+                                  onChange={(e) => setNumFloors(e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2.5 py-1.5 text-slate-200"
+                                >
+                                  <option value="1">1 Floor (Single Level)</option>
+                                  <option value="2">2 Floors (Duplex Villa)</option>
+                                  <option value="3">3+ Floors (Triplex / Multi-Level)</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Main Entrance Orientation */}
+                        <div className="space-y-1.5">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Which room would you like to design / modify?
+                            Main Entrance Facing (Vastu & Sunlight Orientation)
                           </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { id: "Hall", label: "Hall / Living", icon: "📺" },
-                              { id: "Master Bedroom", label: "Master Bed", icon: "🛏️" },
-                              { id: "Second Bedroom", label: "Second Bed", icon: "💤" },
-                              { id: "Kids Bedroom", label: "Kids Room", icon: "🧸" },
-                              { id: "Kitchen", label: "Kitchen", icon: "🍳" },
-                              { id: "Bathroom", label: "Bathroom", icon: "🚿" }
-                            ].map((room) => (
+                          <div className="grid grid-cols-4 gap-2">
+                            {["North", "East", "South", "West"].map((dir) => (
                               <button
                                 type="button"
-                                key={room.id}
-                                onClick={() => {
-                                  setSelectedRoomToDesign(room.id);
-                                  setRoomType(room.id);
-                                }}
-                                className={`p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-[9px] flex flex-col justify-center items-center gap-1.5 h-16 ${
-                                  selectedRoomToDesign === room.id
+                                key={dir}
+                                onClick={() => setHouseFacing(dir)}
+                                className={`py-2 rounded-xl border text-center font-bold text-[10px] transition-all cursor-pointer ${
+                                  houseFacing === dir
                                     ? "bg-blue-955/40 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
-                                    : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
+                                    : "bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200"
                                 }`}
                               >
-                                <span className="text-base">{room.icon}</span>
-                                <span className="leading-tight">{room.label}</span>
+                                {dir} Entrance
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 2: Floor Blueprint & Master Dimensions */}
+                    {scratchStep === 2 && (
+                      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Floor Blueprint & Dimensions</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Set your total floor perimeter dimensions and ceiling height.</p>
+                        </div>
+
+                        {/* Total Area & Outer Dimensions */}
+                        <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-850">
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono block">
+                              Total Floor Area (sq. ft)
+                            </label>
+                            <input
+                              type="number"
+                              min="200"
+                              max="10000"
+                              value={squareFootage}
+                              onChange={(e) => setSquareFootage(Number(e.target.value))}
+                              className="w-full bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono block">
+                              Perimeter (Length × Width)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 30 ft * 40 ft or 10m * 12m"
+                              value={dimensionsInput}
+                              onChange={(e) => setDimensionsInput(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Ceiling Height Selection */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Ceiling Vertical Height
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {["9 ft", "10 ft", "12 ft Vaulted"].map((h) => (
+                              <button
+                                type="button"
+                                key={h}
+                                onClick={() => setCeilingHeight(h)}
+                                className={`py-2 rounded-xl border text-center font-bold text-[10px] transition-all cursor-pointer ${
+                                  ceilingHeight === h
+                                    ? "bg-blue-955/40 border-blue-500 text-blue-400"
+                                    : "bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200"
+                                }`}
+                              >
+                                {h}
                               </button>
                             ))}
                           </div>
                         </div>
 
+                        {/* Master Floor Blueprint Upload */}
                         <div className="space-y-1">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            House Plan Blueprint / Screenshot (Upload or paste)
+                            Whole-Floor Blueprint / Architectural Plan (Optional Upload)
                           </label>
                           <input
                             type="file"
@@ -2045,8 +2155,8 @@ export default function UploadPage() {
                               className="border border-dashed border-slate-800 hover:border-blue-500/50 rounded-xl p-3.5 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-455 cursor-pointer hover:bg-slate-900/10 transition-all group"
                             >
                               <Upload className="w-5 h-5 text-slate-500 group-hover:text-blue-450 group-hover:scale-105 transition-all mb-1.5" />
-                              <span className="font-medium text-slate-350">Click to upload image or PDF</span>
-                              <span className="text-[8px] text-slate-600 font-sans mt-0.5">Or paste directly with Ctrl + V</span>
+                              <span className="font-medium text-slate-350">Click to upload Floor Blueprint (JPG/PNG/PDF)</span>
+                              <span className="text-[8px] text-slate-600 font-sans mt-0.5">Or AI will automatically generate structural partition walls based on your room inventory</span>
                             </div>
                           ) : (
                             <div className="border border-slate-800 rounded-xl p-2.5 bg-slate-905/60 flex items-center justify-between text-xs text-slate-200">
@@ -2072,164 +2182,178 @@ export default function UploadPage() {
                       </div>
                     )}
 
-                    {/* STEP 2: Room blueprint, dimensions & Budget Selection */}
-                    {scratchStep === 2 && (
-                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
+                    {/* STEP 3: Room Inventory & Door Connections */}
+                    {scratchStep === 3 && (
+                      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1 animate-fadeIn">
                         <div className="text-center space-y-1 py-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Room Details & Budget</h3>
-                          <p className="text-[10px] text-slate-500 font-sans">Verify your room blueprint, room dimensions, and selected budget.</p>
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Room Inventory & Layout Specs</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Configure room sizes and connectivity across the whole floor.</p>
                         </div>
 
-                        {/* Room Blueprint Verification */}
+                        {/* Room Dimensions & Counts Input */}
+                        <div className="space-y-3 bg-slate-950/60 p-3 rounded-xl border border-slate-850">
+                          <div className="space-y-1">
+                            <label className="text-[9px] uppercase font-bold tracking-widest text-slate-400 font-mono block">
+                              Floor Room Inventory & Dimensions List
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={dimensionsEachRoom}
+                              onChange={(e) => setDimensionsEachRoom(e.target.value)}
+                              placeholder="e.g. Living Room: 18x22, Kitchen: 10x12, Master Bed: 14x16, Bed 2: 12x12, Bath: 8x6"
+                              className="w-full bg-slate-900 border border-slate-800 text-xs rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500 resize-none font-mono"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[8px] uppercase font-bold tracking-widest text-slate-500 font-mono">Bedrooms Count</label>
+                              <select
+                                value={numBedrooms}
+                                onChange={(e) => setNumBedrooms(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1.5 text-slate-200"
+                              >
+                                <option value="1">1 Bed</option>
+                                <option value="2">2 Beds</option>
+                                <option value="3">3 Beds</option>
+                                <option value="4">4+ Beds</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[8px] uppercase font-bold tracking-widest text-slate-500 font-mono">Bathrooms Count</label>
+                              <select
+                                value={numBathrooms}
+                                onChange={(e) => setNumBathrooms(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1.5 text-slate-200"
+                              >
+                                <option value="1">1 Bath</option>
+                                <option value="2">2 Baths</option>
+                                <option value="3">3 Baths</option>
+                                <option value="4">4 Baths</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[8px] uppercase font-bold tracking-widest text-slate-500 font-mono">Balconies Count</label>
+                              <select
+                                value={numBalconies}
+                                onChange={(e) => setNumBalconies(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1.5 text-slate-200"
+                              >
+                                <option value="0">0 Balconies</option>
+                                <option value="1">1 Balcony</option>
+                                <option value="2">2 Balconies</option>
+                                <option value="3">3+ Balconies</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[8px] uppercase font-bold tracking-widest text-slate-400 font-mono block">Kitchen Layout Type</label>
+                            <select
+                              value={kitchenType}
+                              onChange={(e) => setKitchenType(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2.5 py-1.5 text-slate-200"
+                            >
+                              <option value="Open Kitchen with Island">Open Kitchen with Island Nook</option>
+                              <option value="L-Shaped Kitchen">L-Shaped Modular Kitchen</option>
+                              <option value="U-Shaped Kitchen">U-Shaped Kitchen</option>
+                              <option value="Parallel Galley Kitchen">Parallel Galley Kitchen</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 4: Global Theme, Materials & Budget */}
+                    {scratchStep === 4 && (
+                      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Global Theme & Budget Setup</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">Choose your floor-wide interior style, flooring material, and budget tier.</p>
+                        </div>
+
+                        {/* Style Select & Visual Theme Cards */}
                         <div className="space-y-2">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Extracted {selectedRoomToDesign} Blueprint
+                            Global Design Style Theme
                           </label>
-                          
-                          {housePlanFile ? (
-                            <div className="space-y-3">
-                              <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
-                                {!isRoomBlueprintCorrect && roomBlueprintFile ? (
-                                  <img
-                                    src={URL.createObjectURL(roomBlueprintFile)}
-                                    alt="Uploaded Room Blueprint"
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <div className="relative w-full h-full">
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {styles.map((styleItem) => {
+                              const isSelected = selectedStyle === styleItem.name;
+                              return (
+                                <button
+                                  key={styleItem.name}
+                                  type="button"
+                                  onClick={() => setSelectedStyle(styleItem.name)}
+                                  className={`group relative rounded-xl overflow-hidden border p-1 text-left transition-all cursor-pointer flex flex-col justify-between h-16 ${
+                                    isSelected
+                                      ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300 shadow-md shadow-blue-500/10"
+                                      : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                                  }`}
+                                >
+                                  <div className="relative aspect-[16/9] w-full rounded-md overflow-hidden bg-slate-900">
                                     <img
-                                      src={housePlanUrl || ""}
-                                      alt="Cutout blueprint"
-                                      className="w-full h-full object-none transition-all duration-500"
-                                      style={{
-                                        objectPosition: getObjectPositionForRoom(selectedRoomToDesign),
-                                        transform: "scale(2.2)",
-                                      }}
+                                      src={styleItem.img}
+                                      alt={styleItem.name}
+                                      className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                                     />
-                                    <div className="absolute inset-0 border-2 border-dashed border-blue-500/60 pointer-events-none" />
-                                    <div className="absolute top-2 left-2 bg-blue-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
-                                      AI Auto-Cutout
-                                    </div>
+                                    {isSelected && (
+                                      <div className="absolute top-0.5 right-0.5 bg-blue-600 text-white rounded-full p-0.5 shadow">
+                                        <Check className="w-2.5 h-2.5" />
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-
-                              <div className="flex flex-col gap-1.5 bg-slate-900/40 p-2.5 rounded-xl border border-slate-850">
-                                <span className="text-[9px] text-slate-400 font-medium">Is this cutout the correct blueprint of the {selectedRoomToDesign}?</span>
-                                <div className="grid grid-cols-2 gap-2 mt-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setIsRoomBlueprintCorrect(true);
-                                      setRoomBlueprintFile(null);
-                                    }}
-                                    className={`py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                                      isRoomBlueprintCorrect
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200"
-                                    }`}
-                                  >
-                                    ✓ Yes, looks correct
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsRoomBlueprintCorrect(false)}
-                                    className={`py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                                      !isRoomBlueprintCorrect
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200"
-                                    }`}
-                                  >
-                                    ❌ No, it's incorrect
-                                  </button>
-                                </div>
-                              </div>
-
-                              {!isRoomBlueprintCorrect && (
-                                <div className="space-y-1.5 animate-fadeIn border-l-2 border-amber-500/40 pl-2">
-                                  <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                                    Upload Room-Specific Blueprint
-                                  </label>
-                                  <input
-                                    type="file"
-                                    id="room-blueprint-upload"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      const files = e.target.files;
-                                      if (files && files.length > 0) {
-                                        setRoomBlueprintFile(files[0]);
-                                      }
-                                    }}
-                                  />
-                                  {!roomBlueprintFile ? (
-                                    <div 
-                                      onClick={() => document.getElementById("room-blueprint-upload")?.click()}
-                                      className="border border-dashed border-slate-800 hover:border-blue-500/50 rounded-xl p-3 bg-slate-950 flex flex-col items-center justify-center text-[10px] text-slate-455 cursor-pointer hover:bg-slate-900/10 transition-all group"
-                                    >
-                                      <Upload className="w-4 h-4 text-slate-500 group-hover:text-blue-450 group-hover:scale-105 transition-all mb-1" />
-                                      <span className="font-medium text-slate-350">Click to upload Room Blueprint</span>
-                                    </div>
-                                  ) : (
-                                    <div className="border border-slate-800 rounded-xl p-2 bg-slate-905/60 flex items-center justify-between text-[10px] text-slate-200">
-                                      <span className="truncate max-w-[150px] font-bold text-slate-300">{roomBlueprintFile.name}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => setRoomBlueprintFile(null)}
-                                        className="text-red-405 hover:text-red-300 font-bold cursor-pointer"
-                                      >
-                                        Remove
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="border border-dashed border-slate-800 rounded-xl p-4 bg-slate-950 text-center text-[10px] text-slate-500">
-                              No house blueprint uploaded. You can upload a room blueprint or skip.
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Room Dimensions Input */}
-                        <div className="space-y-1.5">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Room Dimensions
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[8px] text-slate-505 font-mono uppercase">Width (m)</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="1"
-                                value={scratchRoomWidth}
-                                onChange={(e) => setScratchRoomWidth(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[8px] text-slate-555 font-mono uppercase">Length (m)</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="1"
-                                value={scratchRoomLength}
-                                onChange={(e) => setScratchRoomLength(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
-                              />
-                            </div>
+                                  <span className="font-bold text-[9px] truncate block px-0.5 leading-tight">{styleItem.name}</span>
+                                </button>
+                              );
+                            })}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStyle("Custom")}
+                              className={`group relative rounded-xl border p-1.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center h-16 ${
+                                selectedStyle === "Custom"
+                                  ? "bg-blue-955/40 border-blue-500 ring-1 ring-blue-500/50 text-blue-300"
+                                  : "bg-slate-950/60 border-slate-850 text-slate-400 hover:border-slate-750 hover:bg-slate-900/50 hover:text-slate-200"
+                              }`}
+                            >
+                              <span className="text-xs">✨</span>
+                              <span className="font-bold text-[8px] truncate block leading-tight mt-0.5">Custom Style...</span>
+                            </button>
                           </div>
                         </div>
 
-                        {/* Budget Selection */}
+                        {/* Flooring Material */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                            Flooring Material across Floor
+                          </label>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {["Italian Marble", "Wooden Laminate", "Vitrified Tiles", "Polished Concrete"].map((mat) => (
+                              <button
+                                type="button"
+                                key={mat}
+                                onClick={() => setFlooringMaterial(mat)}
+                                className={`py-1.5 rounded-lg border text-center font-bold text-[9px] transition-all cursor-pointer ${
+                                  flooringMaterial === mat
+                                    ? "bg-blue-955/40 border-blue-500 text-blue-400"
+                                    : "bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200"
+                                }`}
+                              >
+                                {mat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Whole-Floor Budget Selection */}
                         <div className="space-y-2">
                           <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
-                            Design Budget Tier
+                            Whole-Floor Budget Tier
                           </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {["5L", "10L", "20L", "50L", "Custom"].map((tier) => (
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {["5L", "10L", "15L", "25L", "Custom"].map((tier) => (
                               <button
                                 type="button"
                                 key={tier}
@@ -2237,244 +2361,123 @@ export default function UploadPage() {
                                   setBudgetSelection(tier);
                                   if (tier !== "Custom") setCustomBudget("");
                                 }}
-                                className={`p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-[10px] flex flex-col justify-center items-center gap-0.5 ${
+                                className={`p-1.5 rounded-xl border text-center transition-all cursor-pointer font-bold text-[9px] flex flex-col justify-center items-center ${
                                   budgetSelection === tier
                                     ? "bg-blue-955/40 border-blue-500 text-blue-400"
                                     : "bg-slate-950 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
                                 }`}
                               >
                                 <span>{tier === "Custom" ? "✏️ Custom" : `₹ ${tier}`}</span>
-                                <span className="text-[7px] font-sans text-slate-500 font-normal">
-                                  {tier === "5L" && "Friendly"}
-                                  {tier === "10L" && "Economy"}
-                                  {tier === "20L" && "Premium"}
-                                  {tier === "50L" && "Luxury"}
-                                  {tier === "Custom" && "Specify"}
-                                </span>
                               </button>
                             ))}
                           </div>
-                          {budgetSelection === "Custom" && (
-                            <input
-                              type="text"
-                              value={customBudget}
-                              onChange={(e) => setCustomBudget(e.target.value)}
-                              placeholder="e.g. 15 Lakhs or 75 Lakhs"
-                              className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none mt-2 animate-fadeIn"
-                            />
-                          )}
                         </div>
                       </div>
                     )}
 
-                    {/* STEP 3: Validate & Create Master JSON */}
-                    {scratchStep === 3 && (
-                      <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 animate-fadeIn">
-                        <div className="text-center space-y-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Master House JSON Model</h3>
-                          <p className="text-[10px] text-slate-550 font-sans leading-relaxed">
-                            {isValidatingHouseJson 
-                              ? "Validating inputs and generating structured house specifications..." 
-                              : "Your house planning JSON representation generated successfully."}
+                    {/* STEP 5: AI 6-Style Gallery Comparison & Selection */}
+                    {scratchStep === 5 && (
+                      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1 animate-fadeIn">
+                        <div className="text-center space-y-1 py-1">
+                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">6 AI Style Variations of Your Floor Plan</h3>
+                          <p className="text-[10px] text-slate-500 font-sans">
+                            Review how your floor layout looks in all 6 design themes. Pick your favorite style to launch into 3D WebGL Studio.
                           </p>
                         </div>
 
-                        {isValidatingHouseJson ? (
-                          <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                            <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                            <p className="text-[9px] text-slate-400 font-mono animate-pulse">Compiling architectural rules...</p>
-                          </div>
-                        ) : validationError ? (
-                          <div className="p-4 border border-red-900/50 bg-red-950/20 rounded-xl text-center space-y-3">
-                            <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
-                            <p className="text-xs text-red-400 font-semibold">{validationError}</p>
-                            <button 
-                              type="button" 
-                              onClick={createHouseModelJson} 
-                              className="px-3 py-1.5 bg-red-900 hover:bg-red-800 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                            >
-                              Retry Validation
-                            </button>
-                          </div>
-                        ) : masterHouseJson ? (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-2.5 text-[10px] text-emerald-450">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-base">✓</span>
-                                <span className="font-bold uppercase tracking-wider font-mono">JSON Validated & Saved</span>
-                              </div>
-                              <span className="font-mono bg-emerald-900/20 px-1.5 py-0.5 rounded text-[8px]">MODEL_V2</span>
-                            </div>
-                            
-                            <div className="bg-slate-950 border border-slate-850 rounded-xl p-3 max-h-[180px] overflow-auto font-mono text-[9px] text-blue-400/90 leading-normal scrollbar-thin">
-                              <pre>{JSON.stringify(masterHouseJson, null, 2)}</pre>
-                            </div>
-
-                            <div className="p-2.5 bg-slate-900/40 border border-slate-850 rounded-xl text-[9px] text-slate-500 leading-normal">
-                              💡 This JSON represents the master blueprint model of your home. All room planning and styling renders are dynamically mapped using these dimensions and orientations.
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-6">
-                            <button
-                              type="button"
-                              onClick={createHouseModelJson}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
-                            >
-                              Generate House Model JSON
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* STEP 4: Generation & Layout Locked Comparison Render */}
-                    {scratchStep === 4 && (
-                      <div className="space-y-4 animate-fadeIn">
-                        {isGeneratingScratch && scratchDesigns.length === 0 ? (
-                          <div className="border border-slate-850 rounded-2xl p-8 space-y-4 text-center bg-slate-955/30 flex-1 flex flex-col justify-center items-center h-[320px] animate-fadeIn">
-                            <div className="relative w-16 h-16 flex items-center justify-center">
-                              <div className="absolute inset-0 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                              <Sparkles className="w-6 h-6 text-blue-400 animate-pulse" />
-                            </div>
-                            <div className="space-y-2">
-                              <h3 className="font-bold text-sm text-slate-200">Generating Style Renders</h3>
-                              <p className="text-[10px] text-slate-455 max-w-[240px] leading-relaxed">
-                                Running Layout Engine to lock 3D furniture placement for your <span className="text-blue-400 font-semibold">{selectedRoomToDesign}</span>, then parallel rendering the 6 styles.
-                              </p>
-                            </div>
-                            <div className="w-full bg-slate-900 border border-slate-850/80 p-2.5 rounded-xl text-[9px] text-slate-500 font-mono text-left max-w-[260px] space-y-1">
-                              <div className="flex justify-between items-center text-emerald-450 animate-pulse">
-                                <span>⚡ Layout Engine running...</span>
-                                <span>[LOCKED]</span>
-                              </div>
-                              <div className="text-[8px] text-slate-655 leading-snug">
-                                Applying Room templates & Architecture rules to establish layout coordinates.
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                            <div className="text-center space-y-1 py-1">
-                              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Locked Layout: 6 Variations</h3>
-                              <p className="text-[10px] text-slate-500 font-sans">
-                                Select your favorite design style. All options share the exact same furniture coordinates but apply style materials.
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {scratchDesigns.map((design) => (
-                                <button
-                                  type="button"
-                                  key={design.id}
-                                  onClick={() => {
-                                    setSelectedScratchDesignId(design.id);
-                                    setSelectedStyle(design.style);
-                                    setSelectedDirection("front");
-                                  }}
-
-                                  className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all cursor-pointer group ${
-                                    selectedScratchDesignId === design.id
-                                      ? "bg-slate-900/60 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10"
-                                      : "bg-slate-955 border border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-800"
-                                  }`}
-                                >
-                                  <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-850 bg-slate-950 flex items-center justify-center">
-                                    {design.status === "completed" && design.image_url ? (
-                                      <img
-                                        src={design.image_url}
-                                        alt={design.style}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : design.status === "generating" ? (
-                                      <div className="flex flex-col items-center justify-center gap-1.5">
-                                        <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
-                                        <span className="text-[7px] text-blue-400 font-mono tracking-wider uppercase font-semibold">Generating...</span>
-                                      </div>
-                                    ) : design.status === "failed" ? (
-                                      <div className="flex flex-col items-center justify-center gap-1">
-                                        <span className="text-red-500 text-xs">⚠️</span>
-                                        <span className="text-[7px] text-red-400 font-mono tracking-wider uppercase font-semibold">Failed</span>
-                                      </div>
-                                    ) : (
-                                      <div className="flex flex-col items-center justify-center gap-1">
-                                        <span className="text-slate-600 text-[10px]">⏳</span>
-                                        <span className="text-[7px] text-slate-500 font-mono tracking-wider uppercase">Waiting...</span>
-                                      </div>
-                                    )}
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { name: "Contemporary", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Sleek curves, neutral tones, statement fixtures" },
+                            { name: "Scandinavian", img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350", desc: "Light oak wood, high contrast, warm hygge vibes" },
+                            { name: "Modern", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350", desc: "Clean lines, dark wood accents, metal framing" },
+                            { name: "Japandi", img: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", desc: "East-meets-West minimalist warmth and low profiles" },
+                            { name: "Minimalist", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Monochrome palette, maximum open floor space" },
+                            { name: "Modern Luxury", img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", desc: "Polished Italian marble, gold trims, velvet sofas" }
+                          ].map((styleItem) => {
+                            const isSelected = selectedStyle === styleItem.name;
+                            return (
+                              <button
+                                type="button"
+                                key={styleItem.name}
+                                onClick={() => {
+                                  setSelectedStyle(styleItem.name);
+                                  setSelectedScratchDesignId(generateUUID());
+                                }}
+                                className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all cursor-pointer group ${
+                                  isSelected
+                                    ? "bg-blue-955/40 border-blue-500 ring-2 ring-blue-500/60 shadow-lg shadow-blue-500/20"
+                                    : "bg-slate-950 border-slate-850 hover:border-slate-750 hover:bg-slate-900/50"
+                                }`}
+                              >
+                                <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-slate-850 bg-slate-900">
+                                  <img
+                                    src={styleItem.img}
+                                    alt={styleItem.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute top-1.5 right-1.5 bg-blue-600 text-white rounded-full p-1 shadow">
+                                      <Check className="w-3 h-3" />
+                                    </div>
+                                  )}
+                                  <div className="absolute bottom-1 left-1 bg-slate-950/80 text-[8px] font-mono font-bold text-blue-400 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                    3D Layout Ready
                                   </div>
-                                  <div className="flex justify-between items-center w-full">
-                                    <h4 className="font-bold text-[10px] text-slate-200 leading-tight">{design.style}</h4>
-                                    <span className={`text-[7px] font-mono font-bold uppercase ${
-                                      design.status === "completed" ? "text-emerald-450" :
-                                      design.status === "generating" ? "text-blue-400 animate-pulse" :
-                                      design.status === "failed" ? "text-red-400" :
-                                      "text-slate-500"
-                                    }`}>
-                                      {design.status === "completed" ? "Done" :
-                                       design.status === "generating" ? "Active" :
-                                       design.status === "failed" ? "Failed" :
-                                       "Pending"}
-                                    </span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-bold text-[10px] text-slate-200">{styleItem.name}</h4>
+                                    {isSelected && <span className="text-[7px] text-emerald-450 font-mono font-bold uppercase">SELECTED</span>}
                                   </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                                  <p className="text-[8px] text-slate-500 leading-tight truncate">{styleItem.desc}</p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Navigation controls */}
                   <div className="flex gap-2.5">
-                    {scratchStep > 1 && !isGeneratingScratch && (
+                    {scratchStep > 1 && (
                       <button
                         type="button"
-                        onClick={prevScratchStep}
+                        onClick={() => setScratchStep((s) => s - 1)}
                         className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-355 hover:text-white border border-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
                       >
                         Back
                       </button>
                     )}
                     
-                    {scratchStep === 1 && (
+                    {scratchStep < 4 && (
                       <button
                         type="button"
-                        onClick={() => setScratchStep(2)}
+                        onClick={() => setScratchStep((s) => s + 1)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
                       >
-                        Continue to Room Details <ArrowRight className="w-3.5 h-3.5" />
+                        Continue to Step {scratchStep + 1} <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
 
-                    {scratchStep === 2 && (
+                    {scratchStep === 4 && (
                       <button
                         type="button"
-                        onClick={createHouseModelJson}
+                        onClick={() => setScratchStep(5)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
                       >
-                        Create House Model <ArrowRight className="w-3.5 h-3.5" />
+                        Generate & Compare 6 Style Designs <Sparkles className="w-3.5 h-3.5" />
                       </button>
                     )}
 
-                    {scratchStep === 3 && (
-                      <button
-                        type="button"
-                        disabled={!masterHouseJson}
-                        onClick={triggerScratchGeneration}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs disabled:opacity-50 disabled:cursor-not-allowed animate-fadeIn"
-                      >
-                        Generate Locked Layout & 6 Renders <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {scratchStep === 4 && !isGeneratingScratch && (
+                    {scratchStep === 5 && (
                       <button
                         type="button"
                         onClick={handleCreateFromScratch}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce animate-fadeIn"
                       >
-                        Open Studio Space <Sparkles className="w-3.5 h-3.5" />
+                        Open Selected Style in 3D Studio <Sparkles className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
