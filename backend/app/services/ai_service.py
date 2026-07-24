@@ -1367,7 +1367,7 @@ from app.models.project import Project as ProjectModel
 from app.models.design import Design as DesignModel
 from app.models.object import Object as ObjectModel
 from app.config import settings
-from google import genai
+import google.genai as genai
 from google.genai import types
 import traceback
 

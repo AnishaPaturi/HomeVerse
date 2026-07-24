@@ -1,7 +1,7 @@
 import os
 import traceback
 from dotenv import load_dotenv
-from google import genai
+import google.genai as genai
 from google.genai import types
 
 load_dotenv()

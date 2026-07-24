@@ -3,7 +3,7 @@ import json
 import traceback
 from typing import Dict, Any, Optional
 from app.config import settings
-from google import genai
+import google.genai as genai
 from google.genai import types
 
 class VisionService:
