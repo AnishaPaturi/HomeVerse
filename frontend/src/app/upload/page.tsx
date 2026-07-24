@@ -397,7 +397,12 @@ export default function UploadPage() {
       setScratchStep(3); // Navigate to step 3 JSON display
     } catch (err: any) {
       console.error(err);
-      setValidationError(err.message || "Failed to create house model. Please check inputs.");
+      const isFetchErr = err?.name === "TypeError" || (err?.message && err.message.toLowerCase().includes("failed to fetch"));
+      setValidationError(
+        isFetchErr
+          ? "Cannot connect to HomeVerse backend server (http://localhost:8080). Please ensure 'python main.py' is running in your backend terminal."
+          : (err.message || "Failed to create house model. Please check inputs.")
+      );
     } finally {
       setIsValidatingHouseJson(false);
     }

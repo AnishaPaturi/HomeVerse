@@ -160,11 +160,9 @@ export default function HomePage() {
   // Sample styles for the MVP selector
   const styles = [
     { name: "Modern", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350", desc: "Sleek lines, dark wood accents, metal fixtures" },
-    { name: "Japandi", img: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", desc: "East meets West. Warm wood, clean canvas, low profile" },
     { name: "Scandinavian", img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350", desc: "Light oak, high contrast, hygge vibes" },
-    { name: "Minimalist", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Maximum space, hidden storage, monochrome" },
-    { name: "Luxury", img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", desc: "Polished marble, gold lining, velvet upholstery" },
     { name: "Modern Luxury", img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", desc: "Polished marble, gold lining, velvet upholstery" },
+    { name: "Japandi", img: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", desc: "East meets West. Warm wood, clean canvas, low profile" },
     { name: "Industrial", img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350", desc: "Raw concrete, brick walls, dark wood, and metal accents" },
     { name: "Contemporary", img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=350", desc: "Sleek curved lines, neutral tones, statement lighting" },
   ];
@@ -460,7 +458,7 @@ export default function HomePage() {
             {/* Quick Feature Accents */}
             <div className="grid grid-cols-3 gap-4 pt-8 border-t border-slate-900 max-w-md mx-auto lg:mx-0">
               <div>
-                <div className="text-2xl font-black text-slate-200">5+</div>
+                <div className="text-2xl font-black text-slate-200">6+</div>
                 <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Style Presets</div>
               </div>
               <div className="border-l border-slate-900 pl-4">
@@ -485,7 +483,7 @@ export default function HomePage() {
               <span className="text-xs font-bold text-slate-400 mr-2 uppercase tracking-wider text-[10px] font-mono">
                 Active Preset:
               </span>
-              {["Modern", "Scandinavian", "Japandi", "Minimalist", "Luxury"].map((style) => (
+              {["Modern", "Scandinavian", "Modern Luxury", "Japandi", "Industrial", "Contemporary"].map((style) => (
                 <button
                   key={style}
                   onClick={() => setHeroStyle(style)}
