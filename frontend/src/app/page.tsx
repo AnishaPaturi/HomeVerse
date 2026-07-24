@@ -461,21 +461,21 @@ export default function HomePage() {
       </section>
 
       {/* ---------------------------------------------------------------- How It Works Section ---------------------------------------------------------------- */}
-      <section id="how-it-works" className="relative py-24 px-8 bg-[#062421] border-t border-emerald-900/40 relative z-10 overflow-hidden">
-        
-        {/* Floating Cutout D: Teal Velvet Armchair (Far Right Outer Margin - Zero Text Overlap) */}
-        <div className="absolute -right-4 top-16 z-30 pointer-events-none hidden xl:block animate-float-reverse">
-          <img
-            src="/assets/cutouts/teal_chair.png"
-            alt="Teal Velvet Armchair Cutout"
-            className="w-72 h-72 sm:w-96 sm:h-96 object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]"
-          />
-        </div>
-
+      <section id="how-it-works" className="relative py-24 px-8 bg-[#062421] border-t border-emerald-900/40 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
           {/* Left Column: Room Showcase Image */}
           <div className="lg:col-span-6 relative">
+
+            {/* Floating Cutout D: Teal Velvet Armchair (Top-Left Empty Corner - 100% Text Safe) */}
+            <div className="absolute -top-16 -left-12 z-30 pointer-events-none hidden sm:block animate-float-reverse">
+              <img
+                src="/assets/cutouts/teal_chair.png"
+                alt="Teal Velvet Armchair Cutout"
+                className="w-48 h-48 sm:w-64 sm:h-64 object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]"
+              />
+            </div>
+
             <div className="relative overflow-hidden rounded-3xl border border-emerald-800/40 shadow-2xl group">
               <img
                 src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=1000"
