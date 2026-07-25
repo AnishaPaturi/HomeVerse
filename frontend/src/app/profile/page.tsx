@@ -303,7 +303,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 text-[10px] text-slate-500 font-medium mt-1">
                         <span className="capitalize">Room: {project.room_type}</span>
                         <span>•</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(project.created_at).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1" suppressHydrationWarning><Clock className="w-3 h-3" /> {new Date(project.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     

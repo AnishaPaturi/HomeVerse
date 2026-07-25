@@ -2212,21 +2212,9 @@ class AIService:
         if custom_prompt:
             layout_str += f", incorporating requests: {sanitize_prompt_for_image(custom_prompt)}"
 
-        image_prompt = f"""Wide-angle architectural photo of a {room_type} designed in {style} style.
-Layout: {layout_str}.
-Composition (matching sample_hall.png):
-- Camera at entrance doorway threshold on {door_wall} wall, looking straight {camera_view} into the room.
-- Part of open entrance door frame/jamb is visible in the foreground on the left edge.
-- Bright natural light from large windows/balcony doors, recessed spotlights, and central chandelier.
-- Polished tiles/wood floor, textured rug grounding modern furniture.
-- Fully furnished in {style} theme, premium materials (leather, wood, marble).
-- Photorealistic architectural visualization, realistic shadows, clean composition, no people or text."""
-
-        os.makedirs("static/generated", exist_ok=True)
-        local_filename = f"{design.id}.jpg"
-        local_path = os.path.join("static/generated", local_filename)
-
-        encoded_prompt = urllib.parse.quote(image_prompt)
+        raw_prompt = f"Wide-angle architectural photo of a {room_type} designed in {style} style. Layout: {layout_str}. Camera at entrance doorway threshold on {door_wall} wall looking straight {camera_view} into the room. Bright natural light, polished floor, textured rug, fully furnished in {style} theme with premium materials. Photorealistic architectural visualization, 4k."
+        clean_prompt = " ".join(raw_prompt.splitlines())
+        encoded_prompt = urllib.parse.quote(clean_prompt)
         pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_width}&height={img_height}&nologo=true&private=true&model=flux"
 
         # Return Pollinations URL immediately so the API responds instantly, and cache the file in a background thread

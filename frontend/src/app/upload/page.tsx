@@ -17,7 +17,8 @@ import {
   User,
   Home,
   DollarSign,
-  Cpu
+  Cpu,
+  Box
 } from "lucide-react";
 
 const generateUUID = () => {
@@ -1379,6 +1380,8 @@ export default function UploadPage() {
     sessionStorage.setItem("homeverse_kitchen_type", kitchenType);
     sessionStorage.setItem("homeverse_flooring_material", flooringMaterial);
     sessionStorage.setItem("homeverse_budget", budgetSelection === "Custom" ? customBudget : budgetSelection);
+    sessionStorage.setItem("homeverse_house_facing", houseFacing);
+    sessionStorage.setItem("homeverse_community_block", communityBlock);
     sessionStorage.setItem("homeverse_upload_step", "complete");
 
     // Seed Whole-House / Whole-Floor 3D Layout Objects into backend
@@ -1796,52 +1799,51 @@ export default function UploadPage() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+      <div className="min-h-screen bg-[#041a18] text-emerald-300 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold">Verifying session...</p>
+          <div className="w-10 h-10 border-4 border-[#0d9488] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold tracking-wide">Verifying session...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden">
-      {/* Background blobs */}
-      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-blue-600/10 to-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-purple-600/5 to-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-[#041a18] text-slate-100 font-sans selection:bg-[#0d9488] selection:text-white flex flex-col relative overflow-x-hidden">
+      
+      {/* Background Gradient Orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#0d9488]/15 rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 -right-40 w-[600px] h-[600px] bg-[#059669]/15 rounded-full blur-[140px]" />
+        <div className="absolute -bottom-40 left-1/3 w-[600px] h-[600px] bg-[#042f2c]/60 rounded-full blur-[140px]" />
+      </div>
 
       {/* Global Header */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
-          <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl shadow-md">
-            <Sparkles className="w-5 h-5 text-white" />
+      <header className="border-b border-emerald-900/40 bg-[#062421]/90 backdrop-blur-md sticky top-0 z-50 px-6 sm:px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => router.push("/")}>
+          <div className="bg-[#0d9488] p-2 rounded-xl border border-emerald-400/30 group-hover:scale-105 transition-transform shadow-lg shadow-[#0d9488]/20">
+            <Box className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="font-extrabold text-base tracking-tight bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
-              HomeVerse
-            </h1>
-            <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500 block -mt-0.5">
-              AI Design Studio
-            </span>
-          </div>
+          <span className="font-serif text-2xl font-extrabold tracking-tight text-white group-hover:text-[#0d9488] transition-colors">
+            HOME<span className="text-emerald-400">VERSE</span>
+          </span>
         </div>
 
         {/* User Info / Navigation */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/profile")}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-855 px-3.5 py-2 rounded-xl border border-slate-850 transition-all cursor-pointer"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-[#042f2c]/60 hover:bg-[#062421] px-4 py-2 rounded-full border border-emerald-800/60 transition-all cursor-pointer shadow-md"
           >
-            <User className="w-3.5 h-3.5 text-blue-400" />
+            <User className="w-3.5 h-3.5 text-emerald-400" />
             <span>Profile</span>
           </button>
           
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-900 px-3 py-2 rounded-xl border border-slate-855 transition-all cursor-pointer"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/40 px-4 py-2 rounded-full border border-emerald-900/60 transition-all cursor-pointer"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 text-emerald-400" />
             <span>Logout</span>
           </button>
         </div>
@@ -1852,13 +1854,13 @@ export default function UploadPage() {
         
         {/* Intro */}
         <div className="text-center space-y-4 mb-10">
-          <div className="inline-flex bg-blue-950/30 text-blue-400 border border-blue-900/30 px-3.5 py-1.5 rounded-full text-xs font-semibold gap-1.5 items-center mx-auto shadow-sm">
-            <Home className="w-3.5 h-3.5" /> Welcome to HomeVerse, {user?.name || "Designer"}
+          <div className="inline-flex bg-[#0d9488]/20 text-emerald-300 border border-[#0d9488]/40 px-3.5 py-1.5 rounded-full text-xs font-semibold gap-1.5 items-center mx-auto shadow-sm">
+            <Home className="w-3.5 h-3.5 text-emerald-400" /> Welcome to HomeVerse, {user?.name || "Designer"}
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+          <h2 className="font-serif text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
             Upload Your Space
           </h2>
-          <p className="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
+          <p className="text-slate-300 text-sm max-w-lg mx-auto leading-relaxed font-light">
             Upload a photo or a video walkthrough of any room or area in your house. Our AI will automatically reconstruct the space into an interactive 3D model.
           </p>
         </div>
@@ -1877,21 +1879,21 @@ export default function UploadPage() {
         <div className="flex flex-col md:flex-row gap-8 items-stretch max-w-7xl w-full mx-auto">
           {/* Left Side: Upload console */}
           <div className="w-full md:w-1/2 flex">
-            <div className="glass-panel p-6 rounded-3xl border-slate-800/80 flex flex-col justify-between w-full space-y-6 shadow-2xl">
-                 <div className="flex items-center justify-between pb-3 border-b border-slate-900">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+            <div className="bg-[#062421]/90 backdrop-blur-xl p-6 rounded-3xl border border-emerald-800/60 flex flex-col justify-between w-full space-y-6 shadow-2xl shadow-black/80">
+              <div className="flex items-center justify-between pb-3 border-b border-emerald-900/60">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">
                   {propertyType === "apartment" ? "Entire Apartment 3D Floor Designer" : "Independent House 3D Floor Designer"}
                 </span>
-                <span className="text-[9px] text-blue-400 font-semibold px-2 py-0.5 bg-blue-955/40 border border-blue-900/40 rounded-full font-mono uppercase animate-pulse">
+                <span className="text-[9px] text-emerald-300 font-semibold px-2.5 py-0.5 bg-[#0d9488]/20 border border-emerald-800/60 rounded-full font-mono uppercase animate-pulse">
                   Step {scratchStep} of 5
                 </span>
               </div>
 
               <div className="space-y-4 flex-1 flex flex-col justify-between animate-fade-in">
-                  <div className="bg-slate-900/20 border border-slate-850/80 p-4 rounded-2xl space-y-4">
+                  <div className="bg-[#041a18]/70 border border-emerald-900/70 p-4 rounded-2xl space-y-4">
                     {/* Visual Progress Steps */}
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider font-mono">
                         {scratchStep === 1 && "Step 1: Property & Floor Structure"}
                         {scratchStep === 2 && "Step 2: Floor Dimensions & Blueprint"}
                         {scratchStep === 3 && "Step 3: Room Inventory & Layout Specs"}
@@ -1904,10 +1906,10 @@ export default function UploadPage() {
                             key={s}
                             className={`w-3.5 h-1.5 rounded-full transition-all ${
                               s === scratchStep
-                                ? "bg-blue-500"
+                                ? "bg-[#0d9488] shadow-sm shadow-[#0d9488]/50"
                                 : s < scratchStep
-                                ? "bg-blue-800"
-                                : "bg-slate-800"
+                                ? "bg-emerald-700"
+                                : "bg-[#041a18] border border-emerald-900/60"
                             }`}
                           />
                         ))}
@@ -1918,13 +1920,13 @@ export default function UploadPage() {
                     {scratchStep === 1 && (
                       <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
                         <div className="text-center space-y-1 py-1">
-                          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-widest font-mono">Property & Floor Setup</h3>
-                          <p className="text-[10px] text-slate-500 font-sans">Design your entire flat at once, or one floor of your independent house at a time.</p>
+                          <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono">Property & Floor Setup</h3>
+                          <p className="text-[10px] text-slate-300 font-sans font-light">Design your entire flat at once, or one floor of your independent house at a time.</p>
                         </div>
 
                         {/* Property Type Selection */}
                         <div className="space-y-1.5">
-                          <label className="text-[9px] uppercase font-bold tracking-widest text-slate-455 font-mono block">
+                          <label className="text-[9px] uppercase font-bold tracking-widest text-emerald-300 font-mono block">
                             Structure Type
                           </label>
                           <div className="grid grid-cols-2 gap-2">
@@ -1933,15 +1935,15 @@ export default function UploadPage() {
                               onClick={() => setPropertyType("apartment")}
                               className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                                 propertyType === "apartment"
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10"
-                                  : "bg-slate-950 border-slate-850 text-slate-400 hover:border-slate-800 hover:text-slate-200"
+                                  ? "bg-[#0d9488]/20 border-emerald-400 text-emerald-300 shadow-md shadow-[#0d9488]/20"
+                                  : "bg-[#041a18] border-emerald-900/70 text-slate-400 hover:border-emerald-700 hover:text-slate-200"
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-xs">🏢 Apartment / Flat</span>
-                                <span className="text-[8px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded font-mono uppercase">Entire House</span>
+                                <span className="text-[8px] bg-[#0d9488]/30 text-emerald-300 px-1.5 py-0.5 rounded font-mono uppercase">Entire House</span>
                               </div>
-                              <span className="text-[9px] text-slate-500 leading-snug">Design your full apartment layout at once (1BHK to Penthouse).</span>
+                              <span className="text-[9px] text-slate-400 leading-snug">Design your full apartment layout at once (1BHK to Penthouse).</span>
                             </button>
 
                             <button
@@ -1949,8 +1951,8 @@ export default function UploadPage() {
                               onClick={() => setPropertyType("independent")}
                               className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                                 propertyType === "independent"
-                                  ? "bg-blue-955/40 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10"
-                                  : "bg-slate-950 border-slate-850 text-slate-400 hover:border-slate-800 hover:text-slate-200"
+                                  ? "bg-[#0d9488]/20 border-emerald-400 text-emerald-300 shadow-md shadow-[#0d9488]/20"
+                                  : "bg-[#041a18] border-emerald-900/70 text-slate-400 hover:border-emerald-700 hover:text-slate-200"
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -2455,7 +2457,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => setScratchStep((s) => s + 1)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn shadow-lg shadow-[#0d9488]/30"
                       >
                         Continue to Step {scratchStep + 1} <ArrowRight className="w-3.5 h-3.5" />
                       </button>
@@ -2465,7 +2467,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => setScratchStep(5)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn shadow-lg shadow-[#0d9488]/30"
                       >
                         Generate & Compare 6 Style Designs <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -2475,7 +2477,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={handleCreateFromScratch}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-bounce animate-fadeIn"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl transition-all cursor-pointer glow-btn text-xs animate-fadeIn shadow-lg shadow-[#0d9488]/30"
                       >
                         Open Selected Style in 3D Studio <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -2485,9 +2487,9 @@ export default function UploadPage() {
             </div>
           </div>
           <div className="w-full md:w-1/2 flex flex-col gap-6">
-            <div className="glass-panel p-6 rounded-3xl border-slate-800/80 space-y-4 flex flex-col justify-between flex-1 shadow-2xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-900">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Active Workspace Preview</span>
+            <div className="bg-[#062421]/90 backdrop-blur-xl p-6 rounded-3xl border border-emerald-800/60 space-y-4 flex flex-col justify-between flex-1 shadow-2xl shadow-black/80">
+              <div className="flex items-center justify-between pb-3 border-b border-emerald-900/60">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">Active Workspace Preview</span>
                 {uploadStep === "complete" && (
                   <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-900/60">
                     <button

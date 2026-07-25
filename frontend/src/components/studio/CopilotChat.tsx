@@ -165,8 +165,8 @@ export default function CopilotChat({ designId, onCopilotAction, onRefresh }: Co
             >
               {msg.text}
             </div>
-            <span className="text-[9px] text-slate-500 mt-1 px-1">
-              {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <span className="text-[9px] text-slate-500 mt-1 px-1" suppressHydrationWarning>
+              {(msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           </div>
         ))}

@@ -81,7 +81,7 @@ function StudioContent() {
 
   // AI Design Advisor states
   const [isScratchMode, setIsScratchMode] = useState(false);
-  const [scratchPropertyType, setScratchPropertyType] = useState<string>("independent");
+  const [scratchPropertyType, setScratchPropertyType] = useState<string>("apartment");
   const [scratchApartmentType, setScratchApartmentType] = useState<string>("single");
   const [scratchCommunityBlock, setScratchCommunityBlock] = useState<string>("Block A");
   const [scratchSqFt, setScratchSqFt] = useState<number>(1000);
@@ -93,6 +93,44 @@ function StudioContent() {
   const [wallPaintColor, setWallPaintColor] = useState<string>("#f8fafc");
   const [sofaComplimentaryColor, setSofaComplimentaryColor] = useState<string>("#1e293b");
 
+  // User Entered Specifications State (Loaded from steps 1-5)
+  const [projectSpecs, setProjectSpecs] = useState<{
+    projectTitle: string;
+    roomType: string;
+    selectedStyle: string;
+    propertyType: string;
+    apartmentConfig: string;
+    targetFloor: string;
+    squareFootage: string;
+    dimensions: string;
+    ceilingHeight: string;
+    numBedrooms: string;
+    numBathrooms: string;
+    kitchenType: string;
+    flooringMaterial: string;
+    budget: string;
+    houseFacing: string;
+    communityBlock: string;
+  }>({
+    projectTitle: "3D Floor Design",
+    roomType: "Whole House Plan",
+    selectedStyle: initialStyle,
+    propertyType: "Apartment / Flat",
+    apartmentConfig: "3BHK",
+    targetFloor: "Ground Floor",
+    squareFootage: "1200",
+    dimensions: "30 ft × 40 ft",
+    ceilingHeight: "10 ft",
+    numBedrooms: "3",
+    numBathrooms: "2",
+    kitchenType: "Modular Parallel",
+    flooringMaterial: "Light Oak Wood",
+    budget: "Standard",
+    houseFacing: "East",
+    communityBlock: "Block A",
+  });
+
+  const [showSpecsModal, setShowSpecsModal] = useState<boolean>(false);
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -101,7 +139,55 @@ function StudioContent() {
     } else {
       router.push("/login");
     }
-  }, [router]);
+
+    if (typeof window !== "undefined") {
+      const pTitle = sessionStorage.getItem("homeverse_project_title");
+      const rType = sessionStorage.getItem("homeverse_room_type");
+      const sStyle = sessionStorage.getItem("homeverse_selected_style") || initialStyle;
+      const pType = sessionStorage.getItem("homeverse_property_type");
+      const aConfig = sessionStorage.getItem("homeverse_apartment_config");
+      const tFloor = sessionStorage.getItem("homeverse_target_floor");
+      const sqFt = sessionStorage.getItem("homeverse_square_footage");
+      const dims = sessionStorage.getItem("homeverse_dimensions");
+      const cHeight = sessionStorage.getItem("homeverse_ceiling_height");
+      const numBeds = sessionStorage.getItem("homeverse_num_bedrooms");
+      const numBaths = sessionStorage.getItem("homeverse_num_bathrooms");
+      const kType = sessionStorage.getItem("homeverse_kitchen_type");
+      const fMat = sessionStorage.getItem("homeverse_flooring_material");
+      const bgt = sessionStorage.getItem("homeverse_budget");
+      const hFacing = sessionStorage.getItem("homeverse_house_facing");
+      const cBlock = sessionStorage.getItem("homeverse_community_block");
+
+      if (pType) {
+        setScratchPropertyType(pType);
+      }
+      if (aConfig) {
+        setScratchApartmentType(aConfig);
+      }
+      if (cBlock) {
+        setScratchCommunityBlock(cBlock);
+      }
+
+      setProjectSpecs({
+        projectTitle: pTitle || (pType === "apartment" ? `${aConfig || "3BHK"} Flat Layout` : `${tFloor || "Ground"} Floor Plan`),
+        roomType: rType || "Whole House Plan",
+        selectedStyle: sStyle,
+        propertyType: pType ? (pType === "apartment" ? "Apartment / Flat" : "Independent House") : "Apartment / Flat",
+        apartmentConfig: aConfig || "3BHK",
+        targetFloor: tFloor || "Ground Floor",
+        squareFootage: sqFt || "1200",
+        dimensions: dims || "30 ft × 40 ft",
+        ceilingHeight: cHeight || "10 ft",
+        numBedrooms: numBeds || "3",
+        numBathrooms: numBaths || "2",
+        kitchenType: kType || "Modular Parallel",
+        flooringMaterial: fMat || "Light Oak Wood",
+        budget: bgt || "Standard",
+        houseFacing: hFacing || "East",
+        communityBlock: cBlock || "Block A",
+      });
+    }
+  }, [router, initialStyle]);
 
   const loadDesignObjects = async () => {
     if (!designId) return;
@@ -1201,34 +1287,49 @@ function StudioContent() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#041a18] text-slate-100 font-sans selection:bg-[#0d9488] selection:text-white overflow-hidden">
       {/* Upper Navigation Bar */}
-      <header className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md px-5 flex items-center justify-between shrink-0">
+      <header className="h-16 border-b border-emerald-900/40 bg-[#062421]/90 backdrop-blur-md px-5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/upload")}
-            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className="p-2 bg-[#042f2c]/60 hover:bg-[#062421] border border-emerald-800/60 rounded-xl text-emerald-400 hover:text-white transition-colors cursor-pointer"
             title="Back to Room Selection"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="h-5 w-[1px] bg-slate-800" />
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-sm tracking-tight text-slate-200">Design Studio</h1>
-              <span className="text-[10px] px-2 py-0.5 bg-blue-900/40 text-blue-300 border border-blue-800/60 rounded-full font-mono capitalize">
-                Style: {initialStyle}
-              </span>
-              <span className="text-[9px] px-2 py-0.5 bg-green-950/40 text-green-400 border border-green-900/60 rounded-full font-semibold flex items-center gap-1 font-mono uppercase">
-                <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" /> Synced to Database
-              </span>
+          <div className="h-5 w-[1px] bg-emerald-900/60" />
+          
+          <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => router.push("/")}>
+            <div className="bg-[#0d9488] p-1.5 rounded-xl border border-emerald-400/30 group-hover:scale-105 transition-transform shadow-lg shadow-[#0d9488]/20">
+              <Box className="w-4 h-4 text-white" />
             </div>
-            <p className="text-[10px] text-slate-500">Interactive 3D Editor Sandbox</p>
+            <span className="font-serif text-xl font-extrabold tracking-tight text-white group-hover:text-[#0d9488] transition-colors">
+              HOME<span className="text-emerald-400">VERSE</span>
+            </span>
+          </div>
+
+          <div className="h-5 w-[1px] bg-emerald-900/60" />
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] px-2.5 py-0.5 bg-[#0d9488]/20 text-emerald-300 border border-emerald-800/60 rounded-full font-mono capitalize">
+              Style: {initialStyle}
+            </span>
+            <span className="text-[9px] px-2.5 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-900/60 rounded-full font-semibold flex items-center gap-1 font-mono uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Synced to DB
+            </span>
           </div>
         </div>
 
         {/* Exporter Controls */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowSpecsModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#0d9488]/20 hover:bg-[#0d9488]/30 text-emerald-300 border border-emerald-800/60 rounded-xl transition-all cursor-pointer shadow-sm mr-1"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-400" /> View House Specs
+          </button>
+
           <button
             onClick={() => {
               sessionStorage.removeItem("homeverse_upload_step");
@@ -1242,16 +1343,16 @@ function StudioContent() {
               sessionStorage.removeItem("homeverse_project_id");
               router.push("/upload");
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 rounded-xl transition-all cursor-pointer mr-1"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-[#042f2c] hover:bg-[#062421] text-emerald-300 hover:text-white border border-emerald-800/60 rounded-xl transition-all cursor-pointer mr-1"
           >
-            <Plus className="w-3.5 h-3.5 text-blue-400" /> Upload Another Image
+            <Plus className="w-3.5 h-3.5 text-emerald-400" /> Upload Another Image
           </button>
 
           <button
             onClick={() => alert("Simulating Video game walkthrough walkmode controls... Use Orbit Controls to drag around!")}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-[#042f2c] hover:bg-[#062421] text-slate-300 hover:text-white border border-emerald-800/60 rounded-xl transition-colors cursor-pointer"
           >
-            <Play className="w-3.5 h-3.5 text-blue-400" /> Enter Walkthrough
+            <Play className="w-3.5 h-3.5 text-emerald-400" /> Walkthrough
           </button>
 
           <button
@@ -1261,30 +1362,21 @@ function StudioContent() {
               setArSurfaceDetected(false);
               setArPlaced(false);
               setArLogs([]);
-              // Default projection target is the first furniture item, or default to sofa
               const firstObj = objects.find(o => o.object_type !== "floor" && o.object_type !== "wall");
               setArTargetObject(firstObj ? firstObj.object_type : "sofa");
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-indigo-650/40 border border-indigo-900/60 hover:bg-indigo-600 text-slate-200 rounded-xl transition-colors cursor-pointer animate-pulse"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-[#0d9488]/20 border border-emerald-500/40 hover:bg-[#0d9488]/30 text-emerald-300 rounded-xl transition-colors cursor-pointer"
           >
-            <Layers className="w-3.5 h-3.5 text-indigo-400" /> WebXR Projection
-          </button>
-
-          <button
-            onClick={() => alert("Design Proposal exported to PDF (Dummy file generated).")}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-colors cursor-pointer"
-            title="Download Proposal PDF"
-          >
-            <FileText className="w-4 h-4" />
+            <Layers className="w-3.5 h-3.5 text-emerald-400" /> WebXR Projection
           </button>
 
           {/* Rendering Style Switcher */}
-          <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-slate-350 mr-1.5">
+          <div className="flex items-center gap-1 bg-[#041a18] p-0.5 rounded-lg border border-emerald-900/70 text-slate-300 mr-1.5">
             <button
               onClick={() => setRenderStyle("mockup")}
               className={`text-[10px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer ${
                 renderStyle === "mockup"
-                  ? "bg-slate-800 text-white"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "hover:text-slate-200"
               }`}
             >
@@ -1294,7 +1386,7 @@ function StudioContent() {
               onClick={() => setRenderStyle("realistic")}
               className={`text-[10px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer ${
                 renderStyle === "realistic"
-                  ? "bg-blue-600 text-white shadow-sm"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "hover:text-slate-200"
               }`}
             >
@@ -1310,16 +1402,16 @@ function StudioContent() {
               setIsRendering(false);
               setRenderLogs([]);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-blue-650 hover:bg-blue-600 text-white rounded-xl transition-all cursor-pointer glow-btn mr-1"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#0d9488] hover:bg-[#0f766e] text-white rounded-xl transition-all cursor-pointer shadow-lg shadow-[#0d9488]/30 glow-btn mr-1"
           >
             <Download className="w-3.5 h-3.5" /> Export Render
           </button>
 
           {user && (
-            <div className="flex items-center gap-2 border-l border-slate-800 pl-3.5 ml-1.5">
+            <div className="flex items-center gap-2 border-l border-emerald-900/60 pl-3.5 ml-1.5">
               <div 
                 onClick={() => router.push("/profile")}
-                className="w-8 h-8 rounded-full bg-indigo-650 hover:bg-indigo-500 border border-indigo-500/50 hover:border-indigo-400 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-sm transition-all hover:scale-105 active:scale-95"
+                className="w-8 h-8 rounded-full bg-[#0d9488] hover:scale-105 border border-emerald-400/30 flex items-center justify-center font-bold text-xs cursor-pointer select-none text-white shadow-md transition-all"
                 title={`View Profile: ${user.name} (${user.email}) - Plan: ${user.plan}`}
               >
                 {user.name ? user.name[0].toUpperCase() : "U"}
@@ -1329,7 +1421,7 @@ function StudioContent() {
                   sessionStorage.removeItem("user");
                   router.push("/login");
                 }}
-                className="text-[10px] font-bold hover:text-white text-slate-400 border border-slate-850 bg-slate-950 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-slate-900 transition-colors"
+                className="text-[10px] font-bold hover:text-white text-slate-400 border border-emerald-900/60 bg-emerald-950/40 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-emerald-900/40 transition-colors"
               >
                 Logout
               </button>
@@ -1341,14 +1433,14 @@ function StudioContent() {
       {/* Main Workspace Frame */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Toolbar: Object catalog */}
-        <aside className="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-4 space-y-4 shrink-0">
+        <aside className="w-64 border-r border-emerald-900/40 bg-[#062421]/90 backdrop-blur-md flex flex-col p-4 space-y-4 shrink-0">
           {/* Sidebar Tabs */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#041a18] rounded-xl border border-emerald-900/60">
             <button
               onClick={() => setActiveLeftTab("library")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "library"
-                  ? "bg-blue-600 text-white shadow"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1356,9 +1448,9 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("advisor")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "advisor"
-                  ? "bg-blue-600 text-white shadow"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1366,9 +1458,9 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("recommendations")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "recommendations"
-                  ? "bg-blue-600 text-white shadow"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1376,9 +1468,9 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("imgTo3D")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "imgTo3D"
-                  ? "bg-blue-600 text-white shadow"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1386,9 +1478,9 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("twin")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "twin"
-                  ? "bg-blue-600 text-white shadow"
+                  ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1396,9 +1488,9 @@ function StudioContent() {
             </button>
             <button
               onClick={() => setActiveLeftTab("joyplan")}
-              className={`flex items-center justify-center py-1 text-[8px] font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex items-center justify-center py-1.5 text-[9px] font-bold rounded-lg transition-all cursor-pointer ${
                 activeLeftTab === "joyplan"
-                  ? "bg-amber-600 text-white shadow"
+                  ? "bg-amber-600 text-white shadow-sm"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -2900,15 +2992,15 @@ Transform:
         <main className="flex-1 p-4 bg-slate-950 flex flex-col min-w-0 gap-3">
           {/* View mode toggle header */}
           <div className="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Perspective:</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 font-mono">Perspective:</span>
                 <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
                   <button
                     onClick={() => setViewMode("2D")}
                     className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
                       viewMode === "2D"
-                        ? "bg-blue-600 text-white shadow-sm"
+                        ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
@@ -2918,7 +3010,7 @@ Transform:
                     onClick={() => setViewMode("3D")}
                     className={`text-xs px-3.5 py-1.5 rounded font-bold transition-all cursor-pointer ${
                       viewMode === "3D"
-                        ? "bg-blue-600 text-white shadow-sm"
+                        ? "bg-[#0d9488] text-white shadow-sm shadow-[#0d9488]/30"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
@@ -2927,39 +3019,48 @@ Transform:
                 </div>
               </div>
 
-              {/* Property Type & Floor Level Selector */}
-              <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
+              {/* Specs Summary Chips Bar */}
+              <div className="flex items-center gap-2 border-l border-slate-800 pl-3 flex-wrap">
+                <span className="text-[9px] bg-[#0d9488]/20 border border-emerald-800/60 text-emerald-300 font-mono font-bold px-2 py-0.5 rounded">
+                  🏢 {projectSpecs.propertyType} ({projectSpecs.apartmentConfig})
+                </span>
+                <span className="text-[9px] bg-[#042f2c] border border-emerald-900/60 text-slate-300 font-mono font-bold px-2 py-0.5 rounded">
+                  📐 {projectSpecs.squareFootage} sq.ft
+                </span>
+                <span className="text-[9px] bg-[#042f2c] border border-emerald-900/60 text-slate-300 font-mono font-bold px-2 py-0.5 rounded">
+                  🧭 {projectSpecs.houseFacing}
+                </span>
+                <span className="text-[9px] bg-[#0d9488]/20 border border-emerald-500/40 text-emerald-300 font-mono font-bold px-2 py-0.5 rounded">
+                  🎨 {projectSpecs.selectedStyle}
+                </span>
+              </div>
+
+              {/* Locked Property Type Indicator (Enforcing user selection from Step 1) */}
+              <div className="flex items-center gap-3 border-l border-emerald-900/60 pl-4">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Property:</span>
-                  <select
-                    value={scratchPropertyType}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      handleUpdatePropertyType(val);
-                      if (val === "apartment" || val === "flat") {
-                        setActiveFloor(0);
-                      }
-                    }}
-                    className="bg-slate-950 border border-slate-850 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none cursor-pointer font-semibold"
-                  >
-                    <option value="independent">🏡 Independent House</option>
-                    <option value="apartment">🏢 Apartment / Flat</option>
-                  </select>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 font-mono">Property:</span>
+                  <div className="bg-[#041a18] border border-emerald-800/60 text-emerald-300 rounded-lg px-3 py-1 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
+                    {scratchPropertyType === "apartment" || scratchPropertyType === "flat" ? (
+                      <>🏢 Apartment / Flat ({projectSpecs.apartmentConfig})</>
+                    ) : (
+                      <>🏡 Independent House ({projectSpecs.targetFloor})</>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 font-mono">Floor Level:</span>
+                <div className="flex items-center gap-1.5 border-l border-emerald-900/60 pl-3">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 font-mono">Floor Level:</span>
                   {(scratchPropertyType === "apartment" || scratchPropertyType === "flat") ? (
-                    <span className="text-xs text-slate-450 bg-slate-950/60 border border-slate-850/40 px-3 py-1.5 rounded font-semibold font-mono">
+                    <span className="text-xs text-emerald-300/80 bg-[#041a18] border border-emerald-900/60 px-3 py-1 rounded font-semibold font-mono">
                       Single Flat Level
                     </span>
                   ) : (
-                    <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-850">
+                    <div className="flex bg-[#041a18] p-0.5 rounded-lg border border-emerald-900/60">
                       <button
                         onClick={() => setActiveFloor(0)}
-                        className={`text-xs px-3 py-1.5 rounded font-bold transition-all cursor-pointer ${
+                        className={`text-xs px-3 py-1 rounded font-bold transition-all cursor-pointer ${
                           activeFloor === 0
-                            ? "bg-indigo-650 text-white shadow-sm font-extrabold"
+                            ? "bg-[#0d9488] text-white shadow-sm font-extrabold"
                             : "text-slate-400 hover:text-slate-200"
                         }`}
                       >
@@ -3041,7 +3142,7 @@ Transform:
         </main>
 
         {/* Right Tab Stack: Properties & Copilot Chat */}
-        <aside className="w-80 border-l border-slate-800 bg-slate-950/90 flex flex-col p-4 gap-4 shrink-0 overflow-y-auto">
+        <aside className="w-80 border-l border-emerald-900/40 bg-[#062421]/90 flex flex-col p-4 gap-4 shrink-0 overflow-y-auto">
           {/* Object properties config */}
           <div className="h-1/2 min-h-[300px]">
             <ObjectPropertiesPanel
@@ -3414,6 +3515,89 @@ Transform:
           )}
         </div>
       )}
+      {/* ---------------- House Specifications Modal Popup ---------------- */}
+      {showSpecsModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#062421] border border-emerald-800/80 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-5 text-slate-100 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-emerald-900/60">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-[#0d9488]/20 border border-emerald-500/30 text-emerald-400">
+                  <Box className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-white">House Blueprint Specifications</h3>
+                  <p className="text-[10px] text-emerald-400 font-mono">Full Breakdown of All Parameters Entered (Steps 1 to 5)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSpecsModal(false)}
+                className="p-1.5 hover:bg-emerald-900/40 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer text-xs font-bold px-3 border border-emerald-800/40"
+              >
+                Close ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Structure Type</span>
+                <p className="font-bold text-white text-xs">{projectSpecs.propertyType}</p>
+                <p className="text-[10px] text-slate-400">{projectSpecs.apartmentConfig}</p>
+              </div>
+
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Selected 3D Style</span>
+                <p className="font-bold text-emerald-300 text-xs">{projectSpecs.selectedStyle}</p>
+                <p className="text-[10px] text-slate-400">Photorealistic Redesign</p>
+              </div>
+
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Floor Area & Dimensions</span>
+                <p className="font-bold text-white text-xs">{projectSpecs.squareFootage} sq.ft</p>
+                <p className="text-[10px] text-slate-400">Outer Bounds: {projectSpecs.dimensions}</p>
+              </div>
+
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Ceiling Height</span>
+                <p className="font-bold text-white text-xs">{projectSpecs.ceilingHeight}</p>
+                <p className="text-[10px] text-slate-400">Vertical Height Clearance</p>
+              </div>
+
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Entrance Orientation</span>
+                <p className="font-bold text-white text-xs">{projectSpecs.houseFacing} Entrance</p>
+                <p className="text-[10px] text-slate-400">Vastu & Sunlight Alignment</p>
+              </div>
+
+              <div className="bg-[#041a18] p-3 rounded-2xl border border-emerald-900/70 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500 font-mono block">Design Budget Tier</span>
+                <p className="font-bold text-white text-xs">{projectSpecs.budget}</p>
+                <p className="text-[10px] text-slate-400">Target Material Valuation</p>
+              </div>
+            </div>
+
+            {/* Room Breakdown summary */}
+            <div className="bg-[#041a18] p-4 rounded-2xl border border-emerald-900/70 space-y-2">
+              <h4 className="text-xs font-bold text-emerald-300 font-mono uppercase">Room Inventory & Material Specs</h4>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                <div>• Bedrooms: <span className="font-bold text-white">{projectSpecs.numBedrooms}</span></div>
+                <div>• Bathrooms: <span className="font-bold text-white">{projectSpecs.numBathrooms}</span></div>
+                <div>• Kitchen Type: <span className="font-bold text-white">{projectSpecs.kitchenType}</span></div>
+                <div>• Flooring: <span className="font-bold text-white">{projectSpecs.flooringMaterial}</span></div>
+              </div>
+            </div>
+
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setShowSpecsModal(false)}
+                className="w-full py-3 bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold rounded-xl transition-all cursor-pointer shadow-lg text-xs uppercase tracking-wider"
+              >
+                Back to 2D / 3D Studio Workspace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <VRPanoramaModal
         isOpen={isVRModalOpen}
         onClose={() => setIsVRModalOpen(false)}
