@@ -158,6 +158,11 @@ function StudioContent() {
       const hFacing = sessionStorage.getItem("homeverse_house_facing");
       const cBlock = sessionStorage.getItem("homeverse_community_block");
 
+      const uploadedFileUrl = sessionStorage.getItem("homeverse_uploaded_file_url");
+      if (uploadedFileUrl) {
+        setBgImageUrl(uploadedFileUrl);
+      }
+
       if (pType) {
         setScratchPropertyType(pType);
       }
@@ -3124,6 +3129,7 @@ Transform:
                 roomDepth={roomDepth}
                 onUpdateRoomDimensions={handleUpdateRoomDimensions}
                 activeFloor={activeFloor}
+                backgroundImageUrl={bgImageUrl}
               />
             ) : (
               <CanvasContainer
