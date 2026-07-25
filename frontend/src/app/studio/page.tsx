@@ -279,6 +279,12 @@ function StudioContent() {
                     parsedDepth = temp;
                   }
                   
+                  // If layout has partitions or full floorplan, ensure canvas dimensions fit the entire layout
+                  if (currentObjects.some((o: any) => o.object_type === "partition") || (projectData.room_type && projectData.room_type.toLowerCase().includes("apartment"))) {
+                    parsedWidth = Math.max(parsedWidth, 16);
+                    parsedDepth = Math.max(parsedDepth, 16);
+                  }
+                  
                   setRoomWidth(parsedWidth);
                   setRoomDepth(parsedDepth);
 

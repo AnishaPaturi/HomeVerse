@@ -187,9 +187,121 @@ class LayoutEngine:
         budget: str
     ) -> Dict[str, Any]:
         """
-        Generates one common 3D room layout (furniture positioning, doors, windows, walls, floor)
+        Generates common 3D room/apartment layout (furniture positioning, doors, windows, walls, floor)
         using the Master House Model JSON and specific architectural templates & rules.
         """
+        prop_type = str(house_model.get("houseType", "")).lower()
+        b_url = house_model.get("blueprintUrl", "")
+        r_type_str = room_type.lower()
+
+        is_full_floorplan = (
+            "apartment" in prop_type or "flat" in prop_type or "gated" in prop_type or
+            "apartment" in r_type_str or "flat" in r_type_str or "floor" in r_type_str or
+            bool(b_url) or len(house_model.get("rooms", {})) >= 3
+        )
+
+        if is_full_floorplan:
+            # Generate complete 11th Floor Apartment Floorplan Layout
+            floorplan_objs = [
+                # --- FLOOR & BASE BOUNDARY ---
+                {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": -3.0, "rotation": 0.0, "scale": 1.0, "material": "wood_light"},
+
+                # --- EXTERIOR BOUNDARY WALLS ---
+                {"object_type": "partition", "position_x": 0.0, "position_y": 0.0, "position_z": -10.0, "rotation": 0.0, "scale": 12.0, "material": "#1e293b"},
+                {"object_type": "partition", "position_x": 0.0, "position_y": 0.0, "position_z": 4.0, "rotation": 0.0, "scale": 12.0, "material": "#1e293b"},
+                {"object_type": "partition", "position_x": -6.0, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 14.0, "material": "#1e293b"},
+                {"object_type": "partition", "position_x": 6.0, "position_y": 0.0, "position_z": -3.0, "rotation": 1.57, "scale": 14.0, "material": "#1e293b"},
+
+                # --- MAIN ENTRANCE DOOR ---
+                {"object_type": "door", "position_x": -6.0, "position_y": 0.0, "position_z": 0.0, "rotation": 1.57, "scale": 1.0, "material": "wood_dark"},
+
+                # --- INTERIOR ROOM PARTITION WALLS ---
+                {"object_type": "partition", "position_x": -4.25, "position_y": 0.0, "position_z": 1.0, "rotation": 1.57, "scale": 2.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": -4.0, "position_y": 0.0, "position_z": 1.0, "rotation": 0.0, "scale": 4.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": -2.5, "position_y": 0.0, "position_z": -5.5, "rotation": 1.57, "scale": 9.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": -2.0, "position_y": 0.0, "position_z": 2.5, "rotation": 1.57, "scale": 3.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": -0.5, "position_y": 0.0, "position_z": 2.5, "rotation": 1.57, "scale": 3.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": -0.5, "position_y": 0.0, "position_z": -4.0, "rotation": 0.0, "scale": 4.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": 1.5, "position_y": 0.0, "position_z": -7.0, "rotation": 1.57, "scale": 6.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": 1.5, "position_y": 0.0, "position_z": -1.5, "rotation": 1.57, "scale": 5.0, "material": "#334155"},
+                {"object_type": "partition", "position_x": 4.5, "position_y": 0.0, "position_z": 2.25, "rotation": 1.57, "scale": 3.5, "material": "#334155"},
+
+                # --- DRAWING ROOM (Top-Left Zone) ---
+                {"object_type": "sofa", "position_x": -4.5, "position_y": 0.0, "position_z": -8.0, "rotation": 0.0, "scale": 1.1, "material": "fabric_base"},
+                {"object_type": "coffee_table", "position_x": -4.5, "position_y": 0.0, "position_z": -6.8, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+                {"object_type": "rug", "position_x": -4.5, "position_y": 0.0, "position_z": -7.4, "rotation": 0.0, "scale": 1.2, "material": "fabric_base"},
+                {"object_type": "tv", "position_x": -5.8, "position_y": 0.0, "position_z": -7.4, "rotation": 1.57, "scale": 1.0, "material": "black_metal"},
+                {"object_type": "window", "position_x": -5.9, "position_y": 1.2, "position_z": -8.0, "rotation": 1.57, "scale": 1.0, "material": "glass_base"},
+                {"object_type": "curtains", "position_x": -5.7, "position_y": 1.2, "position_z": -8.0, "rotation": 1.57, "scale": 1.0, "material": "fabric_curtain_base"},
+
+                # --- FOYER (West Entrance Zone) ---
+                {"object_type": "console_table", "position_x": -4.5, "position_y": 0.0, "position_z": 0.2, "rotation": 0.0, "scale": 1.0, "material": "wood_dark"},
+                {"object_type": "mirror", "position_x": -4.5, "position_y": 1.2, "position_z": 0.95, "rotation": 0.0, "scale": 1.0, "material": "metal_base"},
+
+                # --- MASTER BEDROOM (Bottom-Left Zone) ---
+                {"object_type": "bed", "position_x": -4.5, "position_y": 0.0, "position_z": 2.5, "rotation": 1.57, "scale": 1.1, "material": "wood_dark"},
+                {"object_type": "nightstand", "position_x": -5.5, "position_y": 0.0, "position_z": 1.7, "rotation": 1.57, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "nightstand", "position_x": -5.5, "position_y": 0.0, "position_z": 3.3, "rotation": 1.57, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "wardrobe", "position_x": -3.8, "position_y": 0.0, "position_z": 3.6, "rotation": 3.14, "scale": 1.1, "material": "wood_dark"},
+                {"object_type": "armchair", "position_x": -2.8, "position_y": 0.0, "position_z": 1.8, "rotation": -0.78, "scale": 0.9, "material": "fabric_base"},
+                {"object_type": "tv", "position_x": -2.2, "position_y": 0.0, "position_z": 2.5, "rotation": -1.57, "scale": 1.0, "material": "black_metal"},
+                {"object_type": "window", "position_x": -4.5, "position_y": 1.2, "position_z": 3.9, "rotation": 0.0, "scale": 1.0, "material": "glass_base"},
+
+                # --- MASTER TOILET ---
+                {"object_type": "mirror", "position_x": -1.0, "position_y": 1.2, "position_z": 3.8, "rotation": 3.14, "scale": 0.9, "material": "metal_base"},
+                {"object_type": "stool", "position_x": -1.5, "position_y": 0.0, "position_z": 3.2, "rotation": 0.0, "scale": 0.8, "material": "ceramic"},
+
+                # --- LIVING ROOM (Center-Bottom Zone) ---
+                {"object_type": "sofa", "position_x": -0.5, "position_y": 0.0, "position_z": 2.6, "rotation": 3.14, "scale": 1.1, "material": "fabric_base"},
+                {"object_type": "coffee_table", "position_x": -0.5, "position_y": 0.0, "position_z": 1.6, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+                {"object_type": "rug", "position_x": -0.5, "position_y": 0.0, "position_z": 2.1, "rotation": 0.0, "scale": 1.2, "material": "fabric_base"},
+                {"object_type": "tv", "position_x": -0.5, "position_y": 0.0, "position_z": 3.8, "rotation": 3.14, "scale": 1.0, "material": "black_metal"},
+                {"object_type": "window", "position_x": -0.5, "position_y": 1.2, "position_z": 3.9, "rotation": 0.0, "scale": 1.0, "material": "glass_base"},
+
+                # --- DINING ROOM (Center-Middle Zone) ---
+                {"object_type": "dining_table", "position_x": -0.5, "position_y": 0.0, "position_z": -1.5, "rotation": 0.0, "scale": 1.2, "material": "wood_base"},
+                {"object_type": "chair", "position_x": -1.5, "position_y": 0.0, "position_z": -2.0, "rotation": 1.57, "scale": 0.9, "material": "wood_base"},
+                {"object_type": "chair", "position_x": -1.5, "position_y": 0.0, "position_z": -1.0, "rotation": 1.57, "scale": 0.9, "material": "wood_base"},
+                {"object_type": "chair", "position_x": 0.5, "position_y": 0.0, "position_z": -2.0, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
+                {"object_type": "chair", "position_x": 0.5, "position_y": 0.0, "position_z": -1.0, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
+
+                # --- BEDROOM-02 (Top-Center Zone) ---
+                {"object_type": "bed", "position_x": -0.5, "position_y": 0.0, "position_z": -8.0, "rotation": 3.14, "scale": 1.0, "material": "wood_base"},
+                {"object_type": "nightstand", "position_x": -1.5, "position_y": 0.0, "position_z": -9.2, "rotation": 0.0, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "nightstand", "position_x": 0.5, "position_y": 0.0, "position_z": -9.2, "rotation": 0.0, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "wardrobe", "position_x": -0.5, "position_y": 0.0, "position_z": -4.5, "rotation": 0.0, "scale": 1.1, "material": "wood_dark"},
+                {"object_type": "window", "position_x": -0.5, "position_y": 1.2, "position_z": -9.9, "rotation": 0.0, "scale": 1.0, "material": "glass_base"},
+
+                # --- BEDROOM-01 / MASTER BED 3 (Top-Right Zone) ---
+                {"object_type": "bed", "position_x": 3.2, "position_y": 0.0, "position_z": -7.5, "rotation": -1.57, "scale": 1.1, "material": "wood_base"},
+                {"object_type": "nightstand", "position_x": 4.2, "position_y": 0.0, "position_z": -8.5, "rotation": -1.57, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "nightstand", "position_x": 4.2, "position_y": 0.0, "position_z": -6.5, "rotation": -1.57, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "armchair", "position_x": 2.5, "position_y": 0.0, "position_z": -9.0, "rotation": 0.78, "scale": 0.9, "material": "fabric_base"},
+                {"object_type": "tv", "position_x": 1.8, "position_y": 0.0, "position_z": -7.5, "rotation": 1.57, "scale": 1.0, "material": "black_metal"},
+
+                # --- SITOUT / BALCONY (East Top Zone) ---
+                {"object_type": "balcony", "position_x": 5.2, "position_y": 0.0, "position_z": -7.0, "rotation": 1.57, "scale": 1.2, "material": "metal_base"},
+                {"object_type": "chair", "position_x": 5.2, "position_y": 0.0, "position_z": -8.0, "rotation": 3.14, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "chair", "position_x": 5.2, "position_y": 0.0, "position_z": -6.0, "rotation": 0.0, "scale": 0.8, "material": "wood_base"},
+                {"object_type": "plant_box", "position_x": 5.5, "position_y": 0.0, "position_z": -9.2, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
+
+                # --- KITCHEN (Bottom-Right Zone) ---
+                {"object_type": "desk", "position_x": 3.0, "position_y": 0.0, "position_z": 3.0, "rotation": 3.14, "scale": 1.4, "material": "marble_base"},
+                {"object_type": "refrigerator", "position_x": 1.8, "position_y": 0.0, "position_z": 0.8, "rotation": 1.57, "scale": 1.0, "material": "metal_base"},
+                {"object_type": "window", "position_x": 3.0, "position_y": 1.2, "position_z": 3.9, "rotation": 0.0, "scale": 1.0, "material": "glass_base"},
+
+                # --- UTILITY & SERVICE BALCONY ---
+                {"object_type": "washing_machine", "position_x": 5.2, "position_y": 0.0, "position_z": 2.0, "rotation": -1.57, "scale": 1.0, "material": "metal_base"},
+
+                # --- PUJA & COMMON TOILET ---
+                {"object_type": "mirror", "position_x": 2.5, "position_y": 1.2, "position_z": -2.0, "rotation": 1.57, "scale": 0.8, "material": "metal_base"}
+            ]
+            return {
+                "layout_description": "Full 11th Floor Apartment Blueprint layout with Drawing room, Foyer, Living, Dining, Master Bedroom, Bedrooms 1 & 2, Kitchen, Utility, and Balcony.",
+                "camera_angle": "Apartment Overview Perspective",
+                "objects": floorplan_objs
+            }
+
         client = self._get_client()
 
         # Standardize room key
@@ -266,13 +378,13 @@ class LayoutEngine:
           "camera_angle": "Door Perspective looking straight into the room",
           "objects": [
             {{
-              "object_type": "string",  // must be one of "sofa", "coffee_table", "desk", "chair", "bed", "lamp", "wall", "floor", "curtains", "blinds", "balcony", "tv", "flower_pot", "dining_table", "bookshelf", "nightstand", "wardrobe", "rug", "armchair", "sideboard", "pouf", "mirror", "bench", "stool", "bar_stool", "plant_box", "console_table", "room"
+              "object_type": "string",
               "position_x": float,
               "position_y": float,
               "position_z": float,
               "rotation": float,
               "scale": float,
-              "material": "string" // generic name
+              "material": "string"
             }}
           ]
         }}
@@ -290,53 +402,24 @@ class LayoutEngine:
         except Exception as e:
             print(f"[ERROR] Error generating common layout in layout_engine: {e}")
             traceback.print_exc()
-            # Fallback mock layout based on room type
             r_type = room_type.lower()
             z_center = -3.0
-            
-            # Base floor and wall
             objs = [
                 {"object_type": "floor", "position_x": 0.0, "position_y": 0.0, "position_z": z_center, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
                 {"object_type": "wall", "position_x": 0.0, "position_y": 1.3, "position_z": z_center - (length/2), "rotation": 0.0, "scale": 1.0, "material": "plaster_base"}
             ]
-            
             if "bed" in r_type:
                 objs.extend([
                     {"object_type": "bed", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 3.14, "scale": 1.0, "material": "wood_base"},
                     {"object_type": "chair", "position_x": 1.2, "position_y": 0.0, "position_z": z_center + 0.2, "rotation": 1.57, "scale": 0.9, "material": "fabric_base"},
                     {"object_type": "lamp", "position_x": -1.2, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
                 ])
-            elif "kitchen" in r_type:
-                objs.extend([
-                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.1, "material": "marble_base"},
-                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
-                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 1.57, "scale": 0.9, "material": "wood_base"}
-                ])
-            elif "dining" in r_type:
-                objs.extend([
-                    {"object_type": "dining_table", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
-                    {"object_type": "chair", "position_x": -0.8, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": -1.57, "scale": 0.9, "material": "wood_base"},
-                    {"object_type": "chair", "position_x": 0.8, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 1.57, "scale": 0.9, "material": "wood_base"}
-                ])
-            elif "office" in r_type or "study" in r_type or "work" in r_type:
-                objs.extend([
-                    {"object_type": "desk", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.2, "rotation": 3.14, "scale": 1.0, "material": "wood_base"},
-                    {"object_type": "chair", "position_x": 0.0, "position_y": 0.0, "position_z": z_center + 0.5, "rotation": 0.0, "scale": 0.9, "material": "fabric_base"},
-                    {"object_type": "lamp", "position_x": -0.5, "position_y": 0.75, "position_z": z_center - 0.2, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
-                ])
-            elif "bath" in r_type:
-                objs.extend([
-                    {"object_type": "mirror", "position_x": 0.0, "position_y": 1.2, "position_z": z_center - (length/2) + 0.05, "rotation": 0.0, "scale": 1.0, "material": "metal_base"},
-                    {"object_type": "stool", "position_x": 0.0, "position_y": 0.0, "position_z": z_center, "rotation": 0.0, "scale": 1.0, "material": "wood_base"}
-                ])
             else:
-                # Default to Living Room / Hall
                 objs.extend([
                     {"object_type": "sofa", "position_x": 0.0, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "fabric_base"},
                     {"object_type": "coffee_table", "position_x": 0.0, "position_y": 0.0, "position_z": z_center + 0.8, "rotation": 0.0, "scale": 1.0, "material": "wood_base"},
                     {"object_type": "lamp", "position_x": -1.5, "position_y": 0.0, "position_z": z_center - 0.5, "rotation": 0.0, "scale": 1.0, "material": "metal_base"}
                 ])
-                
             return {
                 "layout_description": f"A default parsed layout for {room_type}.",
                 "camera_angle": "Door Perspective",

@@ -1384,36 +1384,6 @@ export default function UploadPage() {
     sessionStorage.setItem("homeverse_community_block", communityBlock);
     sessionStorage.setItem("homeverse_upload_step", "complete");
 
-    // Seed Whole-House / Whole-Floor 3D Layout Objects into backend
-    const detectedObjs = [
-      // Wall Partitions for Master Floor Plan
-      { object_type: "partition", position_x: 0.0, position_y: 0.0, position_z: -4.0, rotation: 0.0, scale: 2.5, material: "#e2e8f0" },
-      { object_type: "partition", position_x: -2.5, position_y: 0.0, position_z: -1.5, rotation: 1.57, scale: 2.0, material: "#e2e8f0" },
-      { object_type: "partition", position_x: 2.5, position_y: 0.0, position_z: -1.5, rotation: 1.57, scale: 2.0, material: "#e2e8f0" },
-      // Living Room Zone
-      { object_type: "sofa", position_x: -1.5, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#3b82f6" },
-      { object_type: "coffee_table", position_x: -1.5, position_y: 0.0, position_z: -1.0, rotation: 0.0, scale: 1.0, material: "#f59e0b" },
-      { object_type: "tv_unit", position_x: -1.5, position_y: 0.0, position_z: -3.8, rotation: 0.0, scale: 1.0, material: "#1e293b" },
-      // Master Bedroom Zone
-      { object_type: "bed", position_x: 2.0, position_y: 0.0, position_z: -3.0, rotation: 3.14, scale: 1.0, material: "#1e3a8a" },
-      { object_type: "wardrobe", position_x: 3.5, position_y: 0.0, position_z: -2.5, rotation: -1.57, scale: 1.0, material: "#334155" },
-      // Kitchen / Dining Zone
-      { object_type: "dining_table", position_x: -3.0, position_y: 0.0, position_z: -3.0, rotation: 0.0, scale: 1.0, material: "#475569" },
-      { object_type: "lamp", position_x: 0.0, position_y: 0.0, position_z: -2.0, rotation: 0.0, scale: 1.0, material: "#eab308" }
-    ];
-
-    for (const obj of detectedObjs) {
-      try {
-        await fetch(`http://localhost:8080/api/designs/${selectedScratchDesignId}/objects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...obj, design_id: selectedScratchDesignId })
-        });
-      } catch (err) {
-        console.warn("Backend object seeding fallback:", err);
-      }
-    }
-
     // Redirect to studio with selected designId and style
     router.push(`/studio?style=${encodeURIComponent(selectedStyle)}&designId=${selectedScratchDesignId}`);
   };
