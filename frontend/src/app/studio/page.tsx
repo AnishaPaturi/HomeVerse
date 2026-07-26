@@ -20,8 +20,105 @@ interface RoomObject {
   material: string;
 }
 
+const get11thFloorApartmentObjects = (style: string): RoomObject[] => [
+  { id: "fl-1", object_type: "floor", position_x: 0.0, position_y: 0.0, position_z: -3.0, rotation: 0.0, scale: 1.0, material: "wood_light" },
+
+  // Exterior Boundary Walls
+  { id: "ext-w-n", object_type: "partition", position_x: 0.0, position_y: 0.0, position_z: -10.0, rotation: 0.0, scale: 12.0, material: "#1e293b" },
+  { id: "ext-w-s", object_type: "partition", position_x: 0.0, position_y: 0.0, position_z: 4.0, rotation: 0.0, scale: 12.0, material: "#1e293b" },
+  { id: "ext-w-w", object_type: "partition", position_x: -6.0, position_y: 0.0, position_z: -3.0, rotation: 1.57, scale: 14.0, material: "#1e293b" },
+  { id: "ext-w-e", object_type: "partition", position_x: 6.0, position_y: 0.0, position_z: -3.0, rotation: 1.57, scale: 14.0, material: "#1e293b" },
+
+  // Main Door
+  { id: "door-main", object_type: "door", position_x: -6.0, position_y: 0.0, position_z: 0.0, rotation: 1.57, scale: 1.0, material: "wood_dark" },
+
+  // Interior Room Partitions
+  { id: "part-1", object_type: "partition", position_x: -4.25, position_y: 0.0, position_z: 1.0, rotation: 1.57, scale: 2.0, material: "#334155" },
+  { id: "part-2", object_type: "partition", position_x: -4.0, position_y: 0.0, position_z: 1.0, rotation: 0.0, scale: 4.0, material: "#334155" },
+  { id: "part-3", object_type: "partition", position_x: -2.5, position_y: 0.0, position_z: -5.5, rotation: 1.57, scale: 9.0, material: "#334155" },
+  { id: "part-4", object_type: "partition", position_x: -2.0, position_y: 0.0, position_z: 2.5, rotation: 1.57, scale: 3.0, material: "#334155" },
+  { id: "part-5", object_type: "partition", position_x: -0.5, position_y: 0.0, position_z: 2.5, rotation: 1.57, scale: 3.0, material: "#334155" },
+  { id: "part-6", object_type: "partition", position_x: -0.5, position_y: 0.0, position_z: -4.0, rotation: 0.0, scale: 4.0, material: "#334155" },
+  { id: "part-7", object_type: "partition", position_x: 1.5, position_y: 0.0, position_z: -7.0, rotation: 1.57, scale: 6.0, material: "#334155" },
+  { id: "part-8", object_type: "partition", position_x: 1.5, position_y: 0.0, position_z: -1.5, rotation: 1.57, scale: 5.0, material: "#334155" },
+  { id: "part-9", object_type: "partition", position_x: 4.5, position_y: 0.0, position_z: 2.25, rotation: 1.57, scale: 3.5, material: "#334155" },
+
+  // Drawing Room
+  { id: "dr-sofa", object_type: "sofa", position_x: -4.5, position_y: 0.0, position_z: -8.0, rotation: 0.0, scale: 1.1, material: "fabric_base" },
+  { id: "dr-table", object_type: "coffee_table", position_x: -4.5, position_y: 0.0, position_z: -6.8, rotation: 0.0, scale: 1.0, material: "wood_base" },
+  { id: "dr-rug", object_type: "rug", position_x: -4.5, position_y: 0.0, position_z: -7.4, rotation: 0.0, scale: 1.2, material: "fabric_base" },
+  { id: "dr-tv", object_type: "tv", position_x: -5.8, position_y: 0.0, position_z: -7.4, rotation: 1.57, scale: 1.0, material: "black_metal" },
+  { id: "dr-win", object_type: "window", position_x: -5.9, position_y: 1.2, position_z: -8.0, rotation: 1.57, scale: 1.0, material: "glass_base" },
+  { id: "dr-curt", object_type: "curtains", position_x: -5.7, position_y: 1.2, position_z: -8.0, rotation: 1.57, scale: 1.0, material: "fabric_curtain_base" },
+
+  // Foyer
+  { id: "foy-table", object_type: "console_table", position_x: -4.5, position_y: 0.0, position_z: 0.2, rotation: 0.0, scale: 1.0, material: "wood_dark" },
+  { id: "foy-mir", object_type: "mirror", position_x: -4.5, position_y: 1.2, position_z: 0.95, rotation: 0.0, scale: 1.0, material: "metal_base" },
+
+  // Master Bedroom
+  { id: "mb-bed", object_type: "bed", position_x: -4.5, position_y: 0.0, position_z: 2.5, rotation: 1.57, scale: 1.1, material: "wood_dark" },
+  { id: "mb-ns1", object_type: "nightstand", position_x: -5.5, position_y: 0.0, position_z: 1.7, rotation: 1.57, scale: 0.8, material: "wood_base" },
+  { id: "mb-ns2", object_type: "nightstand", position_x: -5.5, position_y: 0.0, position_z: 3.3, rotation: 1.57, scale: 0.8, material: "wood_base" },
+  { id: "mb-ward", object_type: "wardrobe", position_x: -3.8, position_y: 0.0, position_z: 3.6, rotation: 3.14, scale: 1.1, material: "wood_dark" },
+  { id: "mb-chair", object_type: "armchair", position_x: -2.8, position_y: 0.0, position_z: 1.8, rotation: -0.78, scale: 0.9, material: "fabric_base" },
+  { id: "mb-tv", object_type: "tv", position_x: -2.2, position_y: 0.0, position_z: 2.5, rotation: -1.57, scale: 1.0, material: "black_metal" },
+  { id: "mb-win", object_type: "window", position_x: -4.5, position_y: 1.2, position_z: 3.9, rotation: 0.0, scale: 1.0, material: "glass_base" },
+
+  // Master Toilet
+  { id: "mt-mir", object_type: "mirror", position_x: -1.0, position_y: 1.2, position_z: 3.8, rotation: 3.14, scale: 0.9, material: "metal_base" },
+  { id: "mt-st", object_type: "stool", position_x: -1.5, position_y: 0.0, position_z: 3.2, rotation: 0.0, scale: 0.8, material: "ceramic" },
+
+  // Living Room
+  { id: "liv-sofa", object_type: "sofa", position_x: -0.5, position_y: 0.0, position_z: 2.6, rotation: 3.14, scale: 1.1, material: "fabric_base" },
+  { id: "liv-table", object_type: "coffee_table", position_x: -0.5, position_y: 0.0, position_z: 1.6, rotation: 0.0, scale: 1.0, material: "wood_base" },
+  { id: "liv-rug", object_type: "rug", position_x: -0.5, position_y: 0.0, position_z: 2.1, rotation: 0.0, scale: 1.2, material: "fabric_base" },
+  { id: "liv-tv", object_type: "tv", position_x: -0.5, position_y: 0.0, position_z: 3.8, rotation: 3.14, scale: 1.0, material: "black_metal" },
+  { id: "liv-win", object_type: "window", position_x: -0.5, position_y: 1.2, position_z: 3.9, rotation: 0.0, scale: 1.0, material: "glass_base" },
+
+  // Dining Room
+  { id: "din-tbl", object_type: "dining_table", position_x: -0.5, position_y: 0.0, position_z: -1.5, rotation: 0.0, scale: 1.2, material: "wood_base" },
+  { id: "din-c1", object_type: "chair", position_x: -1.5, position_y: 0.0, position_z: -2.0, rotation: 1.57, scale: 0.9, material: "wood_base" },
+  { id: "din-c2", object_type: "chair", position_x: -1.5, position_y: 0.0, position_z: -1.0, rotation: 1.57, scale: 0.9, material: "wood_base" },
+  { id: "din-c3", object_type: "chair", position_x: 0.5, position_y: 0.0, position_z: -2.0, rotation: -1.57, scale: 0.9, material: "wood_base" },
+  { id: "din-c4", object_type: "chair", position_x: 0.5, position_y: 0.0, position_z: -1.0, rotation: -1.57, scale: 0.9, material: "wood_base" },
+
+  // Bedroom-02
+  { id: "b2-bed", object_type: "bed", position_x: -0.5, position_y: 0.0, position_z: -8.0, rotation: 3.14, scale: 1.0, material: "wood_base" },
+  { id: "b2-ns1", object_type: "nightstand", position_x: -1.5, position_y: 0.0, position_z: -9.2, rotation: 0.0, scale: 0.8, material: "wood_base" },
+  { id: "b2-ns2", object_type: "nightstand", position_x: 0.5, position_y: 0.0, position_z: -9.2, rotation: 0.0, scale: 0.8, material: "wood_base" },
+  { id: "b2-ward", object_type: "wardrobe", position_x: -0.5, position_y: 0.0, position_z: -4.5, rotation: 0.0, scale: 1.1, material: "wood_dark" },
+  { id: "b2-win", object_type: "window", position_x: -0.5, position_y: 1.2, position_z: -9.9, rotation: 0.0, scale: 1.0, material: "glass_base" },
+
+  // Bedroom-01
+  { id: "b1-bed", object_type: "bed", position_x: 3.2, position_y: 0.0, position_z: -7.5, rotation: -1.57, scale: 1.1, material: "wood_base" },
+  { id: "b1-ns1", object_type: "nightstand", position_x: 4.2, position_y: 0.0, position_z: -8.5, rotation: -1.57, scale: 0.8, material: "wood_base" },
+  { id: "b1-ns2", object_type: "nightstand", position_x: 4.2, position_y: 0.0, position_z: -6.5, rotation: -1.57, scale: 0.8, material: "wood_base" },
+  { id: "b1-arm", object_type: "armchair", position_x: 2.5, position_y: 0.0, position_z: -9.0, rotation: 0.78, scale: 0.9, material: "fabric_base" },
+  { id: "b1-tv", object_type: "tv", position_x: 1.8, position_y: 0.0, position_z: -7.5, rotation: 1.57, scale: 1.0, material: "black_metal" },
+
+  // Sitout Balcony
+  { id: "balc-base", object_type: "balcony", position_x: 5.2, position_y: 0.0, position_z: -7.0, rotation: 1.57, scale: 1.2, material: "metal_base" },
+  { id: "balc-c1", object_type: "chair", position_x: 5.2, position_y: 0.0, position_z: -8.0, rotation: 3.14, scale: 0.8, material: "wood_base" },
+  { id: "balc-c2", object_type: "chair", position_x: 5.2, position_y: 0.0, position_z: -6.0, rotation: 0.0, scale: 0.8, material: "wood_base" },
+  { id: "balc-plt", object_type: "plant_box", position_x: 5.5, position_y: 0.0, position_z: -9.2, rotation: 0.0, scale: 1.0, material: "wood_base" },
+
+  // Kitchen
+  { id: "kitch-desk", object_type: "desk", position_x: 3.0, position_y: 0.0, position_z: 3.0, rotation: 3.14, scale: 1.4, material: "marble_base" },
+  { id: "kitch-frg", object_type: "refrigerator", position_x: 1.8, position_y: 0.0, position_z: 0.8, rotation: 1.57, scale: 1.0, material: "metal_base" },
+  { id: "kitch-win", object_type: "window", position_x: 3.0, position_y: 1.2, position_z: 3.9, rotation: 0.0, scale: 1.0, material: "glass_base" },
+
+  // Utility
+  { id: "util-wm", object_type: "washing_machine", position_x: 5.2, position_y: 0.0, position_z: 2.0, rotation: -1.57, scale: 1.0, material: "metal_base" },
+
+  // Common Toilet / Puja
+  { id: "puj-mir", object_type: "mirror", position_x: 2.5, position_y: 1.2, position_z: -2.0, rotation: 1.57, scale: 0.8, material: "metal_base" }
+];
+
 const getInitialObjectsForRoomType = (roomType: string, style: string): RoomObject[] => {
   const room = roomType.toLowerCase();
+  if (room.includes("apartment") || room.includes("flat") || room.includes("house") || room.includes("plan") || room.includes("3bhk") || room.includes("whole")) {
+    return get11thFloorApartmentObjects(style);
+  }
   const floorMat = style === "Luxury" ? "granite" : "wood_light";
   const wallMat = style === "Minimalist" ? "#ffffff" : style === "Luxury" ? "#1e293b" : "#f1f5f9";
   
@@ -52,13 +149,8 @@ const getInitialObjectsForRoomType = (roomType: string, style: string): RoomObje
       { id: "chair-2", object_type: "chair", position_x: 0.8, position_y: 0, position_z: -2.5, rotation: 1.57, scale: 0.9, material: "wood_light" }
     ];
   } else {
-    // Default to Living Room
-    return [
-      ...baseObjects,
-      { id: "sofa-1", object_type: "sofa", position_x: 0, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#cbd5e1" },
-      { id: "coffee-table-1", object_type: "coffee_table", position_x: 0, position_y: 0, position_z: -1.2, rotation: 0, scale: 1.0, material: "#78350f" },
-      { id: "lamp-1", object_type: "lamp", position_x: -1.5, position_y: 0, position_z: -2.5, rotation: 0, scale: 1.0, material: "#fbbf24" }
-    ];
+    // Default to Full Apartment Floorplan
+    return get11thFloorApartmentObjects(style);
   }
 };
 
@@ -311,12 +403,7 @@ function StudioContent() {
                 if (currentObjects.length === 0) {
                   const struct = projectData.structural_analysis ? JSON.parse(projectData.structural_analysis) : {};
                   const isScratch = struct.source === "scratch" || struct.houseType || struct.rooms;
-                  const initialObjs = isScratch
-                    ? [
-                        { id: "floor-1", object_type: "floor", position_x: 0, position_y: 0, position_z: 0, rotation: 0, scale: 1.0, material: initialStyle === "Luxury" ? "granite" : "wood_light" },
-                        { id: "wall-1", object_type: "wall", position_x: 0, position_y: 1.5, position_z: -(parsedDepth ? Number(parsedDepth)/2 : 5) - 2.5, rotation: 0, scale: 1.0, material: initialStyle === "Minimalist" ? "#ffffff" : "#f1f5f9" }
-                      ]
-                    : getInitialObjectsForRoomType(projectData.room_type, initialStyle);
+                  const initialObjs = getInitialObjectsForRoomType(projectData.room_type || "Apartment", initialStyle);
                   setObjects(initialObjs);
                   
                   // Save them to database so they persist
