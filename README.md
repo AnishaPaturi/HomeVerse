@@ -144,6 +144,24 @@ graph TD
 
 ---
 
+## 🧰 Tech Stack & Key Libraries
+
+### Frontend — 3D & UI Rendering
+| Library | Role |
+|---|---|
+| **React Three Fiber** (`@react-three/fiber`) | React wrapper for Three.js driving the 3D WebGL canvas |
+| **Drei** (`@react-three/drei`) | R3F utilities — `OrbitControls`, `TransformControls`, `Grid`, `useLoader`, `useGLTF` |
+| **Three.js** (`three`) | Core 3D graphics rendering engine — `TextureLoader`, `MeshStandardMaterial`, `ShadowMaterial`, `PCFShadowMap` |
+
+### Backend — AI & API
+| Library | Role |
+|---|---|
+| **Google GenAI SDK** (`google.genai`) | Interface to **Gemini 2.5 Flash** for multimodal vision parsing of uploaded floorplan images |
+| **FastAPI** | High-performance Python API framework handling static upload file endpoints and design records |
+| **SQLAlchemy** | Python ORM managing project, design, and 3D object database tables |
+
+---
+
 ## 📂 Complete Folder Structure & File Explanations
 
 Below is the complete project tree with detailed explanations for every file across the application:

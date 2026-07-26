@@ -346,7 +346,8 @@ async def generate_scratch_designs(
         common_layout = await layout_engine.generate_common_layout(
             house_model=house_model,
             room_type=room_type,
-            budget=budget
+            budget=budget,
+            project_id=project_id
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate layout: {e}")
@@ -539,7 +540,8 @@ async def initialize_scratch_designs(
         common_layout = await layout_engine.generate_common_layout(
             house_model=house_model,
             room_type=room_type,
-            budget=budget
+            budget=budget,
+            project_id=project_id
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate layout: {e}")

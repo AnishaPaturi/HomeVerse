@@ -400,6 +400,10 @@ export default function UploadPage() {
 
       const data = await res.json();
       setMasterHouseJson(data);
+      if (data.blueprintUrl) {
+        setUploadedFileUrl(data.blueprintUrl);
+        sessionStorage.setItem("homeverse_uploaded_file_url", data.blueprintUrl);
+      }
       setScratchStep(3); // Navigate to step 3 JSON display
     } catch (err: any) {
       console.error(err);
@@ -794,9 +798,9 @@ export default function UploadPage() {
 
   useEffect(() => {
     if (!isReady) return;
-    if (uploadedFileUrl) {
+    if (uploadedFileUrl && !uploadedFileUrl.startsWith("blob:")) {
       sessionStorage.setItem("homeverse_uploaded_file_url", uploadedFileUrl);
-    } else {
+    } else if (!uploadedFileUrl) {
       sessionStorage.removeItem("homeverse_uploaded_file_url");
     }
   }, [uploadedFileUrl, isReady]);
@@ -1259,6 +1263,11 @@ export default function UploadPage() {
         });
         if (analyzeRes.ok) {
           resultData = await analyzeRes.json();
+          const persistentUrl = resultData.uploaded_url || resultData.thumbnail_url;
+          if (persistentUrl) {
+            setUploadedFileUrl(persistentUrl);
+            sessionStorage.setItem("homeverse_uploaded_file_url", persistentUrl);
+          }
         } else {
           const errData = await analyzeRes.json();
           throw new Error(errData.detail || "Backend analysis failed");
