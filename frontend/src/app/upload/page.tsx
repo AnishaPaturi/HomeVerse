@@ -1382,7 +1382,9 @@ export default function UploadPage() {
     sessionStorage.setItem("homeverse_apartment_config", apartmentConfig);
     sessionStorage.setItem("homeverse_target_floor", targetFloor);
     sessionStorage.setItem("homeverse_square_footage", squareFootage.toString());
-    sessionStorage.setItem("homeverse_dimensions", dimensionsInput);
+    sessionStorage.setItem("homeverse_dimensions", dimensionsInput || `${scratchRoomLength} ft * ${scratchRoomWidth} ft`);
+    sessionStorage.setItem("homeverse_scratch_room_width", scratchRoomWidth);
+    sessionStorage.setItem("homeverse_scratch_room_length", scratchRoomLength);
     sessionStorage.setItem("homeverse_ceiling_height", ceilingHeight);
     sessionStorage.setItem("homeverse_num_bedrooms", numBedrooms);
     sessionStorage.setItem("homeverse_num_bathrooms", numBathrooms);
@@ -1393,8 +1395,12 @@ export default function UploadPage() {
     sessionStorage.setItem("homeverse_community_block", communityBlock);
     sessionStorage.setItem("homeverse_upload_step", "complete");
 
-    // Redirect to studio with selected designId and style
-    router.push(`/studio?style=${encodeURIComponent(selectedStyle)}&designId=${selectedScratchDesignId}`);
+    // Redirect to studio with selected designId, style, and explicit room dimensions
+    const widthParam = encodeURIComponent(scratchRoomWidth || "");
+    const lengthParam = encodeURIComponent(scratchRoomLength || "");
+    const heightParam = encodeURIComponent(ceilingHeight || "");
+
+    router.push(`/studio?style=${encodeURIComponent(selectedStyle)}&designId=${selectedScratchDesignId}&width=${widthParam}&length=${lengthParam}&height=${heightParam}`);
   };
 
   const handleSelectDirection = async (direction: "front" | "left" | "right" | "back" | "front_wall") => {
@@ -1503,9 +1509,17 @@ export default function UploadPage() {
 
     try {
       // 1. Create project on backend with custom structural_analysis (room size detected)
+      const numW = parseFloat(scratchRoomWidth) || 10;
+      const numL = parseFloat(scratchRoomLength) || 10;
+      const calcWidth = numW > 15 ? parseFloat((numW * 0.3048).toFixed(2)) : numW;
+      const calcDepth = numL > 15 ? parseFloat((numL * 0.3048).toFixed(2)) : numL;
+
       const struct = {
-        room_width: 10,
-        room_depth: 10,
+        room_width: calcWidth,
+        room_depth: calcDepth,
+        dimensions: dimensionsInput || `${scratchRoomLength} ft * ${scratchRoomWidth} ft`,
+        blueprint_url: uploadedFileUrl || "",
+        blueprintUrl: uploadedFileUrl || "",
         scanned_via: "LiDAR"
       };
 
@@ -1639,9 +1653,17 @@ export default function UploadPage() {
 
     try {
       // 1. Create project on backend with custom structural_analysis (room size detected)
+      const numW = parseFloat(scratchRoomWidth) || 10;
+      const numL = parseFloat(scratchRoomLength) || 10;
+      const calcWidth = numW > 15 ? parseFloat((numW * 0.3048).toFixed(2)) : numW;
+      const calcDepth = numL > 15 ? parseFloat((numL * 0.3048).toFixed(2)) : numL;
+
       const struct = {
-        room_width: 11.5,
-        room_depth: 9.5,
+        room_width: calcWidth,
+        room_depth: calcDepth,
+        dimensions: dimensionsInput || `${scratchRoomLength} ft * ${scratchRoomWidth} ft`,
+        blueprint_url: uploadedFileUrl || "",
+        blueprintUrl: uploadedFileUrl || "",
         scanned_via: "BlueprintVectorizer"
       };
 

@@ -126,6 +126,9 @@ class LayoutEngine:
                 config=types.GenerateContentConfig(response_mime_type="application/json")
             )
             result = json.loads(response.text)
+            if blueprint_url:
+                result["blueprintUrl"] = blueprint_url
+                result["blueprint_url"] = blueprint_url
             return result
         except Exception as e:
             print(f"[ERROR] Error creating house JSON with Gemini: {e}")

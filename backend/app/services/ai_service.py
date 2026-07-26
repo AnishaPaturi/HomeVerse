@@ -1810,6 +1810,9 @@ class AIService:
             project.room_type = detected_room_type
             project.thumbnail = thumbnail_url
             structural_analysis = result.get("structural_analysis", {})
+            structural_analysis["blueprintUrl"] = uploaded_url
+            structural_analysis["blueprint_url"] = uploaded_url
+            structural_analysis["uploaded_url"] = uploaded_url
             project.structural_analysis = json.dumps(structural_analysis)
             db.add(project)
             db.commit()

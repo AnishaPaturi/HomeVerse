@@ -460,10 +460,28 @@ function Shutters3D({ material, isSelected, onClick }: { material: string; isSel
   );
 }
 
-// Scene background loader component
-function SceneBackground({ url }: { url: string }) {
-  const texture = useLoader(THREE.TextureLoader, url);
-  return <primitive attach="background" object={texture} />;
+// Floor blueprint overlay component for 3D view
+function FloorBlueprintOverlay({ url, width, depth, floorY }: { url: string; width: number; depth: number; floorY: number }) {
+  try {
+    const texture = useLoader(THREE.TextureLoader, url);
+    useEffect(() => {
+      if (texture) {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.repeat.x = -1;
+        texture.offset.x = 1;
+        texture.needsUpdate = true;
+      }
+    }, [texture]);
+
+    return (
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY + 0.01, -2.5]}>
+        <planeGeometry args={[width, depth]} />
+        <meshBasicMaterial map={texture} transparent opacity={0.7} depthWrite={false} />
+      </mesh>
+    );
+  } catch (e) {
+    return null;
+  }
 }
 
 // Custom simple 3D Sofa component made of blocks
@@ -1889,13 +1907,6 @@ export default function CanvasContainer({
         />
         <pointLight position={[-5, 5 + activeFloor * 3.0, -5]} intensity={0.5} />
 
-        {/* Load background room photo asynchronously */}
-        {backgroundImageUrl && (
-          <Suspense fallback={null}>
-            <SceneBackground url={backgroundImageUrl} />
-          </Suspense>
-        )}
-
         {/* Render floor slabs and outer walls for all floors up to activeFloor */}
         {Array.from({ length: activeFloor + 1 }).map((_, floorIdx) => {
           const floorY = floorIdx * 3.0;
@@ -1912,62 +1923,61 @@ export default function CanvasContainer({
                 }}
               >
                 <planeGeometry args={[roomWidth, roomDepth]} />
-                {backgroundImageUrl ? (
-                  <shadowMaterial transparent opacity={0.4} />
-                ) : (
-                  <meshStandardMaterial 
-                    color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
-                    roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
-                    metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
-                  />
-                )}
+                <meshStandardMaterial 
+                  color={floorObj ? getFloorColor(floorObj.material) : "#d7ccc8"} 
+                  roughness={floorObj?.material === "marble" ? 0.1 : 0.8}
+                  metalness={floorObj?.material === "marble" ? 0.3 : 0.0}
+                />
               </mesh>
 
-              {/* Hide walls if background photo is loaded for realism */}
-              {!backgroundImageUrl && (
-                <>
-                  {/* Back Wall */}
-                  <mesh 
-                    position={[0, floorY + 1.25, -roomDepth / 2 - 2.5]} 
-                    receiveShadow
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (wallObj) onSelectObject(wallObj.id);
-                    }}
-                  >
-                    <boxGeometry args={[roomWidth, 2.5, 0.1]} />
-                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-                  </mesh>
-
-                  {/* Left Wall */}
-                  <mesh 
-                    position={[-roomWidth / 2, floorY + 1.25, -2.5]} 
-                    rotation={[0, Math.PI / 2, 0]}
-                    receiveShadow
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (wallObj) onSelectObject(wallObj.id);
-                    }}
-                  >
-                    <boxGeometry args={[roomDepth, 2.5, 0.1]} />
-                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-                  </mesh>
-
-                  {/* Right Wall */}
-                  <mesh 
-                    position={[roomWidth / 2, floorY + 1.25, -2.5]} 
-                    rotation={[0, Math.PI / 2, 0]}
-                    receiveShadow
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (wallObj) onSelectObject(wallObj.id);
-                    }}
-                  >
-                    <boxGeometry args={[roomDepth, 2.5, 0.1]} />
-                    <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
-                  </mesh>
-                </>
+              {/* Render Blueprint Image Trace flat on the floor slab */}
+              {backgroundImageUrl && (
+                <Suspense fallback={null}>
+                  <FloorBlueprintOverlay url={backgroundImageUrl} width={roomWidth} depth={roomDepth} floorY={floorY} />
+                </Suspense>
               )}
+
+              {/* 3D Walls - Always Rendered */}
+              {/* Back Wall */}
+              <mesh 
+                position={[0, floorY + 1.25, -roomDepth / 2 - 2.5]} 
+                receiveShadow
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (wallObj) onSelectObject(wallObj.id);
+                }}
+              >
+                <boxGeometry args={[roomWidth, 2.5, 0.1]} />
+                <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+              </mesh>
+
+              {/* Left Wall */}
+              <mesh 
+                position={[-roomWidth / 2, floorY + 1.25, -2.5]} 
+                rotation={[0, Math.PI / 2, 0]}
+                receiveShadow
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (wallObj) onSelectObject(wallObj.id);
+                }}
+              >
+                <boxGeometry args={[roomDepth, 2.5, 0.1]} />
+                <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+              </mesh>
+
+              {/* Right Wall */}
+              <mesh 
+                position={[roomWidth / 2, floorY + 1.25, -2.5]} 
+                rotation={[0, Math.PI / 2, 0]}
+                receiveShadow
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (wallObj) onSelectObject(wallObj.id);
+                }}
+              >
+                <boxGeometry args={[roomDepth, 2.5, 0.1]} />
+                <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
+              </mesh>
             </group>
           );
         })}

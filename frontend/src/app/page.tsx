@@ -95,10 +95,10 @@ export default function HomePage() {
 
           {/* Nav Links */}
           <nav className="hidden md:flex items-center gap-8 text-xs uppercase tracking-wider font-medium text-slate-300">
-            <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors cursor-pointer">Platform Features</button>
-            <button onClick={() => scrollToSection("how-it-works")} className="hover:text-white transition-colors cursor-pointer">How It Works</button>
-            <button onClick={() => scrollToSection("styles")} className="hover:text-white transition-colors cursor-pointer">AI Styles</button>
-            <button onClick={() => scrollToSection("gallery")} className="hover:text-white transition-colors cursor-pointer">Showcase</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("features")} className="hover:text-white transition-colors cursor-pointer">Platform Features</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("how-it-works")} className="hover:text-white transition-colors cursor-pointer">How It Works</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("styles")} className="hover:text-white transition-colors cursor-pointer">AI Styles</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("gallery")} className="hover:text-white transition-colors cursor-pointer">Showcase</button>
           </nav>
 
           {/* Header Action */}
@@ -701,11 +701,11 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-6 text-xs text-slate-400">
-            <button onClick={() => scrollToSection("hero")} className="hover:text-white transition-colors cursor-pointer">Home</button>
-            <button onClick={() => scrollToSection("features")} className="hover:text-white transition-colors cursor-pointer">Features</button>
-            <button onClick={() => scrollToSection("how-it-works")} className="hover:text-white transition-colors cursor-pointer">How It Works</button>
-            <button onClick={() => router.push("/upload")} className="hover:text-white transition-colors cursor-pointer text-emerald-400">Upload Room</button>
-            <button onClick={() => router.push("/studio")} className="hover:text-white transition-colors cursor-pointer text-emerald-400">3D Studio</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("hero")} className="hover:text-white transition-colors cursor-pointer">Home</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("features")} className="hover:text-white transition-colors cursor-pointer">Features</button>
+            <button suppressHydrationWarning onClick={() => scrollToSection("how-it-works")} className="hover:text-white transition-colors cursor-pointer">How It Works</button>
+            <button suppressHydrationWarning onClick={() => router.push("/upload")} className="hover:text-white transition-colors cursor-pointer text-emerald-400">Upload Room</button>
+            <button suppressHydrationWarning onClick={() => router.push("/studio")} className="hover:text-white transition-colors cursor-pointer text-emerald-400">3D Studio</button>
           </div>
 
           <div className="text-[10px] text-slate-500 font-mono">

@@ -193,6 +193,40 @@ function StudioContent() {
         setScratchCommunityBlock(cBlock);
       }
 
+      // Immediately parse and set initial room width & depth from URL or session storage
+      const qW = searchParams.get("width");
+      const qL = searchParams.get("length");
+      const sessW = sessionStorage.getItem("homeverse_scratch_room_width");
+      const sessL = sessionStorage.getItem("homeverse_scratch_room_length");
+      const rawDims = dims || sessionStorage.getItem("homeverse_dimensions") || (sessL && sessW ? `${sessL} ft * ${sessW} ft` : null);
+
+      if (qW && qL) {
+        const wVal = parseFloat(qW);
+        const lVal = parseFloat(qL);
+        if (!isNaN(wVal) && !isNaN(lVal) && wVal > 0 && lVal > 0) {
+          const wM = wVal > 15 ? parseFloat((wVal * 0.3048).toFixed(2)) : wVal;
+          const lM = lVal > 15 ? parseFloat((lVal * 0.3048).toFixed(2)) : lVal;
+          setRoomWidth(wM);
+          setRoomDepth(lM);
+        }
+      } else if (rawDims) {
+        const isFeet = rawDims.toLowerCase().includes("ft") || rawDims.toLowerCase().includes("feet") || rawDims.includes("'");
+        const clean = rawDims.toLowerCase().replace(/ft/g, "").replace(/feet/g, "").replace(/m/g, "").replace(/'/g, "").replace(/"/g, "").trim();
+        const parts = clean.split(/[*xX×,]|by/);
+        if (parts.length >= 2) {
+          let w = parseFloat(parts[0].trim());
+          let d = parseFloat(parts[1].trim());
+          if (!isNaN(w) && !isNaN(d) && w > 0 && d > 0) {
+            if (isFeet || w > 15 || d > 15) {
+              w = parseFloat((w * 0.3048).toFixed(2));
+              d = parseFloat((d * 0.3048).toFixed(2));
+            }
+            setRoomWidth(w);
+            setRoomDepth(d);
+          }
+        }
+      }
+
       setProjectSpecs({
         projectTitle: pTitle || (pType === "apartment" ? `${aConfig || "3BHK"} Flat Layout` : `${tFloor || "Ground"} Floor Plan`),
         roomType: rType || "Whole House Plan",
@@ -215,9 +249,38 @@ function StudioContent() {
   }, [router, initialStyle]);
 
   const loadDesignObjects = async () => {
-    if (!designId) return;
+    let targetDesignId = designId;
+    const activeProjId = projectId || sessionStorage.getItem("homeverse_project_id");
+
+    if (!targetDesignId && activeProjId) {
+      try {
+        const listRes = await fetch(`http://localhost:8080/api/designs/project/${activeProjId}`);
+        if (listRes.ok) {
+          const list = await listRes.json();
+          if (list && list.length > 0) targetDesignId = list[0].id;
+        }
+      } catch (err) {}
+    }
+
+    if (!targetDesignId) return;
+
     try {
-      const res = await fetch(`http://localhost:8080/api/designs/${designId}`);
+      let res = await fetch(`http://localhost:8080/api/designs/${targetDesignId}`);
+      
+      // Fallback: If target design returns 404, look up designs associated with active project
+      if (!res.ok && activeProjId) {
+        try {
+          const listRes = await fetch(`http://localhost:8080/api/designs/project/${activeProjId}`);
+          if (listRes.ok) {
+            const list = await listRes.json();
+            if (list && list.length > 0) {
+              targetDesignId = list[0].id;
+              res = await fetch(`http://localhost:8080/api/designs/${targetDesignId}`);
+            }
+          }
+        } catch (err) {}
+      }
+
       if (res.ok) {
         const designData = await res.json();
         if (designData && designData.direction) {
@@ -286,7 +349,68 @@ function StudioContent() {
                     standardKey = roomKey;
                   }
 
-                  if (struct.rooms && struct.rooms[standardKey]) {
+                  const parseDimensionsStr = (raw: string): { width: number; depth: number } | null => {
+                    if (!raw) return null;
+                    const isFeet = raw.toLowerCase().includes("ft") || raw.toLowerCase().includes("feet") || raw.includes("'");
+                    const clean = raw.toLowerCase()
+                      .replace(/ft/g, "")
+                      .replace(/feet/g, "")
+                      .replace(/m/g, "")
+                      .replace(/'/g, "")
+                      .replace(/"/g, "")
+                      .trim();
+                    const parts = clean.split(/[*xX×,]|by/);
+                    if (parts.length >= 2) {
+                      let w = parseFloat(parts[0].trim());
+                      let d = parseFloat(parts[1].trim());
+                      if (!isNaN(w) && !isNaN(d) && w > 0 && d > 0) {
+                        if (isFeet || w > 15 || d > 15) {
+                          w = parseFloat((w * 0.3048).toFixed(2));
+                          d = parseFloat((d * 0.3048).toFixed(2));
+                        }
+                        return { width: w, depth: d };
+                      }
+                    }
+                    return null;
+                  };
+
+                  const queryW = searchParams.get("width");
+                  const queryL = searchParams.get("length");
+                  let userDims: { width: number; depth: number } | null = null;
+
+                  if (queryW && queryL) {
+                    userDims = parseDimensionsStr(`${queryL} ft * ${queryW} ft`);
+                  }
+
+                  if (!userDims && struct.house_details?.roomWidth && struct.house_details?.roomLength) {
+                    const rw = Number(struct.house_details.roomWidth);
+                    const rl = Number(struct.house_details.roomLength);
+                    if (!isNaN(rw) && !isNaN(rl) && rw > 0 && rl > 0) {
+                      userDims = {
+                        width: rw > 15 ? parseFloat((rw * 0.3048).toFixed(2)) : rw,
+                        depth: rl > 15 ? parseFloat((rl * 0.3048).toFixed(2)) : rl,
+                      };
+                    }
+                  }
+
+                  if (!userDims && struct.dimensions) {
+                    userDims = parseDimensionsStr(struct.dimensions);
+                  }
+
+                  if (!userDims && typeof window !== "undefined") {
+                    const sessWidth = sessionStorage.getItem("homeverse_scratch_room_width");
+                    const sessLength = sessionStorage.getItem("homeverse_scratch_room_length");
+                    if (sessWidth && sessLength) {
+                      userDims = parseDimensionsStr(`${sessLength} ft * ${sessWidth} ft`);
+                    } else if (sessionStorage.getItem("homeverse_dimensions")) {
+                      userDims = parseDimensionsStr(sessionStorage.getItem("homeverse_dimensions") || "");
+                    }
+                  }
+
+                  if (userDims) {
+                    parsedWidth = userDims.width;
+                    parsedDepth = userDims.depth;
+                  } else if (struct.rooms && struct.rooms[standardKey]) {
                     const rData = struct.rooms[standardKey];
                     if (rData.width) parsedWidth = Number(rData.width);
                     if (rData.length) parsedDepth = Number(rData.length);
@@ -301,12 +425,6 @@ function StudioContent() {
                     const temp = parsedWidth;
                     parsedWidth = parsedDepth;
                     parsedDepth = temp;
-                  }
-                  
-                  // If layout has partitions or full floorplan, ensure canvas dimensions fit the entire layout
-                  if (currentObjects.some((o: any) => o.object_type === "partition") || (projectData.room_type && projectData.room_type.toLowerCase().includes("apartment"))) {
-                    parsedWidth = Math.max(parsedWidth, 16);
-                    parsedDepth = Math.max(parsedDepth, 16);
                   }
                   
                   setRoomWidth(parsedWidth);
@@ -324,23 +442,30 @@ function StudioContent() {
                   console.warn("Failed to parse structural analysis dimensions:", e);
                 }
               }
-              // Requirement 2: Parse structural_analysis and set bgImageUrl to blueprintUrl if present
+              // Prioritize blueprintUrl, project thumbnail, and session uploaded URL for the background trace
+              let activeBgUrl: string | null = null;
               if (projectData && projectData.structural_analysis) {
                 try {
-                  const struct = JSON.parse(projectData.structural_analysis);
-                  const bpUrl = struct.blueprintUrl || struct.blueprint_url;
-                  if (bpUrl) {
-                    setBgImageUrl(bpUrl);
-                  } else if (projectData.thumbnail && !projectData.thumbnail.includes("unsplash.com")) {
-                    setBgImageUrl(projectData.thumbnail);
-                  } else if (designData && designData.image_url) {
-                    setBgImageUrl(designData.image_url);
-                  }
+                  const struct = typeof projectData.structural_analysis === "string" ? JSON.parse(projectData.structural_analysis) : projectData.structural_analysis;
+                  activeBgUrl = struct.blueprintUrl || struct.blueprint_url || struct.uploaded_url || null;
                 } catch (e) {}
-              } else if (projectData && projectData.thumbnail && !projectData.thumbnail.includes("unsplash.com")) {
-                setBgImageUrl(projectData.thumbnail);
-              } else if (designData && designData.image_url) {
-                setBgImageUrl(designData.image_url);
+              }
+              
+              if (!activeBgUrl && projectData && projectData.thumbnail && !projectData.thumbnail.includes("unsplash.com")) {
+                activeBgUrl = projectData.thumbnail;
+              }
+              
+              if (!activeBgUrl && typeof window !== "undefined") {
+                const sessionUrl = sessionStorage.getItem("homeverse_uploaded_file_url");
+                if (sessionUrl) activeBgUrl = sessionUrl;
+              }
+              
+              if (!activeBgUrl && designData && designData.image_url) {
+                activeBgUrl = designData.image_url;
+              }
+              
+              if (activeBgUrl) {
+                setBgImageUrl(activeBgUrl);
               }
 
               // Requirement 3: Only populate template objects if explicitly requested (e.g. demo/template query parameter).
@@ -3092,7 +3217,7 @@ Transform:
             
             <div className="flex items-center gap-3">
               <div className="text-[10px] text-slate-500 font-medium">
-                Dimensions: <span className="font-mono text-slate-350 font-bold">{roomWidth.toFixed(1)}m × {roomDepth.toFixed(1)}m</span>
+                Dimensions: <span className="font-mono text-slate-350 font-bold">{(roomWidth / 0.3048).toFixed(0)}ft × {(roomDepth / 0.3048).toFixed(0)}ft ({roomWidth.toFixed(1)}m × {roomDepth.toFixed(1)}m)</span>
               </div>
               <button
                 onClick={() => setIsCartOpen(true)}
