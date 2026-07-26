@@ -382,6 +382,17 @@ function StudioContent() {
                     userDims = parseDimensionsStr(`${queryL} ft * ${queryW} ft`);
                   }
 
+                  if (!userDims && (struct.room_width || struct.room_depth)) {
+                    const rw = Number(struct.room_width || 0);
+                    const rd = Number(struct.room_depth || 0);
+                    if (!isNaN(rw) && !isNaN(rd) && rw > 0 && rd > 0) {
+                      userDims = {
+                        width: rw > 15 ? parseFloat((rw * 0.3048).toFixed(2)) : rw,
+                        depth: rd > 15 ? parseFloat((rd * 0.3048).toFixed(2)) : rd,
+                      };
+                    }
+                  }
+
                   if (!userDims && struct.house_details?.roomWidth && struct.house_details?.roomLength) {
                     const rw = Number(struct.house_details.roomWidth);
                     const rl = Number(struct.house_details.roomLength);
@@ -414,9 +425,6 @@ function StudioContent() {
                     const rData = struct.rooms[standardKey];
                     if (rData.width) parsedWidth = Number(rData.width);
                     if (rData.length) parsedDepth = Number(rData.length);
-                  } else if (struct.room_width && struct.room_depth) {
-                    parsedWidth = Number(struct.room_width);
-                    parsedDepth = Number(struct.room_depth);
                   }
                   
                   // Swap dimensions if layout direction is East or West

@@ -466,15 +466,18 @@ function FloorBlueprintOverlay({ url, width, depth, floorY }: { url: string; wid
     const texture = useLoader(THREE.TextureLoader, url);
     useEffect(() => {
       if (texture) {
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.repeat.x = -1;
-        texture.offset.x = 1;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.repeat.set(1, 1);
+        texture.offset.set(0, 0);
+        texture.rotation = 0;
+        texture.flipY = false;
         texture.needsUpdate = true;
       }
     }, [texture]);
 
     return (
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY + 0.01, -2.5]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY + 0.01, -2.5]} scale={[1, 1, 1]}>
         <planeGeometry args={[width, depth]} />
         <meshBasicMaterial map={texture} transparent opacity={0.7} depthWrite={false} />
       </mesh>
@@ -1890,6 +1893,8 @@ export default function CanvasContainer({
     if (!mat) return "#e2e8f0";
     return mat.startsWith("#") ? mat : "#e2e8f0";
   };
+
+  console.log("[CANVAS RUNTIME RECEIVED]", { roomWidth, roomDepth, backgroundImageUrl });
 
   return (
     <div className="w-full h-full relative rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/80">
