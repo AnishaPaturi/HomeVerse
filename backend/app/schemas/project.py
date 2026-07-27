@@ -11,6 +11,7 @@ class ProjectBase(BaseModel):
     structural_analysis: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
+    id: Optional[UUID] = None
     user_id: UUID
 
 class ProjectUpdate(BaseModel):

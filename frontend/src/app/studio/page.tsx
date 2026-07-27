@@ -1417,6 +1417,8 @@ function StudioContent() {
     return objects.find((o) => o.id === selectedObjectId) || null;
   };
 
+  console.log("[STUDIO RUNTIME STATE]", { roomWidth, roomDepth, bgImageUrl });
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[#041a18] text-slate-100 font-sans selection:bg-[#0d9488] selection:text-white overflow-hidden">
       {/* Upper Navigation Bar */}
