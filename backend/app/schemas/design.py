@@ -9,6 +9,7 @@ class DesignBase(BaseModel):
     selected: Optional[bool] = False
 
 class DesignCreate(DesignBase):
+    id: Optional[UUID] = None
     project_id: UUID
 
 class Design(DesignBase):
