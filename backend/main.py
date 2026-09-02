@@ -8,25 +8,43 @@ from app.db.session import engine
 # Automatically create all database tables
 Base.metadata.create_all(bind=engine)
 
-# Seed fallback user to prevent SQLite UUID numeric affinity bugs
+# Seed official demo accounts for development and testing
 from app.db.session import SessionLocal
 from app.models.user import User as UserModel
 from uuid import UUID
 db = SessionLocal()
 try:
-    fallback_id = UUID("d0000000-0000-0000-0000-000000000000")
-    fallback_user = db.query(UserModel).filter(UserModel.id == fallback_id).first()
-    if not fallback_user:
-        fallback_user = UserModel(
-            id=fallback_id,
-            name="Offline Designer",
-            email="offline@homeverse.ai",
-            plan="Free"
-        )
-        db.add(fallback_user)
-        db.commit()
+    demo_users = [
+        {
+            "id": UUID("d0000000-0000-0000-0000-000000000000"),
+            "name": "Anisha Paturi",
+            "email": "designer@homeverse.ai",
+            "plan": "Pro Designer",
+        },
+        {
+            "id": UUID("d1111111-1111-1111-1111-111111111111"),
+            "name": "Demo Tester",
+            "email": "demo@homeverse.ai",
+            "plan": "Pro Designer",
+        },
+    ]
+    for u in demo_users:
+        existing = db.query(UserModel).filter((UserModel.id == u["id"]) | (UserModel.email == u["email"])).first()
+        if not existing:
+            new_user = UserModel(
+                id=u["id"],
+                name=u["name"],
+                email=u["email"],
+                plan=u["plan"]
+            )
+            db.add(new_user)
+        else:
+            existing.name = u["name"]
+            existing.plan = u["plan"]
+    db.commit()
+    print("Demo development users seeded successfully (designer@homeverse.ai, demo@homeverse.ai)")
 except Exception as e:
-    print(f"Warning: Failed to seed fallback user: {e}")
+    print(f"Warning: Failed to seed demo users: {e}")
 finally:
     db.close()
 

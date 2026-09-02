@@ -24,6 +24,44 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
     return user
 
+from uuid import UUID
+
+@router.post("/demo", response_model=UserSchema)
+def get_demo_user(db: Session = Depends(get_db)):
+    """Returns or seeds the official development/testing demo user."""
+    demo_id = UUID("d0000000-0000-0000-0000-000000000000")
+    demo_user = db.query(UserModel).filter(UserModel.id == demo_id).first()
+    if not demo_user:
+        demo_user = UserModel(
+            id=demo_id,
+            name="Anisha Paturi",
+            email="designer@homeverse.ai",
+            plan="Pro Designer"
+        )
+        db.add(demo_user)
+        db.commit()
+        db.refresh(demo_user)
+    return demo_user
+
+@router.post("/login", response_model=UserSchema)
+def login_user(email: str, db: Session = Depends(get_db)):
+    """Login endpoint for development and testing."""
+    user = db.query(UserModel).filter(UserModel.email == email).first()
+    if not user:
+        # If logging in as demo email, auto-seed
+        if email.lower() in ["designer@homeverse.ai", "demo@homeverse.ai"]:
+            return get_demo_user(db)
+        # Create lightweight session user
+        user = UserModel(
+            name=email.split("@")[0].capitalize(),
+            email=email,
+            plan="Pro Designer"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
 @router.get("/me", response_model=UserSchema)
 def get_current_user(email: str, db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.email == email).first()

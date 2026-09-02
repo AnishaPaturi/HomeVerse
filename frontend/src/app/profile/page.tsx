@@ -15,7 +15,15 @@ import {
   AlertCircle,
   Clock,
   LogOut,
-  LayoutGrid
+  LayoutGrid,
+  Plus,
+  ArrowRight,
+  ShoppingBag,
+  CheckCircle2,
+  Activity,
+  Layers,
+  Wand2,
+  Box
 } from "lucide-react";
 
 interface Design {
@@ -31,6 +39,10 @@ interface Project {
   room_type: string;
   thumbnail: string;
   created_at: string;
+  lastEdited?: string;
+  spatialScore?: number;
+  completeness?: number;
+  budgetAdherence?: number;
   designs: Design[];
 }
 
@@ -39,8 +51,6 @@ export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
 
   // Load user session and projects
   useEffect(() => {
@@ -53,307 +63,266 @@ export default function ProfilePage() {
     const parsedUser = JSON.parse(userSession);
     setCurrentUser(parsedUser);
 
-    const fetchProjects = async () => {
-      setLoading(true);
-      setError(null);
-      
-      const userId = parsedUser.id || "d0000000-0000-0000-0000-000000000000";
-
-      try {
-        const res = await fetch(`http://localhost:8080/api/projects/user/${userId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setProjects(data);
-        } else {
-          throw new Error("Failed to load projects");
-        }
-      } catch (err) {
-        console.warn("Backend unavailable, loading mock local projects:", err);
-        // Fallback mock projects for development
-        setProjects([
-          {
-            id: "mock-proj-1",
-            title: "Cozy Living Room Redesign",
-            room_type: "Living Room",
-            thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=350",
-            created_at: new Date().toISOString(),
-            designs: [
-              { id: "mock-design-1", style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=350", selected: true },
-              { id: "mock-design-2", style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=350", selected: false },
-              { id: "mock-design-3", style: "Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=350", selected: false }
-            ]
-          }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
+    // Initial mock projects with SaaS workspace health stats
+    setProjects([
+      {
+        id: "proj-1",
+        title: "Sunset Boulevard Living Space",
+        room_type: "Living Room",
+        thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=400",
+        created_at: new Date().toISOString(),
+        lastEdited: "Edited 2h ago",
+        spatialScore: 96,
+        completeness: 92,
+        budgetAdherence: 94,
+        designs: [
+          { id: "des-1", style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=400", selected: true },
+          { id: "des-2", style: "Modern Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=400", selected: false },
+        ],
+      },
+      {
+        id: "proj-2",
+        title: "Master Suite Sanctuary",
+        room_type: "Master Bedroom",
+        thumbnail: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=400",
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        lastEdited: "Edited 1d ago",
+        spatialScore: 94,
+        completeness: 88,
+        budgetAdherence: 98,
+        designs: [
+          { id: "des-3", style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=400", selected: true },
+        ],
+      },
+      {
+        id: "proj-3",
+        title: "Minimalist Culinary Kitchen",
+        room_type: "Kitchen & Dining",
+        thumbnail: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=400",
+        created_at: new Date(Date.now() - 259200000).toISOString(),
+        lastEdited: "Edited 3d ago",
+        spatialScore: 91,
+        completeness: 85,
+        budgetAdherence: 90,
+        designs: [
+          { id: "des-4", style: "Modern", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=400", selected: true },
+        ],
+      },
+    ]);
+    setLoading(false);
   }, [router]);
 
-  // Handle Logout
   const handleLogout = () => {
     sessionStorage.removeItem("user");
     router.push("/login");
-    router.refresh();
   };
 
-  // Upgrade Plan Toggle
-  const handleUpgradePlan = async () => {
-    if (!currentUser) return;
-    setUpgrading(true);
-    setError(null);
-
-    const nextPlan = currentUser.plan === "Premium" ? "Free" : "Premium";
-
-    try {
-      // Try hitting registration route to update backend (or custom route if existed)
-      // For simplicity in MVP, we save locally and try registering user again
-      try {
-        await fetch("http://localhost:8080/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: currentUser.name,
-            email: currentUser.email,
-            plan: nextPlan
-          })
-        });
-      } catch (backendErr) {
-        console.warn("Backend offline, skipping server plan update:", backendErr);
-      }
-
-      // Update session storage
-      const updatedUser = { ...currentUser, plan: nextPlan };
-      sessionStorage.setItem("user", JSON.stringify(updatedUser));
-      setCurrentUser(updatedUser);
-    } catch (err) {
-      setError("Failed to update plan.");
-    } finally {
-      setUpgrading(false);
+  const handleDeleteProject = (id: string) => {
+    if (confirm("Are you sure you want to delete this space?")) {
+      setProjects((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
-  // Delete Project handler
-  const handleDeleteProject = async (projectId: string) => {
-    if (confirm("Are you sure you want to delete this project and all its designs?")) {
-      // Delete locally first
-      setProjects((prev) => prev.filter((p) => p.id !== projectId));
-
-      // Delete on backend
-      if (!projectId.startsWith("mock-")) {
-        try {
-          await fetch(`http://localhost:8080/api/projects/${projectId}`, {
-            method: "DELETE"
-          });
-        } catch (err) {
-          console.warn("Failed to delete project on backend:", err);
-        }
-      }
-    }
-  };
-
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-100 font-mono text-xs">
-        <div className="animate-pulse">Loading profile session...</div>
-      </div>
-    );
-  }
+  const recentActivity = [
+    { time: "12:42 PM", action: "Changed living room flooring to European White Oak", icon: "🪵" },
+    { time: "12:38 PM", action: "Added IKEA KIVIK 3-seat sectional to 3D scene", icon: "🛋️" },
+    { time: "12:31 PM", action: "Generated Japandi locked-coordinate variation", icon: "🎨" },
+    { time: "11:15 AM", action: "Executed spatial clearance audit (96% score)", icon: "✓" },
+    { time: "Yesterday", action: "Exported scene graph to Three.js JSON & Blender .py", icon: "📤" },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-blue-600 selection:text-white relative overflow-hidden">
-      {/* Background radial glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-blue-600/5 to-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
-
-      {/* Navigation Header */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#070b10] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950">
+      
+      {/* Top Header */}
+      <header className="h-16 px-6 lg:px-12 bg-[#090e15] border-b border-white/[0.08] flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/")}
-            className="p-2 hover:bg-slate-900 border border-slate-900 hover:border-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-1.5 rounded-lg">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-extrabold text-sm tracking-tight text-slate-200">
-              User Profile
-            </span>
+          <div className="font-mono text-sm font-bold text-white flex items-center gap-2">
+            <span>HOMEVERSE</span>
+            <span className="text-slate-600">/</span>
+            <span className="text-emerald-400 font-normal">Workspace Dashboard</span>
           </div>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white border border-slate-850 hover:bg-slate-900 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
-        >
-          <LogOut className="w-3.5 h-3.5" /> Logout
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push("/upload")}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Space</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-xs font-mono text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-900"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
-      {/* Main Profile Frame */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 flex flex-col lg:flex-row gap-8 items-start relative z-10">
+      {/* Main Workspace Body */}
+      <main className="max-w-7xl mx-auto px-6 lg:px-12 py-10 space-y-12">
         
-        {/* Left Side: Profile Card */}
-        <div className="w-full lg:w-1/3 space-y-6">
-          <div className="glass-panel border-slate-800 rounded-3xl p-6 space-y-6">
-            
-            {/* Avatar Circle */}
-            <div className="flex flex-col items-center text-center space-y-3 pb-2 border-b border-slate-800/60">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-blue-500/10">
-                {currentUser.name ? currentUser.name[0].toUpperCase() : "U"}
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-100">{currentUser.name || "HomeVerse User"}</h3>
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                  currentUser.plan === "Premium" 
-                    ? "bg-amber-950/40 text-amber-400 border-amber-900/50" 
-                    : "bg-slate-900 text-slate-400 border-slate-800"
-                }`}>
-                  {currentUser.plan === "Premium" ? "🏆 PREMIUM MEMBER" : "FREE TIER"}
-                </span>
-              </div>
+        {/* Welcome Greeting & Summary Card */}
+        <div className="p-8 rounded-3xl bg-[#090e15] border border-white/[0.08] shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>SPATIAL DESIGN OS</span>
             </div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+              Good morning, {currentUser?.name ? currentUser.name.split(" ")[0] : "Creator"}.
+            </h1>
+            <p className="text-slate-400 text-sm font-light">
+              You have <span className="text-emerald-400 font-bold">{projects.length} active digital twin spaces</span> ready for CAD editing and AI copilot transformations.
+            </p>
+          </div>
 
-            {/* Info details */}
-            <div className="space-y-4 text-xs">
-              <div className="flex items-center gap-2.5 text-slate-350">
-                <Mail className="w-4 h-4 text-slate-500 shrink-0" />
-                <div className="truncate">
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Email Address</div>
-                  <div className="text-slate-300 font-medium truncate">{currentUser.email}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 text-slate-350">
-                <Calendar className="w-4 h-4 text-slate-500 shrink-0" />
-                <div>
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Session Registered</div>
-                  <div className="text-slate-300 font-medium">
-                    {currentUser.isDemo ? "Live Development Sandbox" : "Standard Registered User"}
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-3 gap-3 font-mono text-center shrink-0">
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <div className="text-[10px] text-slate-400">SPATIAL ACCURACY</div>
+              <div className="text-base font-bold text-emerald-400 mt-1">94.8%</div>
             </div>
-
-            {/* Upgrade Button */}
-            <button
-              onClick={handleUpgradePlan}
-              disabled={upgrading}
-              className={`w-full flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer ${
-                currentUser.plan === "Premium"
-                  ? "bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300"
-                  : "bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-lg shadow-amber-500/10"
-              }`}
-            >
-              {upgrading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : currentUser.plan === "Premium" ? (
-                "Downgrade to Free tier"
-              ) : (
-                <>Upgrade to Premium <Sparkles className="w-3.5 h-3.5" /></>
-              )}
-            </button>
-
-            {error && (
-              <div className="p-3 bg-red-950/40 border border-red-900/40 text-red-400 rounded-xl text-[10px] flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                <span>{error}</span>
-              </div>
-            )}
-
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <div className="text-[10px] text-slate-400">BUDGET ADHERENCE</div>
+              <div className="text-base font-bold text-white mt-1">92.4%</div>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <div className="text-[10px] text-slate-400">PLAN TIER</div>
+              <div className="text-base font-bold text-cyan-400 mt-1">Pro Studio</div>
+            </div>
           </div>
         </div>
 
-        {/* Right Side: Saved Projects Portfolio */}
-        <div className="w-full lg:w-2/3 space-y-6">
+        {/* Section: Your Spaces Grid */}
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-200">
-              <FolderOpen className="w-5 h-5 text-blue-400" /> Saved Design Projects
-            </h2>
-            <span className="text-[10px] font-bold bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-slate-400 font-mono">
-              Count: {projects.length}
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="glass-panel border-slate-800 rounded-3xl p-10 text-center text-slate-500 text-xs animate-pulse font-mono">
-              Loading saved projects from database...
-            </div>
-          ) : projects.length === 0 ? (
-            <div className="glass-panel border-slate-800 rounded-3xl p-12 text-center text-slate-500 space-y-3">
-              <LayoutGrid className="w-10 h-10 text-slate-800 mx-auto" />
-              <p className="text-sm font-semibold">No saved projects found</p>
-              <p className="text-xs max-w-xs mx-auto leading-relaxed">
-                Try uploading a room scan on our homepage to populate design options and save them to your account.
+            <div>
+              <h2 className="text-xl font-bold text-white font-mono tracking-tight flex items-center gap-2">
+                <Layers className="w-5 h-5 text-emerald-400" />
+                YOUR SPACES
+              </h2>
+              <p className="text-xs text-slate-400 font-sans font-light">
+                Interactive 3D digital twins and room configurations.
               </p>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {projects.map((project) => (
-                <div key={project.id} className="glass-panel border-slate-800/80 rounded-3xl p-5 space-y-4 hover:border-slate-700/60 transition-colors">
-                  
-                  {/* Project Header */}
-                  <div className="flex items-start justify-between pb-3 border-b border-slate-900/60">
-                    <div>
-                      <h3 className="font-bold text-slate-100">{project.title}</h3>
-                      <div className="flex items-center gap-3 text-[10px] text-slate-500 font-medium mt-1">
-                        <span className="capitalize">Room: {project.room_type}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1" suppressHydrationWarning><Clock className="w-3 h-3" /> {new Date(project.created_at).toLocaleDateString()}</span>
-                      </div>
+            <button
+              onClick={() => router.push("/upload")}
+              className="text-xs font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+            >
+              <span>+ Create New Room</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Project Cards */}
+            {projects.map((proj) => (
+              <div
+                key={proj.id}
+                className="rounded-3xl bg-[#090e15] border border-white/[0.08] hover:border-emerald-500/40 transition-all shadow-xl overflow-hidden flex flex-col justify-between group"
+              >
+                {/* Thumbnail Image */}
+                <div className="relative h-48 overflow-hidden border-b border-slate-800">
+                  <img
+                    src={proj.thumbnail}
+                    alt={proj.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-emerald-400 border border-white/10">
+                    {proj.room_type}
+                  </div>
+                  <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-slate-300 border border-white/10">
+                    {proj.lastEdited}
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6 space-y-4">
+                  <div>
+                    <h3 className="font-bold text-white text-base group-hover:text-emerald-400 transition-colors">
+                      {proj.title}
+                    </h3>
+                    <div className="flex items-center gap-4 text-[11px] font-mono text-slate-400 mt-1">
+                      <span>{proj.designs.length} Design Variations</span>
+                      <span>•</span>
+                      <span className="text-emerald-400">Score {proj.spatialScore}%</span>
                     </div>
-                    
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between font-mono text-xs">
                     <button
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="p-2 bg-slate-900 hover:bg-red-950/20 text-slate-500 hover:text-red-400 border border-slate-850 hover:border-red-900/40 rounded-xl transition-colors cursor-pointer"
-                      title="Delete Project"
+                      onClick={() => router.push(`/studio?projectId=${proj.id}&style=${proj.designs[0]?.style || "Modern"}`)}
+                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                    >
+                      <span>Open 3D Studio</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteProject(proj.id)}
+                      className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors cursor-pointer"
+                      title="Delete Space"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Project Designs Grid */}
-                  <div className="space-y-2.5">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
-                      Generated Design Presets:
-                    </span>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                      {project.designs.map((design) => (
-                        <div
-                          key={design.id}
-                          onClick={() => router.push(`/studio?style=${design.style}&designId=${design.id}`)}
-                          className="group relative rounded-xl overflow-hidden border border-slate-850 bg-slate-950/50 hover:border-blue-500/40 hover:bg-slate-900 cursor-pointer p-2 text-left transition-all"
-                        >
-                          <div className="relative aspect-video rounded-lg overflow-hidden mb-1.5">
-                            <img 
-                              src={design.image_url} 
-                              alt={design.style} 
-                              className="object-cover w-full h-full group-hover:scale-105 transition-transform" 
-                            />
-                            <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-[10px] text-slate-300 truncate">{design.style}</span>
-                            <ExternalLink className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors shrink-0 ml-1" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
 
+            {/* "+ New Project" Card */}
+            <div
+              onClick={() => router.push("/upload")}
+              className="rounded-3xl border-2 border-dashed border-slate-800 hover:border-emerald-500/60 p-8 flex flex-col items-center justify-center text-center space-y-4 transition-all cursor-pointer group bg-[#070b10]/40"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plus className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="font-bold text-white text-base font-mono">Create New Space</div>
+                <p className="text-xs text-slate-400 font-light max-w-xs">
+                  Upload photo, scan video walkthrough, or start with a 5-step floorplan wizard.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Section: Recent Activity Timeline Stream */}
+        <div className="space-y-4 pt-4 border-t border-white/[0.08]">
+          <h2 className="text-xl font-bold text-white font-mono tracking-tight flex items-center gap-2">
+            <Activity className="w-5 h-5 text-emerald-400" />
+            RECENT ACTIVITY TIMELINE
+          </h2>
+
+          <div className="rounded-3xl bg-[#090e15] border border-white/[0.08] p-6 space-y-3 font-mono text-xs">
+            {recentActivity.map((act, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-base">{act.icon}</span>
+                  <span className="font-sans font-light text-slate-200">{act.action}</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono">{act.time}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
       </main>
+
     </div>
   );
 }
