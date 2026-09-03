@@ -49,3 +49,21 @@ Thumbs.db
 *.njsproj
 *.sln
 *.swp
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Docker & Monitoring
+docker-compose.override.yml
+*.log
+monitoring/grafana_data/

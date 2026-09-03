@@ -1,0 +1,21 @@
+name: Docker Build Check
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'infrastructure/docker/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker.yml'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Config
+        run: docker compose config
