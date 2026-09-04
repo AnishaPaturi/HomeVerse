@@ -3,12 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
-from app.models.room import GUID
-
-try:
-    from app.db.base import Base
-except ImportError:
-    from backend.app.db.base import Base
+from app.db.session import Base, GUID
 
 class User(Base):
     __tablename__ = "users"

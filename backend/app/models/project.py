@@ -2,12 +2,7 @@ from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
-from app.models.room import GUID
-
-try:
-    from app.db.base import Base
-except ImportError:
-    from backend.app.db.base import Base
+from app.db.session import Base, GUID
 
 class Project(Base):
     __tablename__ = "projects"

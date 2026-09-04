@@ -21,6 +21,7 @@ except Exception as e:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+from app.db.guid import GUID
 
 def get_db():
     db = SessionLocal()

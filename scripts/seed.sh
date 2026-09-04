@@ -2,14 +2,20 @@
 set -e
 
 echo "=== Seeding Database ==="
-cd backend
-source .venv/bin/activate 2>/dev/null || source .venv/Scripts/activate 2>/dev/null || true
+cd "$(dirname "$0")/../backend"
 
-python -c "
-import sys
-sys.path.insert(0, '.')
-from database.seed.seed_data import seed
-seed()
-" 2>/dev/null || python ../database/seed/seed_data.py
+if [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON_BIN=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON_BIN=".venv/bin/python"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+else
+    PYTHON_BIN="py"
+fi
 
-echo "Seeding completed."
+"$PYTHON_BIN" ../database/seed/seed_data.py
+
+echo "Seeding completed successfully."
