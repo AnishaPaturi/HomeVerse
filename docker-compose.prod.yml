@@ -1,0 +1,24 @@
+# ==============================================================================
+# HomeVerse Production/Staging Docker Compose Configuration (Phase 35)
+# Optimized for immutable container executions without host volume mounts
+# ==============================================================================
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - PYTHONUNBUFFERED=1
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8080 --workers 4
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    command: npm start
