@@ -65,3 +65,49 @@ export interface ExecutionTask {
   estimated_cost?: number;
   actual_cost?: number;
 }
+
+export interface WhatIfPresetOption {
+  id: string;
+  title: string;
+  query: string;
+  description: string;
+  category: string;
+  icon: string;
+}
+
+export interface ItemModification {
+  action: "add" | "modify" | "remove" | "keep";
+  name: string;
+  category: string;
+  original_material?: string;
+  new_material?: string;
+  original_cost: number;
+  new_cost: number;
+  cost_delta: number;
+  reason: string;
+}
+
+export interface CostSimulationSummary {
+  original_total_cost: number;
+  new_total_cost: number;
+  net_cost_difference: number;
+  project_budget?: number;
+  remaining_budget_after?: number;
+  savings_or_increase_text: string;
+}
+
+export interface WhatIfScenarioResponse {
+  scenario_id: string;
+  design_id: string;
+  query: string;
+  scenario_title: string;
+  summary: string;
+  design_changes: string[];
+  furniture_changes: string[];
+  material_changes: string[];
+  cost_summary: CostSimulationSummary;
+  modified_items: ItemModification[];
+  prompt_preview: string;
+  can_apply: boolean;
+}
+

@@ -10,6 +10,13 @@ import asyncio
 from app.db.session import get_db
 from app.services.ai_service import ai_service
 from app.schemas.design import Design as DesignSchema
+from app.schemas.what_if import (
+    WhatIfQueryRequest,
+    WhatIfScenarioResponse,
+    WhatIfApplyRequest,
+    WhatIfPresetOption,
+)
+from app.ai.what_if_engine import WhatIfEngine
 
 router = APIRouter()
 
@@ -893,5 +900,50 @@ Only generate ONE image."""
         "image_url_back": design.image_url_back,
         "image_url_front": design.image_url_front
     }
+
+
+# ==========================================================
+# PHASE 24 — "WHAT IF?" MODE ENDPOINTS
+# ==========================================================
+
+@router.get("/what-if/presets", response_model=List[WhatIfPresetOption])
+def get_what_if_presets():
+    """
+    Returns standard 'What If?' prompt presets from Phase 24:
+    - Reduce budget by ₹1 lakh
+    - Maximize storage
+    - Luxury aesthetic look
+    - Add work desk
+    """
+    return WhatIfEngine.get_presets()
+
+
+@router.post("/what-if/simulate", response_model=WhatIfScenarioResponse)
+def simulate_what_if_scenario(
+    req: WhatIfQueryRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Simulates modifications to Design, Furniture, Materials, and Cost
+    answering user's 'What If?' question without rebuilding the entire project.
+    """
+    return WhatIfEngine.simulate(db=db, req=req)
+
+
+@router.post("/what-if/apply", response_model=DesignSchema)
+def apply_what_if_scenario(
+    req: WhatIfApplyRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Applies the simulated changes directly to the design and items in the database.
+    """
+    design = WhatIfEngine.apply_scenario(
+        db=db,
+        design_id=req.design_id,
+        scenario_id=req.scenario_id
+    )
+    return design
+
 
 

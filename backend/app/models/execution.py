@@ -11,7 +11,7 @@ class ExecutionTask(Base):
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    status = Column(String, default="todo")  # todo, in_progress, completed
+    status = Column(String, default="pending")  # pending, in_progress, completed, blocked
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
     estimated_cost = Column(Float, default=0.0)
