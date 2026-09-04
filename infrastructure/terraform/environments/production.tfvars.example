@@ -1,0 +1,24 @@
+# ==============================================================================
+# Production Environment Terraform Variables (Phase 35)
+# ==============================================================================
+aws_region      = "us-east-1"
+environment     = "production"
+project_name    = "homeverse"
+vpc_cidr        = "10.2.0.0/16"
+
+# RDS Configuration (Production scale with automated backups & gp3)
+db_instance_class    = "db.t4g.medium"
+db_allocated_storage = 50
+db_name              = "homeverse"
+db_username          = "homeverse_prod"
+db_password          = "ChangeMeStrongProdPass2026!"
+
+# ECS Fargate Sizing (Auto-scaled high capacity)
+backend_cpu            = 1024
+backend_memory         = 2048
+frontend_cpu           = 1024
+frontend_memory        = 2048
+backend_desired_count  = 2
+frontend_desired_count = 2
+
+enable_cloudfront = true

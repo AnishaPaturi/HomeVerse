@@ -1,0 +1,24 @@
+# ==============================================================================
+# Development Environment Terraform Variables (Phase 35)
+# ==============================================================================
+aws_region      = "us-east-1"
+environment     = "development"
+project_name    = "homeverse"
+vpc_cidr        = "10.0.0.0/16"
+
+# RDS Configuration (Lightweight single-instance)
+db_instance_class    = "db.t4g.micro"
+db_allocated_storage = 20
+db_name              = "homeverse"
+db_username          = "homeverse_dev"
+db_password          = "ChangeMeDevPass2026!"
+
+# ECS Fargate Sizing
+backend_cpu            = 256
+backend_memory         = 512
+frontend_cpu           = 256
+frontend_memory        = 512
+backend_desired_count  = 1
+frontend_desired_count = 1
+
+enable_cloudfront = false
