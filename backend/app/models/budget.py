@@ -20,12 +20,17 @@ class Budget(Base):
     remaining_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    project = relationship("Project", back_populates="budgets")
+    categories = relationship("BudgetCategory", back_populates="budget", cascade="all, delete-orphan")
+
 class BudgetCategory(Base):
     __tablename__ = "budget_categories"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     budget_id = Column(GUID(), ForeignKey("budgets.id", ondelete="CASCADE"), nullable=False)
-    category = Column(String, nullable=False)  # furniture, civil, lighting, paint, etc.
+    category = Column(String, nullable=False)  # furniture, civil, lighting, paint, carpentry, false_ceiling, etc.
     allocated = Column(Float, default=0.0)
     estimated = Column(Float, default=0.0)
     actual = Column(Float, default=0.0)
+
+    budget = relationship("Budget", back_populates="categories")

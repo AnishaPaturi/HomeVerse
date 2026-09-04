@@ -27,9 +27,12 @@ class ShoppingItem(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    product_id = Column(GUID(), ForeignKey("products.id", ondelete="CASCADE"), nullable=True)
+    product_id = Column(GUID(), ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
     name = Column(String, nullable=False)
     quantity = Column(Float, default=1.0)
     estimated_cost = Column(Float, default=0.0)
     status = Column(String, default="pending")  # pending, ordered, delivered
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    project = relationship("Project", back_populates="shopping_items")
+    product = relationship("Product")

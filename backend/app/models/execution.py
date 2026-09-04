@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Float, DateTime, Text, ForeignKey
+from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 from app.models.room import GUID
@@ -22,6 +23,8 @@ class ExecutionTask(Base):
     actual_cost = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    project = relationship("Project", back_populates="execution_tasks")
+
 class Expense(Base):
     __tablename__ = "expenses"
 
@@ -32,3 +35,5 @@ class Expense(Base):
     amount = Column(Float, default=0.0)
     date = Column(DateTime, default=datetime.utcnow)
     receipt_url = Column(String, nullable=True)
+
+    project = relationship("Project", back_populates="expenses")
