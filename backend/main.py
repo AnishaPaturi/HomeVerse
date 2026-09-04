@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import auth, projects, designs, ai, recommend
+from app.api import auth, projects, designs, ai, recommend, preferences
 from app.db.base import Base
 from app.db.session import engine
 
@@ -69,6 +69,7 @@ app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(designs.router, prefix="/api/designs", tags=["Designs"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(recommend.router, tags=["default"])
+app.include_router(preferences.router, prefix="/api/preferences", tags=["Preferences & Style"])
 
 # V2 Microservices Pipeline Router
 from app.v2.gateway import router as v2_router
