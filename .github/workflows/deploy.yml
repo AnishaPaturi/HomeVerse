@@ -179,6 +179,11 @@ jobs:
           echo "Executing Terraform Plan for Staging environment..."
           terraform validate
 
+      - name: Deploy Database Migrations to Staging (Phase 37)
+        run: |
+          echo "Applying Alembic database migrations to Staging..."
+          python scripts/migrate.py upgrade head
+
       - name: Deploy to AWS Staging ECS Service
         run: |
           echo "Deploying HomeVerse Staging release..."
@@ -221,6 +226,11 @@ jobs:
         run: |
           echo "Executing Terraform Plan for Production environment..."
           terraform validate
+
+      - name: Deploy Database Migrations to Production (Phase 37)
+        run: |
+          echo "Applying Alembic database migrations to Production..."
+          python scripts/migrate.py upgrade head
 
       - name: Deploy to AWS Production ECS Service (Blue/Green)
         run: |

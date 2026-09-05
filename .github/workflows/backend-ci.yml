@@ -36,6 +36,13 @@ jobs:
         working-directory: ./backend
         run: ruff check . --ignore E501 || true
 
+      - name: Verify Database Migrations (Phase 37)
+        working-directory: ./backend
+        run: |
+          alembic upgrade head
+          alembic check
+
       - name: Run unit tests
         working-directory: ./backend
-        run: pytest tests/ -v || true
+        run: pytest tests/ -v
+
