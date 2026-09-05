@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     ENABLE_CLOUDWATCH_METRICS: bool = False
     CLOUDWATCH_NAMESPACE: str = "HomeVerse/Application"
 
+    # Rate Limiting (Phase 42)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 5
+    RATE_LIMIT_REGISTER_PER_MINUTE: int = 3
+    RATE_LIMIT_AI_FREE_PER_DAY: int = 5
+    RATE_LIMIT_AI_PREMIUM_PER_DAY: int = 50
+    RATE_LIMIT_UPLOAD_PER_MINUTE: int = 10
+    RATE_LIMIT_DEFAULT_PER_MINUTE: int = 100
+
     model_config = SettingsConfigDict(
         env_file=(
             str(Path(__file__).resolve().parent.parent / ".env"),

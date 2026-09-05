@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -17,6 +17,12 @@ from app.schemas.what_if import (
     WhatIfPresetOption,
 )
 from app.ai.what_if_engine import WhatIfEngine
+from app.models.user import User as UserModel
+from app.core.rate_limiter import (
+    rate_limit_ai_generation,
+    rate_limit_upload,
+    get_user_ai_quota,
+)
 import time
 try:
     from app.monitoring.metrics import (
@@ -31,7 +37,7 @@ except ImportError:
 
 router = APIRouter()
 
-@router.post("/analyze-upload")
+@router.post("/analyze-upload", dependencies=[Depends(rate_limit_upload)])
 async def upload_and_analyze_room(
     project_id: UUID = Form(...),
     file: UploadFile = File(...),
@@ -85,7 +91,11 @@ async def upload_and_analyze_room(
             AI_GENERATION_FAILURES_TOTAL.labels(model="gemini-multimodal", error_type=type(exc).__name__).inc()
         raise exc
 
-@router.post("/generate-dynamic-design", response_model=DesignSchema)
+@router.post(
+    "/generate-dynamic-design",
+    response_model=DesignSchema,
+    dependencies=[Depends(rate_limit_ai_generation)],
+)
 async def generate_dynamic_design_endpoint(
     project_id: UUID = Form(...),
     room_type: str = Form(...),
@@ -983,6 +993,42 @@ def apply_what_if_scenario(
         scenario_id=req.scenario_id
     )
     return design
+
+
+@router.get("/quota")
+async def get_ai_quota_endpoint(
+    request: Request,
+    email: Optional[str] = None,
+    user_id: Optional[UUID] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Returns the user's daily AI generation quota, used count, and tier information.
+    """
+    user = None
+    target_id = request.headers.get("X-User-Id") or (str(user_id) if user_id else None)
+    target_email = request.headers.get("X-User-Email") or email
+
+    if target_id:
+        try:
+            uid = UUID(str(target_id))
+            user = db.query(UserModel).filter(UserModel.id == uid).first()
+        except (ValueError, TypeError):
+            pass
+
+    if not user and target_email:
+        user = db.query(UserModel).filter(UserModel.email == str(target_email)).first()
+
+    # Extract client IP
+    forwarded = request.headers.get("X-Forwarded-For")
+    client_ip = (
+        forwarded.split(",")[0].strip()
+        if forwarded
+        else (request.client.host if request.client else "127.0.0.1")
+    )
+
+    return get_user_ai_quota(user, client_ip)
+
 
 
 

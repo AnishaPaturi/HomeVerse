@@ -58,6 +58,8 @@ async def homeverse_exception_handler(request: Request, exc: HomeVerseException)
     """Handles domain-specific HomeVerse exceptions."""
     req_id = _resolve_request_id(request)
     headers = {"X-Request-ID": req_id}
+    if getattr(exc, "headers", None):
+        headers.update(exc.headers)
 
     payload = {
         "error": {

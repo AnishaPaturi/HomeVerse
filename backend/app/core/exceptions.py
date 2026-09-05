@@ -25,12 +25,14 @@ class HomeVerseException(Exception):
         code: str = "APPLICATION_ERROR",
         status_code: int = 400,
         details: Optional[Any] = None,
+        headers: Optional[dict] = None,
     ):
         super().__init__(message)
         self.message = message
         self.code = code
         self.status_code = status_code
         self.details = details
+        self.headers = headers or {}
 
 
 # Specialized Domain Exceptions
@@ -157,11 +159,17 @@ class RateLimitExceededException(HomeVerseException):
         self,
         message: str = "Too many requests. Please slow down and try again later.",
         retry_after_seconds: Optional[int] = None,
+        headers: Optional[dict] = None,
     ):
         details = {"retry_after_seconds": retry_after_seconds} if retry_after_seconds else None
+        all_headers = dict(headers or {})
+        if retry_after_seconds is not None:
+            all_headers["Retry-After"] = str(retry_after_seconds)
+
         super().__init__(
             message=message,
             code="RATE_LIMIT_EXCEEDED",
             status_code=429,
             details=details,
+            headers=all_headers,
         )

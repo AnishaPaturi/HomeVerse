@@ -3,10 +3,16 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import User as UserSchema, UserCreate
+from app.core.rate_limiter import rate_limit_login, rate_limit_register
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit_register)],
+)
 def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.email == user_in.email).first()
     if db_user:
@@ -43,7 +49,11 @@ def get_demo_user(db: Session = Depends(get_db)):
         db.refresh(demo_user)
     return demo_user
 
-@router.post("/login", response_model=UserSchema)
+@router.post(
+    "/login",
+    response_model=UserSchema,
+    dependencies=[Depends(rate_limit_login)],
+)
 def login_user(email: str, db: Session = Depends(get_db)):
     """Login endpoint for development and testing."""
     user = db.query(UserModel).filter(UserModel.email == email).first()
