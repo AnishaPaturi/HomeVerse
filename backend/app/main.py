@@ -10,12 +10,14 @@ try:
     from app.config import settings
     from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from app.monitoring.middleware import PrometheusMiddleware
+    from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.db.base import Base
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
     from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from backend.app.monitoring.middleware import PrometheusMiddleware
+    from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.db.base import Base
     from backend.app.db.session import engine
 
@@ -44,6 +46,9 @@ app.add_middleware(
 # Prometheus Observability Middleware (Phase 38)
 if getattr(settings, "ENABLE_PROMETHEUS_METRICS", True):
     app.add_middleware(PrometheusMiddleware)
+
+# Structured JSON Logging Middleware (Phase 40)
+app.add_middleware(StructuredLoggingMiddleware)
 
 # Core endpoints
 @app.get("/")
