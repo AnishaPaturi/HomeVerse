@@ -10,6 +10,7 @@ from app.models.budget import Budget, BudgetCategory
 from app.models.product import Product, ShoppingItem
 from app.models.execution import ExecutionTask, Expense
 from app.models.object import Object
+from app.models.ai_usage import AIUsage
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "ExecutionTask",
     "Expense",
     "Object",
+    "AIUsage",
 ]

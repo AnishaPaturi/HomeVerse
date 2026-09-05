@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_UPLOAD_PER_MINUTE: int = 10
     RATE_LIMIT_DEFAULT_PER_MINUTE: int = 100
 
+    # AI Cost Control & Limits (Phase 44)
+    AI_COST_TRACKING_ENABLED: bool = True
+    AI_COST_FREE_LIMIT_MONTHLY: float = 1.00
+    AI_COST_PREMIUM_LIMIT_MONTHLY: float = 15.00
+    AI_COST_PRO_LIMIT_MONTHLY: float = 60.00
+
     model_config = SettingsConfigDict(
         env_file=(
             str(Path(__file__).resolve().parent.parent / ".env"),

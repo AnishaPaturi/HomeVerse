@@ -173,3 +173,27 @@ class RateLimitExceededException(HomeVerseException):
             details=details,
             headers=all_headers,
         )
+
+
+class AICostLimitExceededException(HomeVerseException):
+    """Raised when a user exceeds their tier-allocated AI cost/spending budget (Phase 44)."""
+
+    def __init__(
+        self,
+        message: str = "Monthly AI generation spending limit exceeded. Please upgrade your subscription tier to continue.",
+        current_spend: Optional[float] = None,
+        limit: Optional[float] = None,
+        details: Optional[Any] = None,
+    ):
+        info = dict(details or {})
+        if current_spend is not None:
+            info["current_spend_usd"] = round(current_spend, 4)
+        if limit is not None:
+            info["monthly_limit_usd"] = round(limit, 2)
+
+        super().__init__(
+            message=message,
+            code="AI_COST_LIMIT_EXCEEDED",
+            status_code=402,
+            details=info or None,
+        )

@@ -43,6 +43,8 @@ export function getHumanErrorMessage(error: unknown): string {
     switch (error.code) {
       case "BUDGET_EXCEEDED":
         return "Design exceeds the configured budget. Use 'What If?' mode or product alternatives to balance your cost.";
+      case "AI_COST_LIMIT_EXCEEDED":
+        return "Monthly AI generation budget limit reached for your account tier. Please upgrade your plan or wait until next month.";
       case "AI_GENERATION_FAILED":
         return "AI design generation encountered an issue. Please retry or adjust your custom prompt.";
       case "UNAUTHORIZED":
@@ -139,4 +141,40 @@ export async function fetchAiQuota(email?: string): Promise<AiQuota> {
   const query = email ? `?email=${encodeURIComponent(email)}` : "";
   return fetchApi<AiQuota>(`/api/ai/quota${query}`);
 }
+
+export interface AiUsageSummary {
+  user_id: string;
+  plan: string;
+  monthly_limit_usd: number;
+  current_month_spend_usd: number;
+  remaining_budget_usd: number;
+  percentage_used: number;
+  total_generations: number;
+  total_tokens: number;
+  total_images: number;
+  cost_by_model: Record<string, number>;
+  cost_by_operation: Record<string, number>;
+  window_days: number;
+}
+
+export interface AiSpendingLimit {
+  user_id: string;
+  plan: string;
+  monthly_limit_usd: number;
+  current_spend_usd: number;
+  remaining_budget_usd: number;
+  percentage_used: number;
+  is_budget_exceeded: boolean;
+}
+
+export async function fetchAiUsageSummary(email?: string, days: number = 30): Promise<AiUsageSummary> {
+  const query = email ? `?email=${encodeURIComponent(email)}&days=${days}` : `?days=${days}`;
+  return fetchApi<AiUsageSummary>(`/api/ai/usage/summary${query}`);
+}
+
+export async function fetchAiSpendingLimits(email?: string): Promise<AiSpendingLimit> {
+  const query = email ? `?email=${encodeURIComponent(email)}` : "";
+  return fetchApi<AiSpendingLimit>(`/api/ai/usage/limits${query}`);
+}
+
 

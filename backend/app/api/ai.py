@@ -18,6 +18,7 @@ from app.schemas.what_if import (
 )
 from app.ai.what_if_engine import WhatIfEngine
 from app.models.user import User as UserModel
+from app.models.project import Project as ProjectModel
 from app.core.rate_limiter import (
     rate_limit_ai_generation,
     rate_limit_upload,
@@ -25,6 +26,7 @@ from app.core.rate_limiter import (
 )
 from app.core.file_security import validate_uploaded_file
 from app.core.input_validation import sanitize_text, sanitize_prompt
+from app.core.ai_cost_tracker import check_ai_cost_limit, record_ai_usage
 import time
 try:
     from app.monitoring.metrics import (
@@ -122,6 +124,12 @@ async def generate_dynamic_design_endpoint(
     color_palette = sanitize_text(color_palette) if color_palette else None
     custom_prompt = sanitize_prompt(custom_prompt) if custom_prompt else None
 
+    # Verify user AI spending budget before execution (Phase 44)
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    user = db.query(UserModel).filter(UserModel.id == project.user_id).first() if project else None
+    if user:
+        check_ai_cost_limit(db, user, projected_additional_cost=0.001)
+
     start_time = time.perf_counter()
     if AI_GENERATION_REQUESTS_TOTAL:
         AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-3.5-flash", status="initiated").inc()
@@ -140,6 +148,20 @@ async def generate_dynamic_design_endpoint(
             AI_GENERATION_DURATION_SECONDS.labels(model="gemini-3.5-flash").observe(duration)
         if AI_GENERATION_REQUESTS_TOTAL:
             AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-3.5-flash", status="success").inc()
+
+        # Track usage and estimated cost in database (Phase 44)
+        if user:
+            record_ai_usage(
+                db=db,
+                user_id=user.id,
+                operation="dynamic_design",
+                model="gemini-3.5-flash",
+                input_tokens=1800,
+                output_tokens=650,
+                image_count=1,
+                generation_id=str(design.id) if hasattr(design, "id") else None,
+            )
+
         return design
     except Exception as exc:
         if AI_GENERATION_FAILURES_TOTAL:
