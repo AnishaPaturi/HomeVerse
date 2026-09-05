@@ -12,6 +12,8 @@ try:
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
+    from app.core.security_headers import SecurityHeadersMiddleware
+    from app.core.security import verify_secrets_hygiene
     from app.db.base import Base
     from app.db.session import engine
 except ImportError:
@@ -20,8 +22,13 @@ except ImportError:
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
+    from backend.app.core.security_headers import SecurityHeadersMiddleware
+    from backend.app.core.security import verify_secrets_hygiene
     from backend.app.db.base import Base
     from backend.app.db.session import engine
+
+# Verify secrets hygiene on application startup (Phase 43)
+verify_secrets_hygiene()
 
 # Initialize Base tables
 try:
@@ -38,14 +45,31 @@ app = FastAPI(
 # Standardized Global Error Handlers (Phase 41)
 register_error_handlers(app)
 
-# CORS
-cors_origins = getattr(settings, "CORS_ORIGINS", ["*"])
+# Security Headers & HTTPS Enforcement Middleware (Phase 43)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Hardened CORS Configuration (Phase 43)
+cors_origins = getattr(settings, "CORS_ORIGINS", None)
+if not cors_origins or cors_origins == ["*"]:
+    cors_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+        "Retry-After",
+    ],
 )
 
 # Prometheus Observability Middleware (Phase 38)

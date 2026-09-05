@@ -23,6 +23,8 @@ from app.core.rate_limiter import (
     rate_limit_upload,
     get_user_ai_quota,
 )
+from app.core.file_security import validate_uploaded_file
+from app.core.input_validation import sanitize_text, sanitize_prompt
 import time
 try:
     from app.monitoring.metrics import (
@@ -57,11 +59,19 @@ async def upload_and_analyze_room(
     # Read the file bytes for validation
     file_bytes = await file.read()
     await file.seek(0)
-    
+
+    # Binary magic-byte, size, and executable protection (Phase 43)
+    detected_mime, detected_ext, safe_name = validate_uploaded_file(
+        file_bytes=file_bytes,
+        claimed_filename=file.filename,
+        claimed_content_type=file.content_type,
+    )
+    file.filename = safe_name
+
     is_valid = await ai_service.validate_upload_content(
         file_bytes=file_bytes,
         filename=file.filename,
-        mime_type=file.content_type or "image/jpeg"
+        mime_type=detected_mime,
     )
     if not is_valid:
         raise HTTPException(
@@ -107,6 +117,11 @@ async def generate_dynamic_design_endpoint(
     """
     Generates a single design variation dynamically based on the user's choices.
     """
+    room_type = sanitize_text(room_type)
+    style = sanitize_text(style)
+    color_palette = sanitize_text(color_palette) if color_palette else None
+    custom_prompt = sanitize_prompt(custom_prompt) if custom_prompt else None
+
     start_time = time.perf_counter()
     if AI_GENERATION_REQUESTS_TOTAL:
         AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-3.5-flash", status="initiated").inc()

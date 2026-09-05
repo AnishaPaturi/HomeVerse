@@ -10,10 +10,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/homeverse"
     REDIS_URL: str = "redis://localhost:6379/0"
     
-    # Security
+    # Security (Phase 43)
     JWT_SECRET: str = "homeverse-dev-secret-key-do-not-use-in-production"
+    SECRET_KEY: str = "homeverse-dev-secret-key-do-not-use-in-production"
     JWT_ALGORITHM: str = "HS256"
+    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    PASSWORD_MIN_LENGTH: int = 8
+    ENFORCE_HTTPS: bool = False
+    ENABLE_SECURITY_HEADERS: bool = True
+    MAX_UPLOAD_SIZE_MB: int = 15
+    ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"]
     
     # CORS
     CORS_ORIGINS: List[str] = [
