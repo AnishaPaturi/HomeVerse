@@ -8,13 +8,13 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from app.monitoring.middleware import PrometheusMiddleware
     from app.db.base import Base
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.db.base import Base
     from backend.app.db.session import engine
@@ -54,9 +54,9 @@ def root():
         "status": "online"
     }
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+# Health probes & subsystem readiness (Phase 39)
+app.include_router(health.router, prefix="/health", tags=["Health Checks"])
+app.include_router(health.router, prefix="/api/health", tags=["Health Checks"])
 
 @app.get("/metrics", tags=["Monitoring & Telemetry"], include_in_schema=True)
 def prometheus_metrics():

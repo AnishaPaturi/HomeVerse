@@ -20,6 +20,8 @@ def run_smoke_tests(base_url: str) -> bool:
 
     endpoints = [
         {"path": "/health", "expected_status": 200, "desc": "Service Health Probe"},
+        {"path": "/health/db", "expected_status": 200, "desc": "Database Connectivity Probe"},
+        {"path": "/health/live", "expected_status": 200, "desc": "Kubernetes Liveness Probe"},
         {"path": "/", "expected_status": 200, "desc": "API Root Welcome Endpoint"},
         {"path": "/api/preferences/reference-images", "expected_status": 200, "desc": "Preference Discovery Catalog"},
         {"path": "/api/ai/what-if/presets", "expected_status": 200, "desc": "What-If Simulation Engine"},
