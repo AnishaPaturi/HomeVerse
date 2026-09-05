@@ -11,6 +11,7 @@ try:
     from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
+    from app.core.error_handlers import register_error_handlers
     from app.db.base import Base
     from app.db.session import engine
 except ImportError:
@@ -18,6 +19,7 @@ except ImportError:
     from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
+    from backend.app.core.error_handlers import register_error_handlers
     from backend.app.db.base import Base
     from backend.app.db.session import engine
 
@@ -32,6 +34,9 @@ app = FastAPI(
     description="AI Interior Design & Budget Planning Platform API",
     version="1.0.0",
 )
+
+# Standardized Global Error Handlers (Phase 41)
+register_error_handlers(app)
 
 # CORS
 cors_origins = getattr(settings, "CORS_ORIGINS", ["*"])
