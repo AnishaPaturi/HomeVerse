@@ -125,3 +125,18 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
 
   return response.json();
 }
+
+export interface AiQuota {
+  tier: string;
+  is_premium: boolean;
+  limit_per_day: number;
+  used_today: number;
+  remaining_today: number;
+  resets_in_seconds: number;
+}
+
+export async function fetchAiQuota(email?: string): Promise<AiQuota> {
+  const query = email ? `?email=${encodeURIComponent(email)}` : "";
+  return fetchApi<AiQuota>(`/api/ai/quota${query}`);
+}
+
