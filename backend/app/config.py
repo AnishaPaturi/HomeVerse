@@ -1,5 +1,6 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 from typing import List, Literal
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "HomeVerse"
@@ -37,11 +38,18 @@ class Settings(BaseSettings):
     AI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    CLAUDE_API_KEY: str = ""
+    # Monitoring & Observability (Phase 38)
+    ENABLE_PROMETHEUS_METRICS: bool = True
+    ENABLE_CLOUDWATCH_METRICS: bool = False
+    CLOUDWATCH_NAMESPACE: str = "HomeVerse/Application"
 
     model_config = SettingsConfigDict(
-        env_file=(".env", ".env.local"),
-        extra="ignore"
+        env_file=(
+            str(Path(__file__).resolve().parent.parent / ".env"),
+            ".env",
+            ".env.local",
+        ),
+        extra="ignore",
     )
 
     @property

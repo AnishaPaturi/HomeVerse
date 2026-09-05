@@ -17,6 +17,17 @@ from app.schemas.what_if import (
     WhatIfPresetOption,
 )
 from app.ai.what_if_engine import WhatIfEngine
+import time
+try:
+    from app.monitoring.metrics import (
+        AI_GENERATION_REQUESTS_TOTAL,
+        AI_GENERATION_FAILURES_TOTAL,
+        AI_GENERATION_DURATION_SECONDS,
+    )
+except ImportError:
+    AI_GENERATION_REQUESTS_TOTAL = None
+    AI_GENERATION_FAILURES_TOTAL = None
+    AI_GENERATION_DURATION_SECONDS = None
 
 router = APIRouter()
 
@@ -52,13 +63,27 @@ async def upload_and_analyze_room(
             detail="Not appropriate data supplied to the app. The uploaded file does not appear to be an interior room, home area, or blueprint plan."
         )
     
-    # Process the file using the AI service wrapper
-    result = await ai_service.analyze_room_upload(
-        project_id=project_id,
-        file=file,
-        db=db
-    )
-    return result
+    start_time = time.perf_counter()
+    if AI_GENERATION_REQUESTS_TOTAL:
+        AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-multimodal", status="initiated").inc()
+
+    try:
+        # Process the file using the AI service wrapper
+        result = await ai_service.analyze_room_upload(
+            project_id=project_id,
+            file=file,
+            db=db
+        )
+        duration = time.perf_counter() - start_time
+        if AI_GENERATION_DURATION_SECONDS:
+            AI_GENERATION_DURATION_SECONDS.labels(model="gemini-multimodal").observe(duration)
+        if AI_GENERATION_REQUESTS_TOTAL:
+            AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-multimodal", status="success").inc()
+        return result
+    except Exception as exc:
+        if AI_GENERATION_FAILURES_TOTAL:
+            AI_GENERATION_FAILURES_TOTAL.labels(model="gemini-multimodal", error_type=type(exc).__name__).inc()
+        raise exc
 
 @router.post("/generate-dynamic-design", response_model=DesignSchema)
 async def generate_dynamic_design_endpoint(
@@ -72,15 +97,29 @@ async def generate_dynamic_design_endpoint(
     """
     Generates a single design variation dynamically based on the user's choices.
     """
-    design = await ai_service.generate_dynamic_design(
-        project_id=project_id,
-        room_type=room_type,
-        style=style,
-        color_palette=color_palette,
-        custom_prompt=custom_prompt,
-        db=db
-    )
-    return design
+    start_time = time.perf_counter()
+    if AI_GENERATION_REQUESTS_TOTAL:
+        AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-3.5-flash", status="initiated").inc()
+
+    try:
+        design = await ai_service.generate_dynamic_design(
+            project_id=project_id,
+            room_type=room_type,
+            style=style,
+            color_palette=color_palette,
+            custom_prompt=custom_prompt,
+            db=db
+        )
+        duration = time.perf_counter() - start_time
+        if AI_GENERATION_DURATION_SECONDS:
+            AI_GENERATION_DURATION_SECONDS.labels(model="gemini-3.5-flash").observe(duration)
+        if AI_GENERATION_REQUESTS_TOTAL:
+            AI_GENERATION_REQUESTS_TOTAL.labels(model="gemini-3.5-flash", status="success").inc()
+        return design
+    except Exception as exc:
+        if AI_GENERATION_FAILURES_TOTAL:
+            AI_GENERATION_FAILURES_TOTAL.labels(model="gemini-3.5-flash", error_type=type(exc).__name__).inc()
+        raise exc
 
 @router.post("/copilot-chat")
 async def copilot_chat(

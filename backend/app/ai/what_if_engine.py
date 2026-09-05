@@ -24,6 +24,11 @@ from app.schemas.what_if import (
     WhatIfPresetOption,
 )
 
+try:
+    from app.monitoring.metrics import BUDGET_OPTIMIZATIONS_TOTAL
+except ImportError:
+    BUDGET_OPTIMIZATIONS_TOTAL = None
+
 PRESET_OPTIONS: List[WhatIfPresetOption] = [
     WhatIfPresetOption(
         id="reduce_budget",
@@ -92,10 +97,15 @@ class WhatIfEngine:
     ) -> WhatIfScenarioResponse:
         design = db.query(Design).filter(Design.id == req.design_id).first()
         if not design:
+            if BUDGET_OPTIMIZATIONS_TOTAL:
+                BUDGET_OPTIMIZATIONS_TOTAL.labels(status="failed").inc()
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Design {req.design_id} not found",
             )
+
+        if BUDGET_OPTIMIZATIONS_TOTAL:
+            BUDGET_OPTIMIZATIONS_TOTAL.labels(status="success").inc()
 
         items = db.query(DesignItem).filter(DesignItem.design_id == req.design_id).all()
         # Fallback if design has no items yet
