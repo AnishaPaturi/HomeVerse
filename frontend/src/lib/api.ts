@@ -177,4 +177,7 @@ export async function fetchAiSpendingLimits(email?: string): Promise<AiSpendingL
   return fetchApi<AiSpendingLimit>(`/api/ai/usage/limits${query}`);
 }
 
+export * from "./analytics";
+
+
 

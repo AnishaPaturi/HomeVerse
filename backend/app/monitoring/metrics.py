@@ -91,6 +91,13 @@ BUDGET_OPTIMIZATIONS_TOTAL = _get_or_create_metric(
     ["status"],
 )
 
+PRODUCT_ANALYTICS_EVENTS_TOTAL = _get_or_create_metric(
+    Counter,
+    "homeverse_product_analytics_events_total",
+    "Total count of product analytics events recorded",
+    ["event_name"],
+)
+
 # ==========================================
 # 4. ACTIVE PROJECTS & DATABASE METRICS
 # ==========================================

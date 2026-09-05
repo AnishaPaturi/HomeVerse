@@ -8,7 +8,7 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
@@ -19,7 +19,7 @@ try:
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
@@ -111,6 +111,7 @@ app.include_router(recommend.router, tags=["Recommendations"])
 app.include_router(preferences.router, prefix="/api/preferences", tags=["Preferences & Style"])
 app.include_router(budget.router, prefix="/api/budget", tags=["Budget"])
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring & Telemetry"])
+app.include_router(analytics.router, prefix="/api", tags=["Product Analytics"])
 
 if __name__ == "__main__":
     import uvicorn

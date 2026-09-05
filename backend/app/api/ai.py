@@ -162,6 +162,24 @@ async def generate_dynamic_design_endpoint(
                 generation_id=str(design.id) if hasattr(design, "id") else None,
             )
 
+        # Product analytics event (Phase 45)
+        try:
+            from app.core.analytics import track_event
+            track_event(
+                db=db,
+                event_name="design_generated",
+                user_id=user.id if user else None,
+                properties={
+                    "project_id": str(project_id),
+                    "room_type": room_type,
+                    "style": style,
+                    "color_palette": color_palette,
+                    "design_id": str(design.id) if hasattr(design, "id") else None,
+                },
+            )
+        except Exception:
+            pass
+
         return design
     except Exception as exc:
         if AI_GENERATION_FAILURES_TOTAL:
@@ -1013,7 +1031,22 @@ def simulate_what_if_scenario(
     Simulates modifications to Design, Furniture, Materials, and Cost
     answering user's 'What If?' question without rebuilding the entire project.
     """
-    return WhatIfEngine.simulate(db=db, req=req)
+    result = WhatIfEngine.simulate(db=db, req=req)
+    try:
+        from app.core.analytics import track_event
+        track_event(
+            db=db,
+            event_name="budget_optimized",
+            properties={
+                "design_id": str(req.design_id),
+                "budget": result.new_budget,
+                "cost_delta": result.cost_delta,
+                "scenario_title": result.scenario_title,
+            },
+        )
+    except Exception:
+        pass
+    return result
 
 
 @router.post("/what-if/apply", response_model=DesignSchema)

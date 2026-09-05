@@ -24,6 +24,7 @@ from app.core.security import (
 )
 from app.core.input_validation import sanitize_text
 from app.core.exceptions import UnauthorizedException, ValidationErrorException, ResourceNotFoundException
+from app.core.analytics import track_event
 
 router = APIRouter()
 
@@ -61,6 +62,18 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Product analytics event (Phase 45)
+    try:
+        track_event(
+            db=db,
+            event_name="user_registered",
+            user_id=user.id,
+            properties={"email": user.email, "plan": user.plan},
+        )
+    except Exception:
+        pass
+
     return user
 
 

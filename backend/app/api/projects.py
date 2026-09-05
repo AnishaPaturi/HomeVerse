@@ -7,6 +7,7 @@ from app.models.project import Project as ProjectModel
 from app.models.budget import Budget as BudgetModel
 from app.models.user import User as UserModel, UserPreference as UserPreferenceModel
 from app.schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
+from app.core.analytics import track_event
 import uuid
 
 router = APIRouter()
@@ -87,6 +88,27 @@ def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(project)
+
+    # Product analytics event (Phase 45)
+    try:
+        track_event(
+            db=db,
+            event_name="project_created",
+            user_id=project.user_id,
+            properties={
+                "project_id": str(project.id),
+                "name": project.name,
+                "property_type": project.property_type,
+                "bhk": project.bhk,
+                "area_sqft": project.area_sqft,
+                "budget": project.budget,
+                "currency": project.currency,
+                "room_type": project.room_type,
+            },
+        )
+    except Exception:
+        pass
+
     return project
 
 @router.get("", response_model=List[ProjectSchema])

@@ -11,6 +11,7 @@ from app.models.product import Product, ShoppingItem
 from app.models.execution import ExecutionTask, Expense
 from app.models.object import Object
 from app.models.ai_usage import AIUsage
+from app.models.analytics_event import AnalyticsEvent
 
 __all__ = [
     "User",
@@ -28,4 +29,5 @@ __all__ = [
     "Expense",
     "Object",
     "AIUsage",
+    "AnalyticsEvent",
 ]
