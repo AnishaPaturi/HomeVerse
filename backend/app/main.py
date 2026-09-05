@@ -13,6 +13,7 @@ try:
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
     from app.core.security_headers import SecurityHeadersMiddleware
+    from app.core.csrf import CSRFMiddleware
     from app.core.security import verify_secrets_hygiene
     from app.db.base import Base
     from app.db.session import engine
@@ -23,6 +24,7 @@ except ImportError:
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
     from backend.app.core.security_headers import SecurityHeadersMiddleware
+    from backend.app.core.csrf import CSRFMiddleware
     from backend.app.core.security import verify_secrets_hygiene
     from backend.app.db.base import Base
     from backend.app.db.session import engine
@@ -44,6 +46,9 @@ app = FastAPI(
 
 # Standardized Global Error Handlers (Phase 41)
 register_error_handlers(app)
+
+# CSRF Protection Middleware (Phase 43)
+app.add_middleware(CSRFMiddleware)
 
 # Security Headers & HTTPS Enforcement Middleware (Phase 43)
 app.add_middleware(SecurityHeadersMiddleware)

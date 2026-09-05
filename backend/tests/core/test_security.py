@@ -335,3 +335,70 @@ def test_token_issuance_invalid_password_returns_401():
 def test_secrets_hygiene_checker():
     # In development mode, returns True
     assert verify_secrets_hygiene() is True
+
+
+# ============================================================================
+# 8. CSRF Protection and Token Cryptography
+# ============================================================================
+
+from app.core.csrf import generate_csrf_token, verify_csrf_token
+
+def test_csrf_token_generation_and_validation():
+    token = generate_csrf_token()
+    assert isinstance(token, str)
+    assert "." in token
+    assert verify_csrf_token(token) is True
+
+    # Tampered token
+    tampered = f"{token[:-4]}aaaa"
+    assert verify_csrf_token(tampered) is False
+    assert verify_csrf_token("") is False
+    assert verify_csrf_token("invalid-format") is False
+
+
+def test_csrf_middleware_enforcement_on_session_cookies():
+    client_ip = f"192.168.50.{uuid4().int % 240 + 1}"
+
+    # A request with session cookie but missing CSRF token is rejected with 403
+    resp = client.post(
+        "/api/auth/register",
+        json={"name": "Attacker", "email": "attacker@example.com"},
+        cookies={"session": "session_id_123"},
+        headers={"X-Forwarded-For": client_ip},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "FORBIDDEN"
+
+    # With valid CSRF token header, the request is permitted through
+    valid_csrf = generate_csrf_token()
+    resp_valid = client.post(
+        "/api/auth/register",
+        json={"name": "Valid User", "email": f"valid_{uuid4().hex[:6]}@example.com"},
+        cookies={"session": "session_id_123"},
+        headers={"X-CSRF-Token": valid_csrf, "X-Forwarded-For": client_ip},
+    )
+    assert resp_valid.status_code == 201
+
+
+# ============================================================================
+# 9. SQL Injection Parameterization Defense
+# ============================================================================
+
+def test_sql_injection_defense_in_orm_queries():
+    db = next(get_db())
+    try:
+        # Classical SQL injection strings
+        sqli_attempts = [
+            "' OR '1'='1",
+            "admin' --",
+            "'; DROP TABLE users; --",
+            "1' UNION SELECT * FROM users --",
+        ]
+
+        for payload in sqli_attempts:
+            # Querying by injected payload must return None safely without syntax error or table drop
+            result = db.query(UserModel).filter(UserModel.email == payload).first()
+            assert result is None
+    finally:
+        db.close()
+

@@ -133,14 +133,23 @@ In `backend/app/main.py`, CORS origins are strictly validated:
 
 ---
 
-## 9. Verification & Testing
+## 9. CSRF Defense & Double-Submit Tokens (`backend/app/core/csrf.py`)
 
-The security test suite in `backend/tests/core/test_security.py` validates all 17 security scenarios:
+HomeVerse implements double-submit CSRF protection:
+- **Stateless HMAC Signatures**: Generates cryptographically signed tokens (`generate_csrf_token()`) using HMAC-SHA256.
+- **Selective Enforcement**: REST requests authenticated strictly via `Authorization: Bearer <token>` are inherently immune to CSRF. When cookie-based authentication (`session` or `access_token` cookies) is utilized, `CSRFMiddleware` enforces matching `X-CSRF-Token` headers for all state-changing verbs (`POST`, `PUT`, `PATCH`, `DELETE`).
+- Safe idempotent methods (`GET`, `HEAD`, `OPTIONS`) and documentation endpoints are exempt.
+
+---
+
+## 10. Verification & Testing
+
+The security test suite in `backend/tests/core/test_security.py` validates all 20 security scenarios:
 ```powershell
-# Run security test suite
+# Run security test suite (20/20 tests passing)
 .\.venv\Scripts\pytest tests/core/test_security.py -v
 
-# Run entire backend test suite (84 tests passing)
+# Run entire backend test suite (87/87 tests passing)
 .\.venv\Scripts\pytest tests/ -v
 ```
 
@@ -162,3 +171,7 @@ Verified Test Scenarios:
 15. `test_token_issuance_and_profile_retrieval`: Token endpoint and Bearer auth on `/me`.
 16. `test_token_issuance_invalid_password_returns_401`: Password mismatch rejection.
 17. `test_secrets_hygiene_checker`: Production secret validation.
+18. `test_csrf_token_generation_and_validation`: Cryptographic HMAC CSRF token validation.
+19. `test_csrf_middleware_enforcement_on_session_cookies`: Rejection of cookie state-changes without CSRF tokens.
+20. `test_sql_injection_defense_in_orm_queries`: Immunity to classical SQL injection attempts.
+
