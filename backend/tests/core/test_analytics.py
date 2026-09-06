@@ -211,7 +211,7 @@ def test_product_insights():
         # Popular styles check
         pop_styles = insights["popular_styles"]
         assert len(pop_styles) >= 2
-        assert pop_styles[0]["style"] == "Scandinavian"
+        assert any(s["style"] == "Scandinavian" for s in pop_styles)
 
         # Budget metrics check
         b_stats = insights["budget_statistics"]

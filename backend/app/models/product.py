@@ -15,6 +15,12 @@ class Product(Base):
     image_url = Column(String, nullable=True)
     product_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
+    dimensions = Column(String, nullable=True)
+    rating = Column(Float, default=4.5)
+    availability = Column(String, default="in_stock")
+    style = Column(String, nullable=True)
+    material = Column(String, nullable=True)
+    colour = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class ShoppingItem(Base):

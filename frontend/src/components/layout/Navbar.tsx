@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { NotificationBell } from "./NotificationBell";
 
 export const Navbar: React.FC = () => {
   return (
@@ -15,6 +16,9 @@ export const Navbar: React.FC = () => {
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
               Dashboard
             </Link>
+            <Link href="/catalogue" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
+              Catalogue
+            </Link>
             <Link href="/studio" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
               Studio
             </Link>
@@ -25,6 +29,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
+          <NotificationBell />
           <Link
             href="/login"
             className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white"

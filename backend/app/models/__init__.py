@@ -12,6 +12,7 @@ from app.models.execution import ExecutionTask, Expense
 from app.models.object import Object
 from app.models.ai_usage import AIUsage
 from app.models.analytics_event import AnalyticsEvent
+from app.models.notification import Notification
 
 __all__ = [
     "User",
@@ -30,4 +31,6 @@ __all__ = [
     "Object",
     "AIUsage",
     "AnalyticsEvent",
+    "Notification",
 ]
+

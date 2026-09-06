@@ -8,7 +8,7 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
@@ -19,7 +19,7 @@ try:
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
@@ -117,6 +117,9 @@ app.include_router(shopping.router, prefix="/api", tags=["Shopping & Procurement
 app.include_router(execution.router, prefix="/api", tags=["Execution & Tasks"])
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring & Telemetry"])
 app.include_router(analytics.router, prefix="/api", tags=["Product Analytics"])
+app.include_router(products.router, prefix="/api/products", tags=["Product Catalogue"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications Engine"])
+app.include_router(chat.router, prefix="/api/ai", tags=["AI Design Copilot"])
 
 if __name__ == "__main__":
     import uvicorn

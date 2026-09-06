@@ -9,3 +9,6 @@ from app.models.budget import Budget, BudgetCategory
 from app.models.product import Product, ShoppingItem
 from app.models.execution import ExecutionTask, Expense
 from app.models.object import Object
+from app.models.notification import Notification
+from app.models.analytics_event import AnalyticsEvent
+
