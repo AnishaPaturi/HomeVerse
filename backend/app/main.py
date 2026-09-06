@@ -8,7 +8,7 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
@@ -19,7 +19,7 @@ try:
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
@@ -103,13 +103,18 @@ def prometheus_metrics():
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
+app.include_router(rooms.router, prefix="/api", tags=["Rooms"])
 app.include_router(designs.router, prefix="/api/designs", tags=["Designs"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(ai_usage.router, prefix="/api/ai", tags=["AI Cost & Usage"])
 app.include_router(recommend.router, tags=["Recommendations"])
 app.include_router(preferences.router, prefix="/api/preferences", tags=["Preferences & Style"])
 app.include_router(budget.router, prefix="/api/budget", tags=["Budget"])
+app.include_router(uploads.router, prefix="/api", tags=["Uploads & Media"])
+app.include_router(shopping.router, prefix="/api", tags=["Shopping & Procurement"])
+app.include_router(execution.router, prefix="/api", tags=["Execution & Tasks"])
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring & Telemetry"])
 app.include_router(analytics.router, prefix="/api", tags=["Product Analytics"])
 

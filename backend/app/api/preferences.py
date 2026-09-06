@@ -120,3 +120,42 @@ def get_current_preferences(db: Session = Depends(get_db)):
         },
         "confidence_score": 0.85
     }
+
+
+class DirectPreferenceUpdate(BaseModel):
+    style: Optional[str] = None
+    colour_preferences: Optional[List[str]] = None
+    material_preferences: Optional[List[str]] = None
+    lifestyle_preferences: Optional[Dict[str, Any]] = None
+
+
+@router.post("/{user_id}", response_model=Dict[str, Any])
+@router.put("/{user_id}", response_model=Dict[str, Any])
+def update_user_preferences_endpoint(
+    user_id: UUID,
+    payload: DirectPreferenceUpdate,
+    db: Session = Depends(get_db),
+):
+    """Saves or updates custom style and lifestyle preferences for a user."""
+    pref = db.query(UserPreferenceModel).filter(UserPreferenceModel.user_id == user_id).first()
+    if not pref:
+        pref = UserPreferenceModel(user_id=user_id)
+        db.add(pref)
+    if payload.style:
+        pref.style = payload.style
+    if payload.colour_preferences:
+        pref.colour_preferences = payload.colour_preferences
+    if payload.material_preferences:
+        pref.material_preferences = payload.material_preferences
+    if payload.lifestyle_preferences:
+        pref.lifestyle_preferences = payload.lifestyle_preferences
+    db.commit()
+    db.refresh(pref)
+    return {
+        "user_id": str(pref.user_id),
+        "style": pref.style,
+        "colour_preferences": pref.colour_preferences or [],
+        "material_preferences": pref.material_preferences or [],
+        "lifestyle_preferences": pref.lifestyle_preferences or {},
+    }
+

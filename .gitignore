@@ -73,3 +73,7 @@ override.tf.json
 docker-compose.override.yml
 *.log
 monitoring/grafana_data/
+
+# Uploads
+backend/static/uploads/
+static/uploads/
