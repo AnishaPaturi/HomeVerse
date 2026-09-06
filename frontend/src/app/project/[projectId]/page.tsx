@@ -17,6 +17,7 @@ export default function ProjectWorkspacePage() {
     { label: "Budget", href: `/project/${projectId}/budget`, desc: "Allocations & expenses" },
     { label: "Shopping", href: `/project/${projectId}/shopping`, desc: "Item lists & product links" },
     { label: "Execution", href: `/project/${projectId}/execution`, desc: "Tasks & progress" },
+    { label: "Digital Home Book", href: `/project/${projectId}/home-book`, desc: "Dossier & completion certificate" },
   ];
 
   return (

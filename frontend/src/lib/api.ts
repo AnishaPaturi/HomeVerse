@@ -177,7 +177,109 @@ export async function fetchAiSpendingLimits(email?: string): Promise<AiSpendingL
   return fetchApi<AiSpendingLimit>(`/api/ai/usage/limits${query}`);
 }
 
+export interface DigitalHomeBook {
+  project_id: string;
+  name: string;
+  property_type: string;
+  bhk: number;
+  area_sqft: number;
+  currency: string;
+  target_budget: number;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+  client_profile: {
+    user_name: string;
+    email: string | null;
+    lifestyle: Record<string, any>;
+    style_preferences: {
+      style?: string;
+      colours?: string[];
+      materials?: string[];
+    };
+  };
+  floor_plan: {
+    thumbnail: string;
+    detected_rooms: Array<{ name: string; dimensions: string; area_sqft: number }>;
+    structural_summary: string;
+  };
+  selected_design: {
+    id: string;
+    name: string;
+    style: string;
+    estimated_cost: number;
+    renders: {
+      primary?: string;
+      front?: string;
+      left?: string;
+      right?: string;
+      back?: string;
+    };
+    objects_count: number;
+    items_count: number;
+  };
+  all_designs_compared: Array<{
+    id: string;
+    name: string;
+    style: string;
+    estimated_cost: number;
+    selected: boolean;
+  }>;
+  budget_summary: {
+    target_budget: number;
+    initial_estimate: number;
+    optimized_cost: number;
+    savings_achieved: number;
+    total_expenses_spent: number;
+    budget_variance: number;
+    is_within_budget: boolean;
+    currency: string;
+  };
+  shopping_inventory: Array<{
+    name: string;
+    category: string;
+    quantity: number;
+    estimated_cost: number;
+    status: string;
+  }>;
+  execution_timeline: {
+    total_tasks: number;
+    completed_tasks: number;
+    completion_percentage: number;
+    tasks: Array<{
+      name: string;
+      status: string;
+      actual_cost?: number;
+      estimated_cost?: number;
+    }>;
+  };
+  maintenance_and_care: Array<{
+    material: string;
+    instructions: string;
+  }>;
+  completion_certificate: {
+    certificate_id: string;
+    issued_to: string;
+    project_name: string;
+    completion_date: string;
+    issued_by: string;
+  };
+}
+
+export async function fetchDigitalHomeBook(projectId: string): Promise<DigitalHomeBook> {
+  return fetchApi<DigitalHomeBook>(`/api/projects/${projectId}/digital-home-book`);
+}
+
+export async function completeProject(projectId: string): Promise<{ status: string; project_id: string; completed_at: string; home_book_url: string }> {
+  return fetchApi(`/api/projects/${projectId}/complete`, { method: "POST" });
+}
+
+export async function selectDesign(designId: string): Promise<any> {
+  return fetchApi(`/api/designs/${designId}/select`, { method: "POST" });
+}
+
 export * from "./analytics";
+
 
 
 

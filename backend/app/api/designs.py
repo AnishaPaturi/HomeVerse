@@ -82,6 +82,53 @@ def get_design(design_id: UUID, db: Session = Depends(get_db)):
     return design
 
 
+@router.post("/{design_id}/select", response_model=DesignSchema)
+def select_design(design_id: UUID, db: Session = Depends(get_db)):
+    """
+    Selects a specific design concept for the project (Phase 46).
+    Unselects other designs in the same project and triggers design_selected analytics.
+    """
+    design = db.query(DesignModel).filter(DesignModel.id == design_id).first()
+    if not design:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Design with ID {design_id} not found"
+        )
+
+    # Unselect sibling designs in the same project
+    if design.project_id:
+        db.query(DesignModel).filter(
+            DesignModel.project_id == design.project_id,
+            DesignModel.id != design_id,
+        ).update({"selected": False})
+
+    design.selected = True
+    db.commit()
+    db.refresh(design)
+
+    # Track analytics event (Phase 45/46)
+    try:
+        from app.core.analytics import track_event
+        from app.models.project import Project as ProjectModel
+        proj = db.query(ProjectModel).filter(ProjectModel.id == design.project_id).first()
+        u_id = proj.user_id if proj else None
+        track_event(
+            db=db,
+            event_name="design_selected",
+            user_id=u_id,
+            properties={
+                "design_id": str(design.id),
+                "project_id": str(design.project_id) if design.project_id else None,
+                "style": design.style,
+                "estimated_cost": design.estimated_cost,
+            },
+        )
+    except Exception:
+        pass
+
+    return design
+
+
 # ==========================================================
 # PHASE 15 — DESIGN COST CALCULATION ENDPOINTS
 # ==========================================================
