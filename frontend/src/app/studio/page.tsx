@@ -41,13 +41,17 @@ import {
   FileCode, 
   Film,
   Zap,
-  HelpCircle
+  HelpCircle,
+  Smartphone
 } from "lucide-react";
 import CanvasContainer from "@/components/studio/CanvasContainer";
 import BlueprintEditor2D from "@/components/studio/BlueprintEditor2D";
 import ObjectPropertiesPanel from "@/components/studio/ObjectPropertiesPanel";
 import CopilotChat from "@/components/studio/CopilotChat";
 import VRPanoramaModal from "@/components/studio/VRPanoramaModal";
+import VoiceAssistantWidget from "@/components/studio/VoiceAssistantWidget";
+import ARPlacementModal from "@/components/studio/ARPlacementModal";
+import MaterialExplorerModal from "@/components/studio/MaterialExplorerModal";
 
 interface RoomObject {
   id: string;
@@ -166,6 +170,59 @@ function StudioContent() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+
+  // Phase 49 V3 State
+  const [voiceWidgetOpen, setVoiceWidgetOpen] = useState(false);
+  const [arModalOpen, setArModalOpen] = useState(false);
+  const [arProductId, setArProductId] = useState<string>("ecc79f63-5725-499f-a47f-c2de03a095cf");
+  const [arProductName, setArProductName] = useState<string>("Boucle Sectional Sofa");
+  const [materialExplorerOpen, setMaterialExplorerOpen] = useState(false);
+  const [costDelta, setCostDelta] = useState<number>(0);
+  const [financialImpactSummary, setFinancialImpactSummary] = useState<string>("Standard PBR Material baseline.");
+  const [styleCoherenceScore, setStyleCoherenceScore] = useState<number>(96.5);
+
+  const handleRealtimeRoomEdit = async (newWallColor?: string, newFlooring?: string) => {
+    const wallCol = newWallColor || wallPaintColor;
+    const floorMat = newFlooring || flooringMaterial;
+
+    if (newWallColor) setWallPaintColor(newWallColor);
+    if (newFlooring) setFlooringMaterial(newFlooring);
+
+    // Update 3D canvas objects dynamically
+    setObjects((prev) =>
+      prev.map((obj) => {
+        if (obj.object_type === "partition") {
+          return { ...obj, material: wallCol };
+        }
+        if (obj.object_type === "floor") {
+          return { ...obj, material: floorMat.toLowerCase().includes("marble") ? "granite" : "wood_light" };
+        }
+        return obj;
+      })
+    );
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const targetRoomId = "eeea6d22-d8da-4177-af59-45f4611de56d";
+      const res = await fetch(`${apiBase}/api/rooms/${targetRoomId}/realtime-edit`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wall_colour: wallCol,
+          flooring_material: floorMat,
+          active_style: activeStyle,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCostDelta(data.cost_delta || 0);
+        setFinancialImpactSummary(data.financial_impact_summary || data.financial_summary || "");
+        setStyleCoherenceScore(data.style_coherence_score || data.style_coherence || 95.8);
+      }
+    } catch (err) {
+      console.warn("Notice: Real-time room edit:", err);
+    }
+  };
 
   // Load SessionStorage on Mount
   useEffect(() => {
@@ -465,8 +522,48 @@ function StudioContent() {
 
         </div>
 
-        {/* Right: Export Center + Share */}
-        <div className="flex items-center gap-2.5 font-mono text-xs">
+        {/* Right: Phase 49 Controls + Export Center + Share */}
+        <div className="flex items-center gap-2 font-mono text-xs">
+
+          {/* Real-time Room Edit Cost Ticker (Phase 49) */}
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-[11px]">
+            <span className="text-slate-400">Delta:</span>
+            <span className={`font-bold ${costDelta > 0 ? "text-amber-400" : costDelta < 0 ? "text-emerald-400" : "text-slate-300"}`}>
+              {costDelta > 0 ? `+₹${costDelta.toLocaleString("en-IN")}` : costDelta < 0 ? `-₹${Math.abs(costDelta).toLocaleString("en-IN")}` : "₹0"}
+            </span>
+            <span className="text-slate-600">|</span>
+            <span className="text-emerald-400 font-semibold">{styleCoherenceScore}% Coherent</span>
+          </div>
+
+          {/* Voice Assistant Copilot (Phase 49) */}
+          <button
+            onClick={() => setVoiceWidgetOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-medium transition-all cursor-pointer shadow-sm"
+            title="Launch Voice Copilot"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span className="hidden sm:inline">Voice Assistant</span>
+          </button>
+
+          {/* PBR Materials (Phase 49) */}
+          <button
+            onClick={() => setMaterialExplorerOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all cursor-pointer"
+            title="PBR Material Specs & Comparison"
+          >
+            <Layers className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Materials</span>
+          </button>
+
+          {/* AR View (Phase 49) */}
+          <button
+            onClick={() => setArModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-all cursor-pointer"
+            title="AR Mobile QuickLook & WebXR"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden sm:inline">AR View</span>
+          </button>
           
           <button
             onClick={() => {
@@ -1146,6 +1243,45 @@ function StudioContent() {
           </div>
         </div>
       )}
+
+      {/* Phase 49: Voice Assistant Widget */}
+      <VoiceAssistantWidget
+        isOpen={voiceWidgetOpen}
+        onClose={() => setVoiceWidgetOpen(false)}
+        onWallColorChange={(colorHex) => handleRealtimeRoomEdit(colorHex, undefined)}
+        onFlooringChange={(flooringName) => handleRealtimeRoomEdit(undefined, flooringName)}
+        onCameraChange={(viewType) => {
+          if (viewType === "top_down") setViewportMode("2D");
+          else if (viewType === "walkthrough") setViewportMode("walkthrough");
+          else setViewportMode("3D");
+        }}
+        onNavigateAction={(url) => {
+          if (url === "#ar") setArModalOpen(true);
+          else router.push(url);
+        }}
+      />
+
+      {/* Phase 49: AR Placement Modal */}
+      <ARPlacementModal
+        isOpen={arModalOpen}
+        onClose={() => setArModalOpen(false)}
+        productId={arProductId}
+        productName={arProductName}
+      />
+
+      {/* Phase 49: Advanced PBR Material Visualization & Comparison Modal */}
+      <MaterialExplorerModal
+        isOpen={materialExplorerOpen}
+        onClose={() => setMaterialExplorerOpen(false)}
+        onApplyMaterial={(mat, target) => {
+          if (target === "wall") {
+            handleRealtimeRoomEdit(mat.albedo_color, undefined);
+          } else {
+            handleRealtimeRoomEdit(undefined, mat.name);
+          }
+        }}
+        roomAreaSqft={280}
+      />
 
     </div>
   );

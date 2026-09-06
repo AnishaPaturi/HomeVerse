@@ -11,4 +11,6 @@ from app.models.execution import ExecutionTask, Expense
 from app.models.object import Object
 from app.models.notification import Notification
 from app.models.analytics_event import AnalyticsEvent
+from app.models.material import Material
+
 

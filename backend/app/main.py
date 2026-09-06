@@ -8,7 +8,7 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
@@ -19,7 +19,7 @@ try:
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
@@ -120,6 +120,11 @@ app.include_router(analytics.router, prefix="/api", tags=["Product Analytics"])
 app.include_router(products.router, prefix="/api/products", tags=["Product Catalogue"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications Engine"])
 app.include_router(chat.router, prefix="/api/ai", tags=["AI Design Copilot"])
+app.include_router(materials.router, prefix="/api/materials", tags=["Materials & PBR Specs"])
+app.include_router(scene_3d.router, prefix="/api", tags=["3D Visualization & Realtime Editing"])
+app.include_router(ar.router, prefix="/api", tags=["AR Furniture Placement"])
+app.include_router(floorplan.router, prefix="/api", tags=["Interactive Floor Plans"])
+app.include_router(voice.router, prefix="/api/voice", tags=["Voice Assistant Copilot"])
 
 if __name__ == "__main__":
     import uvicorn
