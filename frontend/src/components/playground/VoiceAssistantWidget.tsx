@@ -21,23 +21,25 @@ interface VoiceCommandResponse {
 interface VoiceAssistantWidgetProps {
   projectId?: string;
   roomId?: string;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   onWallColorChange?: (colorHex: string, colorName: string) => void;
   onFlooringChange?: (flooringName: string, costDelta: number) => void;
   onCameraChange?: (viewType: "isometric" | "walkthrough" | "top_down") => void;
   onNavigateAction?: (url: string) => void;
+  onVoiceCommand?: (cmd: string) => void;
 }
 
 export default function VoiceAssistantWidget({
   projectId,
   roomId,
-  isOpen,
+  isOpen = true,
   onClose,
   onWallColorChange,
   onFlooringChange,
   onCameraChange,
   onNavigateAction,
+  onVoiceCommand,
 }: VoiceAssistantWidgetProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -150,6 +152,7 @@ export default function VoiceAssistantWidget({
     setIsProcessing(true);
 
     setHistory((prev) => [...prev, { sender: "user", text: trimmed }]);
+    onVoiceCommand?.(trimmed);
 
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";

@@ -15,30 +15,32 @@ interface RoomObject {
 }
 
 interface BlueprintEditor2DProps {
-  objects: RoomObject[];
-  selectedObjectId: string | null;
-  onSelectObject: (id: string | null) => void;
-  onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
-  onDeleteObject: (id: string) => void;
-  onAddObject: (type: any, customMaterial?: string, customScale?: number) => void;
-  roomWidth: number;
-  roomDepth: number;
-  onUpdateRoomDimensions: (width: number, depth: number) => void;
-  activeFloor: number;
+  objects?: RoomObject[];
+  selectedObjectId?: string | null;
+  onSelectObject?: (id: string | null) => void;
+  onObjectSelect?: (obj: any) => void;
+  onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
+  onDeleteObject?: (id: string) => void;
+  onAddObject?: (type: any, customMaterial?: string, customScale?: number) => void;
+  roomWidth?: number;
+  roomDepth?: number;
+  onUpdateRoomDimensions?: (width: number, depth: number) => void;
+  activeFloor?: number;
   backgroundImageUrl?: string | null;
 }
 
 export default function BlueprintEditor2D({
-  objects,
-  selectedObjectId,
-  onSelectObject,
-  onUpdateObject,
-  onDeleteObject,
-  onAddObject,
-  roomWidth,
-  roomDepth,
-  onUpdateRoomDimensions,
-  activeFloor,
+  objects = [],
+  selectedObjectId = null,
+  onSelectObject = () => {},
+  onObjectSelect,
+  onUpdateObject = () => {},
+  onDeleteObject = () => {},
+  onAddObject = () => {},
+  roomWidth = 10,
+  roomDepth = 10,
+  onUpdateRoomDimensions = () => {},
+  activeFloor = 0,
   backgroundImageUrl = null,
 }: BlueprintEditor2DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
