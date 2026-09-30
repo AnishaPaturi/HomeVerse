@@ -5,6 +5,10 @@ export async function getFloors(projectId: string): Promise<Floor[]> {
   return await fetchApi<Floor[]>(`/api/projects/${projectId}/floors`);
 }
 
+export async function getFloorsByProject(projectId: string): Promise<Floor[]> {
+  return await fetchApi<Floor[]>(`/api/projects/${projectId}/floors`);
+}
+
 export async function createFloor(projectId: string, data: Partial<CreateFloorInput>): Promise<Floor> {
   return await fetchApi<Floor>(`/api/projects/${projectId}/floors`, {
     method: "POST",
@@ -15,3 +19,12 @@ export async function createFloor(projectId: string, data: Partial<CreateFloorIn
 export async function getFloor(floorId: string): Promise<Floor> {
   return await fetchApi<Floor>(`/api/floors/${floorId}`);
 }
+
+export const floorApi = {
+  getFloors,
+  getFloorsByProject,
+  createFloor,
+  getFloor,
+};
+
+export default floorApi;

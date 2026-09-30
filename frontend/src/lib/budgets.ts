@@ -5,6 +5,10 @@ export async function getBudget(projectId: string): Promise<Budget> {
   return await fetchApi<Budget>(`/api/budget/projects/${projectId}/budget`);
 }
 
+export async function getProjectBudget(projectId: string): Promise<Budget> {
+  return await fetchApi<Budget>(`/api/budget/projects/${projectId}/budget`);
+}
+
 export async function updateBudget(projectId: string, data: Partial<Budget>): Promise<Budget> {
   return await fetchApi<Budget>(`/api/budget/projects/${projectId}/budget`, {
     method: "PUT",
@@ -22,6 +26,10 @@ export async function getAllocations(
   if (roomId) query.append("room_id", roomId);
   const qStr = query.toString() ? `?${query.toString()}` : "";
   return await fetchApi<BudgetAllocation[]>(`/api/budget/projects/${projectId}/allocations${qStr}`);
+}
+
+export async function getBudgetAllocations(projectId: string): Promise<BudgetAllocation[]> {
+  return await fetchApi<BudgetAllocation[]>(`/api/budget/projects/${projectId}/allocations`);
 }
 
 export async function createAllocation(
@@ -47,6 +55,12 @@ export async function autoAllocateRoom(
   );
 }
 
+export async function autoAllocateRoomBudgets(projectId: string): Promise<any> {
+  return await fetchApi<any>(`/api/budget/projects/${projectId}/auto-allocate`, {
+    method: "POST",
+  });
+}
+
 export async function simulateBudgetImpact(data: {
   project_id: string;
   room_id?: string;
@@ -61,3 +75,35 @@ export async function simulateBudgetImpact(data: {
     body: JSON.stringify(data),
   });
 }
+
+export async function simulateImpact(
+  projectId: string,
+  itemType: string,
+  grade: string
+): Promise<any> {
+  return await fetchApi<any>(`/api/budget/simulate-impact`, {
+    method: "POST",
+    body: JSON.stringify({
+      project_id: projectId,
+      action_type: "upgrade_item",
+      item_category: itemType,
+      current_item_cost: 45000,
+      new_item_cost: grade === "luxury" ? 85000 : 32000,
+    }),
+  });
+}
+
+export const budgetApi = {
+  getBudget,
+  getProjectBudget,
+  updateBudget,
+  getAllocations,
+  getBudgetAllocations,
+  createAllocation,
+  autoAllocateRoom,
+  autoAllocateRoomBudgets,
+  simulateBudgetImpact,
+  simulateImpact,
+};
+
+export default budgetApi;
