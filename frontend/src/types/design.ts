@@ -23,7 +23,7 @@ export interface DesignVersion {
 
 export interface Design {
   id: string;
-  project_id: string;
+  project_id?: string;
   room_id?: string;
   name?: string;
   description?: string;

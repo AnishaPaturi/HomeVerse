@@ -227,27 +227,16 @@ export default function ProjectBudgetPage() {
 
         {/* Room Allocations Grid */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Layers className="w-5 h-5 text-emerald-400" />
-              <span>Room Budget Envelopes</span>
-            </h2>
-            <span className="text-xs font-mono text-slate-400">
-              {allocations.length} Active Envelopes
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {allocations.map((alloc) => (
-              <RoomBudget
-                key={alloc.id}
-                roomName={alloc.room_name || alloc.category || "Room"}
-                allocatedAmount={alloc.allocated_amount}
-                spentAmount={alloc.spent_amount || alloc.allocated_amount * 0.8}
-                category={alloc.category}
-              />
-            ))}
-          </div>
+          <RoomBudget
+            totalBudget={budget.total_budget || 1500000}
+            rooms={allocations.map((alloc) => ({
+              roomName: alloc.room_name || alloc.category || "Room",
+              roomType: alloc.category || "General",
+              allocatedAmount: alloc.allocated_amount,
+              spentAmount: alloc.spent_amount || alloc.allocated_amount * 0.8,
+              status: "completed",
+            }))}
+          />
         </div>
       </main>
     </div>
