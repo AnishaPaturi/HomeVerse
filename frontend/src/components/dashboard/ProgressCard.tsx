@@ -7,14 +7,20 @@ interface ProgressCardProps {
   completedRooms: number;
   totalRooms: number;
   activeDesignStyle?: string;
+  overallProgress?: number;
+  designProgress?: number;
+  procurementProgress?: number;
 }
 
 export const ProgressCard: React.FC<ProgressCardProps> = ({
   completedRooms = 2,
   totalRooms = 4,
   activeDesignStyle = "Modern",
+  overallProgress,
+  designProgress,
+  procurementProgress,
 }) => {
-  const percentage = totalRooms > 0 ? Math.round((completedRooms / totalRooms) * 100) : 0;
+  const percentage = overallProgress ?? (totalRooms > 0 ? Math.round((completedRooms / totalRooms) * 100) : 0);
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">

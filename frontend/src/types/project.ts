@@ -5,14 +5,20 @@ import { Budget } from "./budget";
 
 export interface Project {
   id: string;
-  user_id: string;
+  user_id?: string;
   name: string;
   title?: string;
-  property_type: "apartment" | "independent" | "villa" | string;
+  property_type?: "apartment" | "independent" | "villa" | string;
+  home_type?: string;
   bhk?: number;
   area_sqft?: number;
   budget?: number;
+  total_budget?: number;
   currency?: string;
+  budget_flexibility?: string;
+  design_style?: string;
+  floors_count?: number;
+  total_rooms?: number;
   room_type?: string;
   thumbnail?: string;
   created_at?: string;
@@ -25,11 +31,17 @@ export interface Project {
 
 export interface CreateProjectInput {
   name: string;
-  property_type: string;
+  property_type?: string;
+  home_type?: string;
   bhk?: number;
   area_sqft?: number;
   budget?: number;
+  total_budget?: number;
   currency?: string;
   budget_flexibility?: string;
+  design_style?: string;
   num_floors?: number;
+  floors_count?: number;
+  total_rooms?: number;
+  floors?: any[];
 }

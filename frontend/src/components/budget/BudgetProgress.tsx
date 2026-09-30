@@ -3,16 +3,24 @@ import { formatIndianBudget } from "@/lib/utils";
 
 interface BudgetProgressProps {
   totalBudget: number;
-  estimatedCost: number;
-  remainingAmount: number;
+  estimatedCost?: number;
+  spentAmount?: number;
+  remainingAmount?: number;
+  currency?: string;
+  flexibility?: string;
 }
 
 export const BudgetProgress: React.FC<BudgetProgressProps> = ({
   totalBudget,
   estimatedCost,
+  spentAmount,
   remainingAmount,
+  currency = "INR",
+  flexibility = "moderate",
 }) => {
-  const percentage = totalBudget > 0 ? Math.min(100, Math.round((estimatedCost / totalBudget) * 100)) : 0;
+  const actualCost = estimatedCost ?? spentAmount ?? 0;
+  const actualRemaining = remainingAmount ?? (totalBudget - actualCost);
+  const percentage = totalBudget > 0 ? Math.min(100, Math.round((actualCost / totalBudget) * 100)) : 0;
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6">

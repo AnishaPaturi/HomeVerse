@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Home,
@@ -14,20 +14,19 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  ShieldCheck,
 } from "lucide-react";
 
-import HomeTypeSelector from "@/components/home-setup/HomeTypeSelector";
-import FloorCountSelector from "@/components/home-setup/FloorCountSelector";
-import RoomCountSelector, { RoomConfig } from "@/components/home-setup/RoomCountSelector";
-import BudgetSelector from "@/components/home-setup/BudgetSelector";
-import FloorPlanUploader from "@/components/home-setup/FloorPlanUploader";
-import FloorPlanPreview from "@/components/home-setup/FloorPlanPreview";
-import DimensionConfirmation from "@/components/home-setup/DimensionConfirmation";
-import DimensionCorrection from "@/components/home-setup/DimensionCorrection";
-import RoomSelector, { RoomItem } from "@/components/home-setup/RoomSelector";
-import DesignStyleSelector from "@/components/home-setup/DesignStyleSelector";
-import GenerationStatus, { GenerationStep } from "@/components/ai/GenerationStatus";
+import { HomeTypeSelector } from "@/components/home-setup/HomeTypeSelector";
+import { FloorCountSelector } from "@/components/home-setup/FloorCountSelector";
+import { RoomCountSelector } from "@/components/home-setup/RoomCountSelector";
+import { BudgetSelector } from "@/components/home-setup/BudgetSelector";
+import { FloorPlanUploader } from "@/components/home-setup/FloorPlanUploader";
+import { FloorPlanPreview } from "@/components/home-setup/FloorPlanPreview";
+import { DimensionConfirmation } from "@/components/home-setup/DimensionConfirmation";
+import { DimensionCorrection } from "@/components/home-setup/DimensionCorrection";
+import { RoomSelector } from "@/components/home-setup/RoomSelector";
+import { DesignStyleSelector } from "@/components/home-setup/DesignStyleSelector";
+import { GenerationStatus, GenerationStep } from "@/components/ai/GenerationStatus";
 import { projectApi } from "@/lib/projects";
 import { budgetApi } from "@/lib/budgets";
 import { generateUUID } from "@/lib/utils";
@@ -40,42 +39,42 @@ export default function NewHomePage() {
   const totalSteps = 9;
 
   // Step 1: Home Type
-  const [homeType, setHomeType] = useState("apartment");
+  const [propertyType, setPropertyType] = useState<"independent" | "apartment">("apartment");
   const [projectName, setProjectName] = useState("My Dream Residence");
 
   // Step 2: Floor Count
   const [floorCount, setFloorCount] = useState(1);
 
   // Step 3: Room Counts
-  const [rooms, setRooms] = useState<RoomConfig[]>([
-    { type: "living_room", label: "Living Room", count: 1, defaultAreaSqm: 28 },
-    { type: "master_bedroom", label: "Master Bedroom", count: 1, defaultAreaSqm: 22 },
-    { type: "kitchen", label: "Kitchen", count: 1, defaultAreaSqm: 14 },
-    { type: "dining_room", label: "Dining Room", count: 1, defaultAreaSqm: 16 },
-  ]);
+  const [bhk, setBhk] = useState(3);
+  const [bedroomsCount, setBedroomsCount] = useState(3);
+  const [bathroomsCount, setBathroomsCount] = useState(2);
+  const [balconiesCount, setBalconiesCount] = useState(2);
 
-  // Step 4: Budget
+  // Step 4: Budget (Established during House Creation!)
   const [totalBudget, setTotalBudget] = useState(1500000); // ₹15 Lakhs default
-  const [flexibility, setFlexibility] = useState<"strict" | "moderate" | "flexible">("moderate");
+  const [flexibility, setFlexibility] = useState<"Strict" | "Moderate" | "Flexible">("Moderate");
 
   // Step 5: Floor Plan Upload
   const [floorPlanFile, setFloorPlanFile] = useState<File | null>(null);
-  const [floorPlanPreviewUrl, setFloorPlanPreviewUrl] = useState<string | null>(null);
+  const [floorPlanPreviewUrl, setFloorPlanPreviewUrl] = useState<string>(
+    "/templates/modern_north_layout-a.jpg"
+  );
 
   // Step 6: Dimensions
-  const [detectedDimensions, setDetectedDimensions] = useState({
-    width: 9.5,
-    length: 12.0,
-    ceilingHeight: 3.0,
-    unit: "meters" as "meters" | "feet",
-  });
+  const [detectedRooms, setDetectedRooms] = useState([
+    { name: "Living Room", room_type: "living_room", width_m: 5.5, length_m: 6.5, area_sqm: 35.75, confidence: 98 },
+    { name: "Kitchen & Dining", room_type: "kitchen", width_m: 4.0, length_m: 5.0, area_sqm: 20.0, confidence: 95 },
+    { name: "Master Bedroom", room_type: "master_bedroom", width_m: 4.5, length_m: 5.0, area_sqm: 22.5, confidence: 96 },
+    { name: "Guest Bedroom", room_type: "bedroom", width_m: 4.0, length_m: 4.5, area_sqm: 18.0, confidence: 93 },
+    { name: "Study Room", room_type: "office", width_m: 3.5, length_m: 4.0, area_sqm: 14.0, confidence: 91 },
+  ]);
   const [isEditingDimensions, setIsEditingDimensions] = useState(false);
 
-  // Step 7: Room Selection (for prioritized AI design)
-  const [selectableRooms, setSelectableRooms] = useState<RoomItem[]>([]);
-  const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
+  // Step 7: Room Focus
+  const [selectedRoom, setSelectedRoom] = useState("Living Room");
 
-  // Step 8: Design Style
+  // Step 8: Design Style DNA
   const [designStyle, setDesignStyle] = useState("Japandi");
 
   // Step 9: AI Generation Status
@@ -86,27 +85,7 @@ export default function NewHomePage() {
     { id: "3", label: "Generating 3D room geometries & PBR materials (" + designStyle + ")", status: "pending" },
     { id: "4", label: "Assembling spatial scene graph & digital twin", status: "pending" },
   ]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-
-  // Synchronize selectable rooms whenever room configurations change
-  useEffect(() => {
-    const list: RoomItem[] = [];
-    let idx = 1;
-    rooms.forEach((r) => {
-      for (let i = 1; i <= r.count; i++) {
-        list.push({
-          id: `room-${idx++}`,
-          name: r.count > 1 ? `${r.label} ${i}` : r.label,
-          type: r.type,
-          floorNumber: 1,
-          areaSqm: r.defaultAreaSqm,
-        });
-      }
-    });
-    setSelectableRooms(list);
-    setSelectedRoomIds(list.map((r) => r.id));
-  }, [rooms]);
 
   // Stepper titles
   const stepTitles = [
@@ -123,7 +102,6 @@ export default function NewHomePage() {
 
   const handleNext = () => {
     if (currentStep === 8) {
-      // Begin step 9: AI Generation
       setCurrentStep(9);
       startGenerationPipeline();
     } else {
@@ -137,70 +115,57 @@ export default function NewHomePage() {
 
   // Launch the generation pipeline & persist project
   const startGenerationPipeline = async () => {
-    setIsGenerating(true);
     setGenerationError(null);
-    setGenerationProgress(10);
+    setGenerationProgress(15);
 
-    // Step 1: Parse structure
+    // Step 1: Processing
     setGenerationSteps((prev) =>
       prev.map((s, idx) => (idx === 0 ? { ...s, status: "processing" } : s))
     );
 
-    // Build payload for backend
+    let createdProjectId = generateUUID();
+
     const floorList = [];
     for (let f = 1; f <= floorCount; f++) {
-      const floorRooms = selectableRooms.filter((r) => r.floorNumber === f || f === 1);
       floorList.push({
         level: f,
         name: f === 1 ? "Ground Floor" : f === 2 ? "First Floor" : `Floor ${f}`,
-        room_count: floorRooms.length,
-        rooms: floorRooms.map((r) => ({
+        room_count: detectedRooms.length,
+        rooms: detectedRooms.map((r) => ({
           name: r.name,
-          room_type: r.type,
-          area_sqm: r.areaSqm,
-          width_meters: Math.sqrt(r.areaSqm * 1.2),
-          length_meters: Math.sqrt(r.areaSqm / 1.2),
+          room_type: r.room_type,
+          area_sqm: r.area_sqm,
+          width_meters: r.width_m,
+          length_meters: r.length_m,
         })),
       });
     }
 
     const projectPayload = {
       name: projectName,
-      home_type: homeType,
+      home_type: propertyType,
       floors_count: floorCount,
-      total_rooms: selectableRooms.length,
+      total_rooms: detectedRooms.length,
       total_budget: totalBudget,
       currency: "INR",
-      budget_flexibility: flexibility,
+      budget_flexibility: flexibility.toLowerCase(),
       design_style: designStyle,
       floors: floorList,
     };
 
-    let createdProjectId = generateUUID();
-
     try {
-      // 1. Call backend project creation API
       const res = await projectApi.createProject(projectPayload);
       if (res && res.id) {
         createdProjectId = res.id;
       }
     } catch (_) {
-      // Graceful offline fallback: save to sessionStorage
-      const offlineProject = {
-        id: createdProjectId,
-        name: projectName,
-        home_type: homeType,
-        total_budget: totalBudget,
-        currency: "INR",
-        flexibility,
-        created_at: new Date().toISOString(),
-      };
-      sessionStorage.setItem(`project_${createdProjectId}`, JSON.stringify(offlineProject));
+      // Fallback
+      sessionStorage.setItem(`project_${createdProjectId}`, JSON.stringify(projectPayload));
     }
 
-    // Step 1 completed
+    // Step 1 Done -> Step 2 Processing
     await new Promise((r) => setTimeout(r, 600));
-    setGenerationProgress(35);
+    setGenerationProgress(45);
     setGenerationSteps((prev) =>
       prev.map((s, idx) =>
         idx === 0
@@ -216,8 +181,9 @@ export default function NewHomePage() {
       await budgetApi.autoAllocateRoomBudgets(createdProjectId);
     } catch (_) {}
 
+    // Step 2 Done -> Step 3 Processing
     await new Promise((r) => setTimeout(r, 700));
-    setGenerationProgress(65);
+    setGenerationProgress(75);
     setGenerationSteps((prev) =>
       prev.map((s, idx) =>
         idx === 1
@@ -228,9 +194,9 @@ export default function NewHomePage() {
       )
     );
 
-    // Step 3: 3D Geometries & PBR Materials
-    await new Promise((r) => setTimeout(r, 800));
-    setGenerationProgress(90);
+    // Step 3 Done -> Step 4 Processing
+    await new Promise((r) => setTimeout(r, 700));
+    setGenerationProgress(95);
     setGenerationSteps((prev) =>
       prev.map((s, idx) =>
         idx === 2
@@ -241,17 +207,16 @@ export default function NewHomePage() {
       )
     );
 
-    // Step 4: Scene graph assembled
-    await new Promise((r) => setTimeout(r, 600));
+    // Step 4 Complete
+    await new Promise((r) => setTimeout(r, 500));
     setGenerationProgress(100);
     setGenerationSteps((prev) =>
       prev.map((s) => ({ ...s, status: "completed" }))
     );
 
-    // Complete and redirect
     setTimeout(() => {
       router.push(`/project/${createdProjectId}`);
-    }, 800);
+    }, 700);
   };
 
   return (
@@ -272,7 +237,6 @@ export default function NewHomePage() {
           </span>
         </div>
 
-        {/* Stepper Pill Indicator */}
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
           <span className="text-emerald-400 font-bold">Step {currentStep}</span>
           <span className="text-slate-500">/ {totalSteps}</span>
@@ -337,15 +301,6 @@ export default function NewHomePage() {
           {/* STEP 1: Home Type */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  What type of home are you building or designing?
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Select your dwelling archetype to calibrate structural boundaries, standard clearances, and budget allocations.
-                </p>
-              </div>
-
               <div className="p-4 rounded-2xl bg-[#090e15] border border-white/[0.08] space-y-2 max-w-md">
                 <label className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
                   Project / House Name
@@ -360,86 +315,56 @@ export default function NewHomePage() {
               </div>
 
               <HomeTypeSelector
-                selectedType={homeType}
-                onSelect={(type) => setHomeType(type)}
+                selectedType={propertyType}
+                onSelect={(type) => setPropertyType(type)}
               />
             </div>
           )}
 
           {/* STEP 2: Floors */}
           {currentStep === 2 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  How many floors does your house have?
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Configure the vertical levels. HomeVerse builds stacked multi-level cutaway models for your entire residence.
-                </p>
-              </div>
-
-              <FloorCountSelector
-                floorCount={floorCount}
-                onChange={(count) => setFloorCount(count)}
-              />
-            </div>
+            <FloorCountSelector
+              propertyType={propertyType}
+              floorCount={floorCount}
+              onChange={(count) => setFloorCount(count)}
+            />
           )}
 
           {/* STEP 3: Rooms */}
           {currentStep === 3 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  What rooms do you have?
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Select room counts across your home. These determine spatial envelopes and initial budget breakdowns.
-                </p>
-              </div>
-
-              <RoomCountSelector
-                rooms={rooms}
-                onChange={(updated) => setRooms(updated)}
-              />
-            </div>
+            <RoomCountSelector
+              bhk={bhk}
+              bedroomsCount={bedroomsCount}
+              bathroomsCount={bathroomsCount}
+              balconiesCount={balconiesCount}
+              onChange={(newBhk, beds, baths, bals) => {
+                setBhk(newBhk);
+                setBedroomsCount(beds);
+                setBathroomsCount(baths);
+                setBalconiesCount(bals);
+              }}
+            />
           )}
 
           {/* STEP 4: Budget (Established at House Creation!) */}
           {currentStep === 4 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Set Your Project Budget (₹ INR)
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Establishing your target budget now ensures all AI recommendations, furniture models, materials, and alterations stay within your real-world financial parameters.
-                </p>
-              </div>
-
-              <BudgetSelector
-                budget={totalBudget}
-                flexibility={flexibility}
-                onBudgetChange={(b) => setTotalBudget(b)}
-                onFlexibilityChange={(f) => setFlexibility(f)}
-              />
-            </div>
+            <BudgetSelector
+              initialBudget={totalBudget}
+              initialFlexibility={flexibility}
+              onChange={(b, f) => {
+                setTotalBudget(b);
+                setFlexibility(f);
+              }}
+            />
           )}
 
           {/* STEP 5: Floor Plan Upload */}
           {currentStep === 5 && (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Upload Floor Plan or Architectural Layout
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Upload an image (PNG, JPG), PDF, or CAD blueprint. If you don't have one right now, you can proceed with our standard spatial template.
-                </p>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 <div className="md:col-span-7">
                   <FloorPlanUploader
+                    selectedFile={floorPlanFile}
                     onFileSelected={(file) => {
                       setFloorPlanFile(file);
                       setFloorPlanPreviewUrl(URL.createObjectURL(file));
@@ -447,13 +372,7 @@ export default function NewHomePage() {
                   />
                 </div>
                 <div className="md:col-span-5">
-                  <FloorPlanPreview
-                    previewUrl={
-                      floorPlanPreviewUrl ||
-                      "/templates/modern_north_layout-a.jpg"
-                    }
-                    fileName={floorPlanFile ? floorPlanFile.name : "Default Layout Template"}
-                  />
+                  <FloorPlanPreview imageUrl={floorPlanPreviewUrl} />
                 </div>
               </div>
             </div>
@@ -461,27 +380,26 @@ export default function NewHomePage() {
 
           {/* STEP 6: Dimension Confirmation & Correction */}
           {currentStep === 6 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Confirm Structural Dimensions
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Our spatial vision model automatically detected these room boundaries. You can confirm or calibrate them for centimeter-level CAD accuracy.
-                </p>
-              </div>
-
+            <div>
               {!isEditingDimensions ? (
                 <DimensionConfirmation
-                  dimensions={detectedDimensions}
+                  rooms={detectedRooms}
                   onConfirm={handleNext}
-                  onEdit={() => setIsEditingDimensions(true)}
+                  onCorrect={() => setIsEditingDimensions(true)}
                 />
               ) : (
                 <DimensionCorrection
-                  dimensions={detectedDimensions}
-                  onChange={(d) => setDetectedDimensions(d)}
-                  onSave={() => setIsEditingDimensions(false)}
+                  initialRooms={detectedRooms}
+                  onSave={(updated) => {
+                    setDetectedRooms(
+                      updated.map((u) => ({
+                        ...u,
+                        confidence: 99,
+                      }))
+                    );
+                    setIsEditingDimensions(false);
+                  }}
+                  onCancel={() => setIsEditingDimensions(false)}
                 />
               )}
             </div>
@@ -489,46 +407,20 @@ export default function NewHomePage() {
 
           {/* STEP 7: Room Focus Selection */}
           {currentStep === 7 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Which rooms would you like to design first?
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Select one or more rooms for priority 3D scene generation and budget allocation.
-                </p>
-              </div>
-
-              <RoomSelector
-                rooms={selectableRooms}
-                selectedRoomIds={selectedRoomIds}
-                onToggleRoom={(id) => {
-                  setSelectedRoomIds((prev) =>
-                    prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-                  );
-                }}
-                onSelectAll={() => setSelectedRoomIds(selectableRooms.map((r) => r.id))}
-              />
-            </div>
+            <RoomSelector
+              rooms={detectedRooms}
+              selectedRoom={selectedRoom}
+              onSelect={(rName) => setSelectedRoom(rName)}
+            />
           )}
 
           {/* STEP 8: Design Style DNA */}
           {currentStep === 8 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Select Architectural Design DNA
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 font-light">
-                  Choose the aesthetic model. The generative AI will apply calibrated PBR materials, furniture profiles, and lighting schemes matching this DNA.
-                </p>
-              </div>
-
-              <DesignStyleSelector
-                selectedStyle={designStyle}
-                onSelect={(style) => setDesignStyle(style)}
-              />
-            </div>
+            <DesignStyleSelector
+              selectedStyle={designStyle}
+              onSelect={(style) => setDesignStyle(style)}
+              budgetAmount={totalBudget}
+            />
           )}
 
           {/* STEP 9: AI Generation Status */}

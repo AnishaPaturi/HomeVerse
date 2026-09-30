@@ -4,10 +4,15 @@ import React from "react";
 import Link from "next/link";
 import { Plus, Home, Sparkles, ArrowRight } from "lucide-react";
 
-export const CreateHomeCard: React.FC = () => {
+interface CreateHomeCardProps {
+  onClick?: () => void;
+}
+
+export const CreateHomeCard: React.FC<CreateHomeCardProps> = ({ onClick }) => {
   return (
     <Link
       href="/home/new"
+      onClick={onClick}
       className="group bg-gradient-to-br from-indigo-900/40 via-zinc-900 to-zinc-950 border border-indigo-500/20 hover:border-indigo-500/50 rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all hover:shadow-2xl hover:shadow-indigo-500/10"
     >
       <div>

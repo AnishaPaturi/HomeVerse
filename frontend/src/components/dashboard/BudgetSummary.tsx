@@ -12,7 +12,10 @@ interface BudgetSummaryProps {
   completionPercentage?: number;
   totalBudget?: number;
   estimatedCost?: number;
+  spentAmount?: number;
   remainingAmount?: number;
+  currency?: string;
+  flexibility?: string;
 }
 
 export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
@@ -21,10 +24,14 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
   totalRooms = 4,
   completionPercentage = 62,
   totalBudget = 2500000,
-  estimatedCost = 2140000,
+  estimatedCost,
+  spentAmount,
   remainingAmount = 360000,
+  currency = "INR",
+  flexibility = "moderate",
 }) => {
-  const percentage = totalBudget > 0 ? Math.min(100, Math.round((estimatedCost / totalBudget) * 100)) : 0;
+  const actualEstimate = estimatedCost ?? spentAmount ?? 2140000;
+  const percentage = totalBudget > 0 ? Math.min(100, Math.round((actualEstimate / totalBudget) * 100)) : 0;
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-sm">
