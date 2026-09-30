@@ -76,3 +76,7 @@ class Design(DesignBase):
     items: List[DesignItemOut] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+DesignOut = Design
+DesignUpdate = DesignBase
+

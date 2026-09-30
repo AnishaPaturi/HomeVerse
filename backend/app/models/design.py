@@ -33,6 +33,7 @@ class Design(Base):
     room = relationship("Room", back_populates="designs")
     objects = relationship("Object", back_populates="design", cascade="all, delete-orphan")
     items = relationship("DesignItem", back_populates="design", cascade="all, delete-orphan")
+    versions = relationship("DesignVersion", back_populates="design", cascade="all, delete-orphan")
 
 class DesignItem(Base):
     __tablename__ = "design_items"

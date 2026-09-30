@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from uuid import UUID
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 class UserBase(BaseModel):
     name: str
@@ -18,7 +18,23 @@ class UserLogin(BaseModel):
 class User(UserBase):
     id: UUID
     created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
+# Alias for canonical Out schema
+UserOut = User
+
+class UserPreferenceBase(BaseModel):
+    design_style: Optional[str] = "Modern"
+    color_palette: Optional[str] = "Neutral"
+    budget_range: Optional[str] = "10L-20L"
+    preferred_materials: Optional[List[str]] = []
+
+class UserPreferenceUpdate(UserPreferenceBase):
+    pass
+
+class UserPreferenceOut(UserPreferenceBase):
+    id: Optional[UUID] = None
+    user_id: Optional[UUID] = None
     model_config = ConfigDict(from_attributes=True)
 
 class Token(BaseModel):

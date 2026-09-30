@@ -12,7 +12,7 @@ class Project(Base):
     
     # Phase 5 canonical fields
     name = Column(String, nullable=True)
-    property_type = Column(String, default="apartment")
+    property_type = Column(String, default="apartment")  # apartment, independent, villa
     bhk = Column(Integer, nullable=True)
     area_sqft = Column(Float, nullable=True)
     budget = Column(Float, nullable=True)
@@ -27,9 +27,13 @@ class Project(Base):
     structural_analysis = Column(String, nullable=True)
 
     user = relationship("User", back_populates="projects")
-    designs = relationship("Design", back_populates="project", cascade="all, delete-orphan")
+    floors = relationship("Floor", back_populates="project", cascade="all, delete-orphan")
     rooms = relationship("Room", back_populates="project", cascade="all, delete-orphan")
+    floorplans = relationship("Floorplan", back_populates="project", cascade="all, delete-orphan")
+    designs = relationship("Design", back_populates="project", cascade="all, delete-orphan")
     budgets = relationship("Budget", back_populates="project", cascade="all, delete-orphan")
+    scenes = relationship("Scene", back_populates="project", cascade="all, delete-orphan")
+    ai_interactions = relationship("AIInteraction", back_populates="project", cascade="all, delete-orphan")
     shopping_items = relationship("ShoppingItem", back_populates="project", cascade="all, delete-orphan")
     execution_tasks = relationship("ExecutionTask", back_populates="project", cascade="all, delete-orphan")
     expenses = relationship("Expense", back_populates="project", cascade="all, delete-orphan")

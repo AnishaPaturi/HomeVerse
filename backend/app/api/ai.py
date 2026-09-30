@@ -1099,6 +1099,19 @@ async def get_ai_quota_endpoint(
 
     return get_user_ai_quota(user, client_ip)
 
+from app.schemas.ai import AIChatRequest, AIChatResponse
+from app.services.ai.ai_service import AIService
+
+@router.post("/chat", response_model=AIChatResponse)
+@router.post("/copilot-chat", response_model=AIChatResponse)
+def copilot_chat_endpoint(chat_req: AIChatRequest, db: Session = Depends(get_db)):
+    """
+    Budget-aware AI Copilot: evaluates user requests, determines design alterations,
+    calculates delta financial impact, and suggests cheaper alternatives.
+    """
+    return AIService.handle_copilot_chat(db, chat_req)
+
+
 
 
 

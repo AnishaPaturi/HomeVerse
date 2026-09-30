@@ -53,3 +53,6 @@ class Project(ProjectBase):
     designs: List[Design] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+ProjectOut = Project
+

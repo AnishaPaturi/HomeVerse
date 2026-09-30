@@ -1,6 +1,4 @@
 from sqlalchemy import Column, String, Float, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
@@ -12,6 +10,7 @@ class Room(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    floor_id = Column(GUID(), ForeignKey("floors.id", ondelete="SET NULL"), nullable=True)
     name = Column(String, nullable=False)
     room_type = Column(String, nullable=False)  # Living Room, Master Bedroom, Kitchen, etc.
     length = Column(Float, nullable=True)
@@ -22,8 +21,12 @@ class Room(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     project = relationship("Project", back_populates="rooms")
+    floor = relationship("Floor", back_populates="rooms")
     images = relationship("RoomImage", back_populates="room", cascade="all, delete-orphan")
     designs = relationship("Design", back_populates="room", cascade="all, delete-orphan")
+    budget_allocations = relationship("BudgetAllocation", back_populates="room")
+    scenes = relationship("Scene", back_populates="room")
+    ai_interactions = relationship("AIInteraction", back_populates="room")
 
 class RoomImage(Base):
     __tablename__ = "room_images"
