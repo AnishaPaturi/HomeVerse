@@ -2,178 +2,228 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Palette, IndianRupee } from "lucide-react";
 
 interface DesignFeaturesProps {
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
 }
 
-export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated }) => {
+export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated = false }) => {
   const router = useRouter();
 
-  const designDnaList = [
+  // All 6 styles portrayed on the EXACT SAME ROOM (Master Living Room with Balcony Door)
+  const stylesOnSameRoom = [
     {
       id: "japandi",
       name: "Japandi",
-      tagline: "Warm · Natural · Calm",
-      desc: "A timeless fusion of Scandinavian functionality and Japanese wabi-sabi minimalism. Low-profile platform oak furniture, organic linen textiles, and diffused lighting.",
+      tagline: "Warm Oak · Organic Bouclé · Wabi-Sabi Lighting",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Warm vertical white-oak acoustic wall slates, low-profile oatmeal bouclé modular sofa, paper lantern pendant, and natural jute/tatami woven floor rug.",
+      wallFinish: "Vertical White-Oak Slat Paneling + Limewash Plaster",
+      floorFinish: "Bleached Engineered Oak Parquet (₹180/sq.ft)",
+      keyFurniture: "Low-Slung 3-Seater Platform Bouclé Sofa",
+      lightingMood: "Soft Warm Diffused 2700K Paper Lantern",
+      budget: "₹8,45,000",
       palette: ["#f5f5f4", "#e7e5e4", "#b45309", "#0f766e", "#78350f"],
-      materials: ["Bleached White Oak", "Natural Raw Linen", "Washi Paper Shade", "Smooth Limestone"],
-      image: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=800",
-      budgetTier: "₹8.4L - ₹10.2L",
-    },
-    {
-      id: "modern",
-      name: "Modern",
-      tagline: "Clean · Minimal · Structured",
-      desc: "Architectural purity characterized by sleek geometric profiles, concealed storage, dark walnut wood paneling, and matte black metal accents.",
-      palette: ["#0f172a", "#1e293b", "#334155", "#0d9488", "#cbd5e1"],
-      materials: ["Dark Smoked Walnut", "Matte Black Steel", "Smoked Grey Glass", "Seamless Concrete"],
-      image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
-      budgetTier: "₹8.8L - ₹11.0L",
+      image: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=1200",
     },
     {
       id: "scandinavian",
-      name: "Scandinavian",
-      tagline: "Bright · Functional · Airy",
-      desc: "Maximized natural day-lighting with blonde birch furniture, high-contrast hardware, plush hygge wool rugs, and ergonomic modular arrangements.",
+      name: "Modern Scandinavian",
+      tagline: "Nordic Birch · Heather Linen · Crisp Light",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Chalk-white breathable mineral walls, blonde birch wood media console, heather gray linen sectional, geometric monochrome wool rug, and slim brass arc lamp.",
+      wallFinish: "Chalk White Matte Wash + Ash Wood Accents",
+      floorFinish: "Light Scandinavian Ash Wood (₹165/sq.ft)",
+      keyFurniture: "Ergonomic Modular Linen Corner Sectional",
+      lightingMood: "High CRI 4000K Natural Daylight Emulation",
+      budget: "₹7,90,000",
       palette: ["#ffffff", "#f8fafc", "#e2e8f0", "#0284c7", "#10b981"],
-      materials: ["Nordic Light Birch", "Bouclé Wool Fabric", "Powder White Metal", "Fluted Glass Panels"],
-      image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
-      budgetTier: "₹7.9L - ₹9.8L",
+      image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=1200",
     },
     {
       id: "luxury",
       name: "Modern Luxury",
-      tagline: "Elegant · Refined · Premium",
-      desc: "High-end bespoke craftsmanship featuring bookmatched Calacatta Gold marble, brushed gold brass trims, and emerald velvet upholstery.",
+      tagline: "Statuario Marble · Emerald Velvet · Smoked Glass & Gold",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Bookmatched Italian Statuario white & gold marble slab flooring, rich emerald velvet sofa with brushed brass plinth, dark smoked walnut fluting, and tiered crystal chandelier.",
+      wallFinish: "Dark Smoked Walnut Fluting + Brushed Brass Inlays",
+      floorFinish: "Italian Statuario Marble Slabs (₹450/sq.ft)",
+      keyFurniture: "Custom Emerald Italian Velvet Chesterfield",
+      lightingMood: "Layered Warm Cove LED + Smoked Chandelier (3000K)",
+      budget: "₹14,80,000",
       palette: ["#090d16", "#1e1b4b", "#d97706", "#047857", "#fef08a"],
-      materials: ["Calacatta Gold Marble", "Brushed Brass Trims", "Emerald Italian Velvet", "High-Gloss Veneer"],
-      image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
-      budgetTier: "₹14.2L - ₹22.5L",
+      image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200",
+    },
+    {
+      id: "minimalist",
+      name: "Minimalist",
+      tagline: "Polished Concrete · Floating Silhouettes · Shadow Gaps",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Seamless micro-cement concrete floors with concealed skirting shadow gaps, floating modular platform couch, zero clutter, and recessed architectural ceiling channels.",
+      wallFinish: "Seamless Micro-Topping Cement Wash",
+      floorFinish: "Polished Monolithic Concrete (₹140/sq.ft)",
+      keyFurniture: "Floating Low-Back Platform Bench Sofa",
+      lightingMood: "Indirect Architectural Ceiling Glow Only",
+      budget: "₹7,20,000",
+      palette: ["#f1f5f9", "#cbd5e1", "#475569", "#1e293b", "#0f172a"],
+      image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200",
     },
     {
       id: "industrial",
       name: "Industrial",
-      tagline: "Raw · Bold · Urban",
-      desc: "Uncovered structural character with exposed red brickwork, polished warehouse concrete floors, antique cognac leather seating, and black steel framing.",
+      tagline: "Heritage Brick · Cognac Leather · Matte Black Iron",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Exposed rustic red terracotta brick accent wall, matte black steel warehouse track lighting, distressed cognac saddle leather sofa, and reclaimed solid teak coffee table.",
+      wallFinish: "Exposed Wirecut Red Brickwork + Charcoal Mortar",
+      floorFinish: "Epoxy Warehouse Screed Floor (₹125/sq.ft)",
+      keyFurniture: "Cognac Saddle Leather Deep-Seat Sofa",
+      lightingMood: "Edison Filament Pendants + Black Iron Tracks (2200K)",
+      budget: "₹9,25,000",
       palette: ["#18181b", "#27272a", "#ea580c", "#451a03", "#71717a"],
-      materials: ["Exposed Heritage Brick", "Cognac Saddle Leather", "Reclaimed Barn Wood", "Black Cast Iron"],
-      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800",
-      budgetTier: "₹9.1L - ₹11.8L",
+      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1200",
     },
     {
       id: "contemporary",
       name: "Contemporary",
-      tagline: "Fluid · Curvaceous · Fresh",
-      desc: "Embraces trend-forward architectural movements: sculpted organic sofa curves, warm taupe palettes, and layered tactile textures.",
+      tagline: "Curved Sculptural Forms · Honed Travertine · Warm Taupe",
+      roomSpecification: "Same 5.0m × 4.2m Living Room with Floor-to-Ceiling Balcony Door",
+      desc: "Sculpted curved ivory bouclé sofa, fluted warm plaster feature wall, honed roman travertine nesting coffee tables, champagne bronze fixtures, and plush textured boucle rug.",
+      wallFinish: "Fluted Curved Plaster in Desert Taupe",
+      floorFinish: "Honed Roman Travertine Stone (₹280/sq.ft)",
+      keyFurniture: "Asymmetric Curved Sculptural Crescent Sofa",
+      lightingMood: "Soft Organic Rim Lighting + Curved Wall Sconces",
+      budget: "₹11,40,000",
       palette: ["#f1f5f9", "#e2e8f0", "#6366f1", "#475569", "#d97706"],
-      materials: ["Curved Bouclé Fleece", "Honed Travertine Stone", "Champagne Bronze", "Ribbed Walnut"],
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800",
-      budgetTier: "₹10.5L - ₹13.4L",
+      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200",
     },
   ];
 
-  const [activeDnaStyle, setActiveDnaStyle] = useState("Japandi");
-  const currentDna = designDnaList.find((s) => s.name === activeDnaStyle) || designDnaList[0];
+  const [selectedStyleId, setSelectedStyleId] = useState("japandi");
+  const currentStyle = stylesOnSameRoom.find((s) => s.id === selectedStyleId) || stylesOnSameRoom[0];
 
   return (
-    <section id="design-dna" className="py-24 px-6 lg:px-12 border-t border-white/[0.06] bg-[#05080c]">
+    <section id="compare-styles" className="py-24 px-6 lg:px-12 bg-[#070b10] border-t border-white/[0.08] relative">
       <div className="max-w-7xl mx-auto space-y-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
-              <span>CURATED INTERIOR DESIGN DNA</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
-              Cohesive architectural style profiles.
-            </h2>
-            <p className="text-slate-400 text-sm font-light">
-              Explore our six core interior aesthetic models. Each DNA profile comes with curated PBR materials, color palettes, lighting rules, and budget metrics.
-            </p>
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-morphism border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+            <Palette className="w-3.5 h-3.5 text-emerald-400" />
+            <span>SAME ROOM · 6 ARCHITECTURAL STYLES</span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {designDnaList.map((dna) => (
-              <button
-                key={dna.id}
-                onClick={() => setActiveDnaStyle(dna.name)}
-                className={`text-xs font-mono uppercase tracking-wider px-3.5 py-2 rounded-full transition-all cursor-pointer ${
-                  activeDnaStyle === dna.name
-                    ? "bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/30"
-                    : "bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700"
-                }`}
-              >
-                {dna.name}
-              </button>
-            ))}
-          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-editorial">
+            One Room. Infinite Expressions. Locked Budget.
+          </h2>
+
+          <p className="text-slate-400 text-sm sm:text-base font-light">
+            Notice how the room layout, window positions, and structural walls remain exactly identical. Only materials, furniture silhouettes, lighting, and contractor rates shift.
+          </p>
         </div>
 
-        {/* Active DNA Detail Showcase Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-8 sm:p-10 rounded-3xl bg-[#090e15] border border-white/[0.1] shadow-2xl">
-          <div className="lg:col-span-6 relative overflow-hidden rounded-2xl border border-white/[0.08] group h-[380px]">
-            <img
-              src={currentDna.image}
-              alt={currentDna.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-mono uppercase tracking-wider text-emerald-400">{currentDna.tagline}</div>
-                <h3 className="text-2xl font-bold text-white mt-0.5">{currentDna.name} Space</h3>
-              </div>
-              <div className="text-xs font-mono bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 text-slate-200">
-                Est. {currentDna.budgetTier}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 space-y-6">
-            <div>
-              <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">{currentDna.tagline}</div>
-              <h3 className="text-3xl font-bold text-white mt-1">{currentDna.name} Design System</h3>
-              <p className="text-slate-300 text-sm font-light leading-relaxed mt-2">
-                {currentDna.desc}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Color Palette DNA</div>
-              <div className="flex items-center gap-3">
-                {currentDna.palette.map((color, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-1.5">
-                    <div
-                      className="w-10 h-10 rounded-xl border border-white/20 shadow-md transition-transform hover:scale-110"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-[9px] font-mono text-slate-400">{color}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Curated PBR Finishes</div>
-              <div className="grid grid-cols-2 gap-2">
-                {currentDna.materials.map((mat, idx) => (
-                  <div key={idx} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>{mat}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-2">
+        {/* 6-Style Filter Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          {stylesOnSameRoom.map((style) => {
+            const isSelected = selectedStyleId === style.id;
+            return (
               <button
-                onClick={() => router.push(isAuthenticated ? "/home/new" : "/login")}
-                className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
+                key={style.id}
+                onClick={() => setSelectedStyleId(style.id)}
+                className={`px-5 py-2.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center gap-2 border ${
+                  isSelected
+                    ? "bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/30 border-emerald-400 scale-105"
+                    : "glass-morphism text-slate-300 hover:text-white hover:bg-white/[0.08] border-white/10"
+                }`}
               >
-                <span>Launch in 3D Studio</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>{style.name}</span>
+                {isSelected && <Sparkles className="w-3.5 h-3.5" />}
               </button>
+            );
+          })}
+        </div>
+
+        {/* Main Stage: The Same Room Portrayed In Selected Style */}
+        <div className="max-w-6xl mx-auto">
+          <div className="glass-morphism rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Visual Image of the Room */}
+            <div className="lg:col-span-7 relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-950 border border-white/10 shadow-xl group">
+              <img
+                src={currentStyle.image}
+                alt={`${currentStyle.name} Style in Living Room`}
+                className="w-full h-full object-cover filter brightness-[0.92] contrast-105 transition-all duration-700 group-hover:scale-105"
+              />
+
+              {/* Floating Same Room Badge */}
+              <div className="absolute top-4 left-4 glass-morphism px-3.5 py-1.5 rounded-full text-[10px] font-mono text-white flex items-center gap-2 border border-white/20 shadow-lg">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>LOCKED SHELL: 5.0m × 4.2m LIVING ROOM</span>
+              </div>
+
+              {/* Floating Budget Badge */}
+              <div className="absolute bottom-4 right-4 glass-morphism px-4 py-2 rounded-2xl text-xs font-mono text-emerald-400 flex items-center gap-2 border border-emerald-500/30 shadow-xl">
+                <IndianRupee className="w-4 h-4" />
+                <span className="font-bold text-white text-sm">{currentStyle.budget}</span>
+                <span className="text-[10px] text-slate-400">Total Room Est.</span>
+              </div>
+            </div>
+
+            {/* Architectural Spec Sheet for This Exact Style */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="space-y-1">
+                <div className="text-[11px] font-mono text-emerald-400 uppercase tracking-widest">
+                  {currentStyle.name} Profile
+                </div>
+                <h3 className="text-2xl font-bold text-white font-editorial">
+                  {currentStyle.tagline}
+                </h3>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                {currentStyle.desc}
+              </p>
+
+              {/* Material Breakdown */}
+              <div className="space-y-3 pt-2 text-xs font-mono">
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                  <div className="text-slate-400 text-[10px] uppercase">Wall Surface Treatment</div>
+                  <div className="text-white font-medium">{currentStyle.wallFinish}</div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                  <div className="text-slate-400 text-[10px] uppercase">Flooring Specification</div>
+                  <div className="text-white font-medium">{currentStyle.floorFinish}</div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                  <div className="text-slate-400 text-[10px] uppercase">Key Silhouette</div>
+                  <div className="text-white font-medium">{currentStyle.keyFurniture}</div>
+                </div>
+              </div>
+
+              {/* Swatch Palette */}
+              <div className="flex items-center gap-3 pt-2">
+                <span className="text-[10px] font-mono text-slate-400 uppercase">Color DNA:</span>
+                <div className="flex items-center gap-1.5">
+                  {currentStyle.palette.map((color, i) => (
+                    <div
+                      key={i}
+                      className="w-5 h-5 rounded-full border border-white/20 shadow-sm"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="pt-2">
+                <button
+                  onClick={() => router.push(isAuthenticated ? "/home/new" : "/signup")}
+                  className="w-full py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 hover:scale-[1.01]"
+                >
+                  <span>Apply {currentStyle.name} to My Home →</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,77 +1,125 @@
 "use client";
 
 import React from "react";
+import { 
+  Building2, 
+  UploadCloud, 
+  Scan, 
+  Palette, 
+  Box, 
+  FileSpreadsheet, 
+  ArrowRight, 
+  Sparkles 
+} from "lucide-react";
 
 export const HowItWorks: React.FC = () => {
-  const steps = [
+  const flowSteps = [
     {
       num: "01",
-      title: "Set Home & Budget",
-      badge: "House · Floors · Budget",
-      desc: "Specify your house type, floors, room count, and allocate your total target budget in Indian Rupees with strict or flexible guardrails.",
+      icon: Building2,
+      title: "Set House & Budget",
+      badge: "STEP 1 · FINANCIAL BOUNDS",
+      desc: "Specify your house type (Apartment, Duplex, Villa), number of floors, and lock your total target budget in ₹ Lakhs or Crores with Strict (±0%) or Moderate guardrails.",
     },
     {
       num: "02",
+      icon: UploadCloud,
       title: "Upload Floor Plan",
-      badge: "CAD · PNG · PDF",
-      desc: "Upload your architectural layout or room blueprints. HomeVerse automatically recognizes structural boundaries and dimensions.",
+      badge: "STEP 2 · BLUEPRINT INGESTION",
+      desc: "Drop in your architect's PDF, CAD vector drawing, brochure JPEG, or even a smartphone snapshot of a hand-drawn pencil layout on paper.",
     },
     {
       num: "03",
-      title: "AI Room Detection",
-      badge: "4.8m × 6.2m Dimensions",
-      desc: "Spatial vision isolates living rooms, bedrooms, and kitchens, extracting exact room square footage and door/window clearances.",
+      icon: Scan,
+      title: "AI Vision Scan",
+      badge: "STEP 3 · DIMENSION EXTRACTION",
+      desc: "Gemini multimodal vision isolates living room, bedrooms, and kitchen boundaries, calculates exact room square meters, and checks window/door swing clearances.",
     },
     {
       num: "04",
-      title: "Select Rooms & Style",
-      badge: "6 Curated Aesthetics",
-      desc: "Pick which rooms to redesign and select your aesthetic: Japandi, Modern, Scandinavian, Modern Luxury, Industrial, or Contemporary.",
+      icon: Palette,
+      title: "Select Design Style",
+      badge: "STEP 4 · 6-STYLE SIMULATION",
+      desc: "Preview Japandi, Scandinavian, Modern Luxury, Minimalist, Industrial, or Contemporary on the exact same room with real-world material rate cards.",
     },
     {
       num: "05",
-      title: "Live 3D CAD Twin",
-      badge: "Real-time AI Copilot",
-      desc: "Step into your interactive 3D space. Move furniture, calculate budget deltas on the fly, and inspect vendor purchase links.",
+      icon: Box,
+      title: "Interactive 3D Walk",
+      badge: "STEP 5 · BROWSER 3D STUDIO",
+      desc: "Step inside your photorealistic 3D room. Move furniture, tweak finishes, and stroll room-by-room in first-person mode with zero software installation.",
+    },
+    {
+      num: "06",
+      icon: FileSpreadsheet,
+      title: "Contractor BOM Export",
+      badge: "STEP 6 · TENDER PROCUREMENT",
+      desc: "Export an itemized Bill of Materials with civil, modular millwork, and lighting rates mapped to verified Indian manufacturers ready to hand to your contractor.",
     },
   ];
 
   return (
-    <section id="workflow" className="py-24 px-6 lg:px-12 border-t border-white/[0.06] bg-[#05080c] relative">
+    <section id="workflow" className="py-24 px-6 lg:px-12 border-t border-white/[0.08] bg-[#05080c] relative">
       <div className="max-w-7xl mx-auto space-y-16">
+        {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
-            <span>ZERO HALLUCINATIONS · TRUE SPATIAL PRECISION</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-morphism border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>THE COMPLETE ARCHITECTURAL JOURNEY</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
-            From House Creation to Live 3D Twin
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-editorial">
+            How HomeVerse Transforms Idea to Reality
           </h2>
+
           <p className="text-slate-400 text-sm sm:text-base font-light">
-            A seamless architecture-grade pipeline that connects your real-world budget with precision 3D CAD modeling and generative AI.
+            A seamless, guided 6-stage flow connecting your budget, 2D blueprint, 3D digital twin, and contractor execution with zero guesswork.
           </p>
         </div>
 
-        {/* 5-Step Visual Workflow Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 lg:gap-6 relative">
-          {steps.map((s, idx) => (
-            <div
-              key={idx}
-              className="p-6 rounded-3xl bg-[#090e15] border border-white/[0.08] hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 group"
-            >
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center font-mono font-bold text-xs text-emerald-400 group-hover:scale-110 transition-transform">
-                  {s.num}
+        {/* 6-Step Visual Flow Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+          {flowSteps.map((step, idx) => {
+            const Icon = step.icon;
+            return (
+              <div
+                key={idx}
+                className="glass-morphism rounded-3xl p-7 flex flex-col justify-between space-y-6 hover:border-emerald-500/40 transition-all duration-300 group relative overflow-hidden"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <span className="font-mono text-2xl font-bold text-slate-600 group-hover:text-emerald-400/60 transition-colors">
+                      {step.num}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-mono text-emerald-400 tracking-wider">
+                      {step.badge}
+                    </span>
+                    <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors font-editorial">
+                      {step.title}
+                    </h3>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-slate-400 font-light leading-relaxed">
+                    {step.desc}
+                  </p>
                 </div>
-                <h3 className="text-base font-bold text-white">{s.title}</h3>
-                <p className="text-xs text-slate-400 font-light leading-relaxed">
-                  {s.desc}
-                </p>
+
+                <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span>Stage {idx + 1} of 6</span>
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <span>Progress</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </div>
               </div>
-              <div className="pt-4 border-t border-slate-800/80 text-[11px] font-mono text-emerald-400">
-                {s.badge}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
