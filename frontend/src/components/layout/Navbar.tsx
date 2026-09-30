@@ -22,6 +22,9 @@ export const Navbar: React.FC = () => {
             <Link href="/studio" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
               Studio
             </Link>
+            <Link href="/marketplace" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
+              Marketplace
+            </Link>
             <Link href="/onboarding" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
               New Project
             </Link>

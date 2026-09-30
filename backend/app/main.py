@@ -8,7 +8,7 @@ import os
 
 try:
     from app.config import settings
-    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice
+    from app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice, marketplace, contracts
     from app.monitoring.middleware import PrometheusMiddleware
     from app.core.logging import StructuredLoggingMiddleware, setup_logging
     from app.core.error_handlers import register_error_handlers
@@ -19,7 +19,7 @@ try:
     from app.db.session import engine
 except ImportError:
     from backend.app.config import settings
-    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice
+    from backend.app.api import auth, projects, designs, ai, recommend, preferences, budget, monitoring, health, ai_usage, analytics, rooms, uploads, shopping, execution, users, products, notifications, chat, materials, scene_3d, ar, floorplan, voice, marketplace, contracts
     from backend.app.monitoring.middleware import PrometheusMiddleware
     from backend.app.core.logging import StructuredLoggingMiddleware, setup_logging
     from backend.app.core.error_handlers import register_error_handlers
@@ -125,6 +125,8 @@ app.include_router(scene_3d.router, prefix="/api", tags=["3D Visualization & Rea
 app.include_router(ar.router, prefix="/api", tags=["AR Furniture Placement"])
 app.include_router(floorplan.router, prefix="/api", tags=["Interactive Floor Plans"])
 app.include_router(voice.router, prefix="/api/voice", tags=["Voice Assistant Copilot"])
+app.include_router(marketplace.router, prefix="/api", tags=["Marketplace (Contractors, Designers, Vendors, Listings)"])
+app.include_router(contracts.router, prefix="/api", tags=["Quotations & Contract Management"])
 
 if __name__ == "__main__":
     import uvicorn

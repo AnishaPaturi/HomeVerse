@@ -14,6 +14,7 @@ from app.models.ai_usage import AIUsage
 from app.models.analytics_event import AnalyticsEvent
 from app.models.notification import Notification
 from app.models.material import Material
+from app.models.marketplace import Provider, MarketplaceListing, Quotation, Contract
 
 __all__ = [
     "User",
@@ -34,5 +35,9 @@ __all__ = [
     "AnalyticsEvent",
     "Notification",
     "Material",
+    "Provider",
+    "MarketplaceListing",
+    "Quotation",
+    "Contract",
 ]
 
