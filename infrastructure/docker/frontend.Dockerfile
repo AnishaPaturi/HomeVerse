@@ -1,13 +1,13 @@
 # Multi-stage Dockerfile for Next.js Frontend
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json* ./
+COPY frontend-web/package.json frontend-web/package-lock.json* ./
 RUN npm ci
 
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY frontend/ ./
+COPY frontend-web/ ./
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

@@ -1,13 +1,14 @@
-.PHONY: help install dev dev-backend dev-frontend build test lint docker-up docker-down migrate seed clean
+.PHONY: help install dev dev-backend dev-web dev-mobile build test lint docker-up docker-down migrate seed clean
 
 help:
 	@echo "Available commands:"
-	@echo "  make install        Install frontend & backend dependencies"
-	@echo "  make dev            Run frontend and backend concurrently"
+	@echo "  make install        Install web, mobile & backend dependencies"
+	@echo "  make dev            Run web and backend concurrently"
 	@echo "  make dev-backend    Run backend development server"
-	@echo "  make dev-frontend   Run frontend Next.js development server"
-	@echo "  make build          Build production artifacts for frontend and backend"
-	@echo "  make test           Run backend and frontend tests"
+	@echo "  make dev-web        Run frontend-web Next.js development server"
+	@echo "  make dev-mobile     Run Flutter mobile application"
+	@echo "  make build          Build production artifacts for frontend-web and backend"
+	@echo "  make test           Run backend, web and mobile tests"
 	@echo "  make lint           Run linters across codebase"
 	@echo "  make docker-up      Start all services via docker-compose"
 	@echo "  make docker-down    Stop all docker-compose services"
@@ -17,28 +18,32 @@ help:
 
 install:
 	cd backend && pip install -r requirements.txt
-	cd frontend && npm install
+	cd frontend-web && npm install
+	cd mobile && flutter pub get || true
 
 dev-backend:
 	cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
-dev-frontend:
-	cd frontend && npm run dev
+dev-web:
+	cd frontend-web && npm run dev
+
+dev-mobile:
+	cd mobile && flutter run
 
 dev:
-	@echo "Starting backend and frontend..."
-	$(MAKE) -j 2 dev-backend dev-frontend
+	@echo "Starting backend and web..."
+	$(MAKE) -j 2 dev-backend dev-web
 
 build:
-	cd frontend && npm run build
+	cd frontend-web && npm run build
 
 test:
 	cd backend && pytest
-	cd frontend && npm test --if-present
+	cd frontend-web && npm test --if-present
 
 lint:
 	cd backend && ruff check . || flake8 .
-	cd frontend && npm run lint
+	cd frontend-web && npm run lint
 
 docker-up:
 	docker compose up -d
@@ -55,4 +60,4 @@ seed:
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
-	rm -rf frontend/.next
+	rm -rf frontend-web/.next
