@@ -447,16 +447,16 @@ export default function PreferencesPage() {
 
                   <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 space-y-2">
                     <Link
-                      href="/studio"
+                      href="/dashboard"
                       className="block w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-xs text-center transition-colors"
                     >
-                      Generate Room Concepts in Studio &rarr;
+                      View Generated Rooms in Dashboard &rarr;
                     </Link>
                     <Link
-                      href="/onboarding"
+                      href="/home/new"
                       className="block w-full py-2 text-center text-xs text-gray-500 hover:underline"
                     >
-                      Configure New Project with this Profile
+                      Configure New Home with this Profile
                     </Link>
                   </div>
                 </div>

@@ -16,17 +16,11 @@ export const Navbar: React.FC = () => {
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
               Dashboard
             </Link>
-            <Link href="/catalogue" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
-              Catalogue
+            <Link href="/home/new" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
+              Create Home
             </Link>
-            <Link href="/studio" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
-              Studio
-            </Link>
-            <Link href="/marketplace" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
-              Marketplace
-            </Link>
-            <Link href="/onboarding" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
-              New Project
+            <Link href="/preferences" className="text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white">
+              Preferences
             </Link>
           </div>
         </div>
@@ -40,7 +34,7 @@ export const Navbar: React.FC = () => {
             Sign In
           </Link>
           <Link
-            href="/register"
+            href="/signup"
             className="text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
           >
             Get Started

@@ -78,10 +78,10 @@ export default function ProjectDesignsPage() {
               &ldquo;What If?&rdquo; Simulator
             </button>
             <Link
-              href="/studio"
+              href={`/project/${projectId}/walkthrough`}
               className="px-4 py-2 border border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl text-sm font-medium transition"
             >
-              Open 3D Studio
+              Open 3D Walkthrough
             </Link>
           </div>
         </div>

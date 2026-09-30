@@ -36,14 +36,26 @@ backend/.env
 
 # Node.js / Frontend dependencies
 node_modules/
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/dist/
-frontend/.vercel/
-frontend/*.tsbuildinfo
-frontend/next-env.d.ts
+frontend-web/node_modules/
+frontend-web/.next/
+frontend-web/out/
+frontend-web/build/
+frontend-web/dist/
+frontend-web/.vercel/
+frontend-web/*.tsbuildinfo
+frontend-web/next-env.d.ts
+
+# Flutter / Mobile build & dependencies
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/flutter_export_environment.sh
+
 
 # OS & Editor configurations
 .DS_Store
