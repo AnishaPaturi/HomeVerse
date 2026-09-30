@@ -47,11 +47,21 @@ export interface CreateBudgetInput {
   flexibility?: BudgetFlexibility | string;
 }
 
+export interface CheaperAlternative {
+  id?: string;
+  name: string;
+  category?: string;
+  cost: number;
+  savings: number;
+  image_url?: string;
+  description?: string;
+}
+
 export interface BudgetImpactSimulationResponse {
   cost_delta: number;
   new_total_estimate: number;
   budget_status: "within_budget" | "warning" | "exceeded";
   remaining_amount: number;
   message: string;
-  alternative_items?: any[];
+  alternative_items?: CheaperAlternative[];
 }

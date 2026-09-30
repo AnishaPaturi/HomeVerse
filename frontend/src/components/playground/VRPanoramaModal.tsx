@@ -9,7 +9,7 @@ import { X, RotateCw, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 interface VRPanoramaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialStyle: string;
+  initialStyle?: string;
 }
 
 // Beautiful equirectangular or high-quality 360-ish room images representing each style
@@ -72,7 +72,7 @@ function PanoramaSphere({ url }: { url: string }) {
 export default function VRPanoramaModal({
   isOpen,
   onClose,
-  initialStyle,
+  initialStyle = "Modern",
 }: VRPanoramaModalProps) {
   const [currentStyle, setCurrentStyle] = useState(initialStyle);
   const [autoRotate, setAutoRotate] = useState(true);

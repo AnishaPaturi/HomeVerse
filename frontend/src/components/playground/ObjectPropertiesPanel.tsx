@@ -16,8 +16,9 @@ interface RoomObject {
 
 interface ObjectPropertiesPanelProps {
   selectedObject: RoomObject | null;
-  onUpdateObject: (id: string, updates: Partial<RoomObject>) => void;
-  onDeleteObject: (id: string) => void;
+  onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
+  onDeleteObject?: (id: string) => void;
+  onUpdate?: (updated: any) => void;
   roomWidth?: number;
   roomDepth?: number;
   onUpdateRoomDimensions?: (width: number, depth: number) => void;
@@ -26,11 +27,20 @@ interface ObjectPropertiesPanelProps {
 export default function ObjectPropertiesPanel({
   selectedObject,
   onUpdateObject,
-  onDeleteObject,
+  onDeleteObject = () => {},
+  onUpdate,
   roomWidth,
   roomDepth,
   onUpdateRoomDimensions,
 }: ObjectPropertiesPanelProps) {
+  const handleUpdate = (id: string, updates: Partial<RoomObject>) => {
+    if (onUpdateObject) {
+      onUpdateObject(id, updates);
+    }
+    if (onUpdate && selectedObject) {
+      onUpdate({ ...selectedObject, ...updates });
+    }
+  };
   if (!selectedObject) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-500 border border-slate-800/40 rounded-2xl bg-slate-900/30">
@@ -72,7 +82,7 @@ export default function ObjectPropertiesPanel({
   }
 
   const handleUpdateRoomSize = (newWidth: number, newDepth: number) => {
-    onUpdateObject(id, {
+    handleUpdate(id, {
       material: `${roomColor};width=${newWidth};depth=${newDepth}`
     });
   };
@@ -126,7 +136,7 @@ export default function ObjectPropertiesPanel({
             {floorPresets.map((preset) => (
               <button
                 key={preset.value}
-                onClick={() => onUpdateObject(id, { material: preset.value })}
+                onClick={() => handleUpdate(id, { material: preset.value })}
                 className={`py-2 px-3 text-xs rounded-lg border text-left transition-all cursor-pointer ${
                   material === preset.value
                     ? "border-blue-500 bg-blue-950/40 text-blue-300 font-medium"
@@ -150,7 +160,7 @@ export default function ObjectPropertiesPanel({
             {colorPresets.map((preset) => (
               <button
                 key={preset.value}
-                onClick={() => onUpdateObject(id, { material: preset.value })}
+                onClick={() => handleUpdate(id, { material: preset.value })}
                 className={`w-full aspect-square rounded-lg border-2 transition-all hover:scale-105 cursor-pointer relative ${
                   material === preset.value ? "border-blue-500" : "border-transparent"
                 }`}
@@ -168,7 +178,7 @@ export default function ObjectPropertiesPanel({
             <input
               type="color"
               value={material.startsWith("#") ? material : "#cccccc"}
-              onChange={(e) => onUpdateObject(id, { material: e.target.value })}
+              onChange={(e) => handleUpdate(id, { material: e.target.value })}
               className="w-10 h-7 rounded border border-slate-700 bg-transparent cursor-pointer"
             />
             <span className="text-xs text-slate-400 font-mono">{material}</span>
@@ -237,7 +247,7 @@ export default function ObjectPropertiesPanel({
                   max="4"
                   step="0.1"
                   value={position_x}
-                  onChange={(e) => onUpdateObject(id, { position_x: parseFloat(e.target.value) })}
+                  onChange={(e) => handleUpdate(id, { position_x: parseFloat(e.target.value) })}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
               </div>
@@ -253,7 +263,7 @@ export default function ObjectPropertiesPanel({
                   max="2"
                   step="0.05"
                   value={position_y}
-                  onChange={(e) => onUpdateObject(id, { position_y: parseFloat(e.target.value) })}
+                  onChange={(e) => handleUpdate(id, { position_y: parseFloat(e.target.value) })}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
               </div>
@@ -269,7 +279,7 @@ export default function ObjectPropertiesPanel({
                   max="4"
                   step="0.1"
                   value={position_z}
-                  onChange={(e) => onUpdateObject(id, { position_z: parseFloat(e.target.value) })}
+                  onChange={(e) => handleUpdate(id, { position_z: parseFloat(e.target.value) })}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
               </div>
@@ -292,7 +302,7 @@ export default function ObjectPropertiesPanel({
                 max={Math.PI * 2}
                 step={Math.PI / 12}
                 value={rotation}
-                onChange={(e) => onUpdateObject(id, { rotation: parseFloat(e.target.value) })}
+                onChange={(e) => handleUpdate(id, { rotation: parseFloat(e.target.value) })}
                 className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
@@ -314,7 +324,7 @@ export default function ObjectPropertiesPanel({
                 max="2.0"
                 step="0.05"
                 value={scale}
-                onChange={(e) => onUpdateObject(id, { scale: parseFloat(e.target.value) })}
+                onChange={(e) => handleUpdate(id, { scale: parseFloat(e.target.value) })}
                 className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>

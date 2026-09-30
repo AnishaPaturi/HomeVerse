@@ -6,30 +6,32 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
-export function formatCurrency(amount: number, currency = "INR"): string {
+export function formatCurrency(amount: number = 0, currency = "INR"): string {
+  const safeAmount = isNaN(amount) ? 0 : amount;
   if (currency === "INR") {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(safeAmount);
   }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
-export function formatIndianBudget(amount: number): string {
-  if (amount >= 10000000) {
-    const cr = amount / 10000000;
+export function formatIndianBudget(amount?: number): string {
+  const safeAmount = amount === undefined || amount === null || isNaN(amount) ? 0 : amount;
+  if (safeAmount >= 10000000) {
+    const cr = safeAmount / 10000000;
     return `₹${cr % 1 === 0 ? cr : cr.toFixed(2)} Cr`;
   }
-  if (amount >= 100000) {
-    const l = amount / 100000;
+  if (safeAmount >= 100000) {
+    const l = safeAmount / 100000;
     return `₹${l % 1 === 0 ? l : l.toFixed(1)} Lakhs`;
   }
-  return formatCurrency(amount);
+  return formatCurrency(safeAmount);
 }
 
 export function formatDate(dateString: string | Date): string {

@@ -43,8 +43,8 @@ export const BudgetProgress: React.FC<BudgetProgressProps> = ({
       </div>
 
       <div className="flex justify-between items-center text-xs text-gray-500">
-        <span>Estimated: {formatIndianBudget(estimatedCost)}</span>
-        <span>Remaining: {formatIndianBudget(remainingAmount)}</span>
+        <span>Estimated: {formatIndianBudget(actualCost)}</span>
+        <span>Remaining: {formatIndianBudget(actualRemaining)}</span>
       </div>
     </div>
   );

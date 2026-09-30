@@ -53,6 +53,7 @@ interface MaterialExplorerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyMaterial?: (material: MaterialItem, target: "wall" | "floor") => void;
+  onSelectMaterial?: (material: any) => void;
   roomAreaSqft?: number;
 }
 
@@ -62,6 +63,7 @@ export default function MaterialExplorerModal({
   isOpen,
   onClose,
   onApplyMaterial,
+  onSelectMaterial,
   roomAreaSqft = 280.0,
 }: MaterialExplorerModalProps) {
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
@@ -451,6 +453,7 @@ export default function MaterialExplorerModal({
                     onClick={(e) => {
                       e.stopPropagation();
                       onApplyMaterial?.(mat, mat.category === "paint" ? "wall" : "floor");
+                      onSelectMaterial?.(mat);
                       onClose();
                     }}
                     className="w-full mt-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-[11px] font-semibold transition"
