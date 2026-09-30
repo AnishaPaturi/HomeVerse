@@ -31,15 +31,16 @@ interface RoomObject {
 }
 
 interface CanvasContainerProps {
-  objects: RoomObject[];
-  selectedObjectId: string | null;
-  onSelectObject: (id: string | null) => void;
+  objects?: RoomObject[];
+  selectedObjectId?: string | null;
+  onSelectObject?: (id: string | null) => void;
   onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
   backgroundImageUrl?: string | null;
   roomWidth?: number;
   roomDepth?: number;
   activeFloor?: number;
   renderStyle?: "mockup" | "realistic";
+  onCopilotAction?: (actionType: string, payload: any) => void;
 }
 
 // Custom simple 3D Partition Wall component
@@ -1859,15 +1860,16 @@ function TransformableObject({
 }
 
 export default function CanvasContainer({
-  objects,
-  selectedObjectId,
-  onSelectObject,
+  objects = [],
+  selectedObjectId = null,
+  onSelectObject = () => {},
   onUpdateObject,
   backgroundImageUrl = null,
   roomWidth = 10,
   roomDepth = 10,
   activeFloor = 0,
   renderStyle = "realistic",
+  onCopilotAction,
 }: CanvasContainerProps) {
   const [isWalkthrough, setIsWalkthrough] = useState(false);
   const [isLocked, setIsLocked] = useState(false);

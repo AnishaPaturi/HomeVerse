@@ -6,9 +6,10 @@ import { ArrowRight, BedDouble, DoorClosed, UtensilsCrossed, Bath, Sparkles } fr
 interface RoomCardProps {
   room: Room;
   projectId?: string;
+  onSelect?: (room: Room) => void;
 }
 
-export const RoomCard: React.FC<RoomCardProps> = ({ room, projectId }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, projectId, onSelect }) => {
   const isCompleted = room.status === "completed";
   const isInProgress = room.status === "in_progress";
 
