@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, ArrowRight, AlertCircle, Check } from "lucide-react";
+import { Mail, Lock, ArrowRight, AlertCircle, Check, Sparkles } from "lucide-react";
 import GoogleAuthButton from "./GoogleAuthButton";
 
 interface LoginFormProps {
@@ -20,9 +20,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  const DEMO_EMAIL = "designer@homeverse.ai";
-  const DEMO_NAME = "Anisha Paturi";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +44,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         if (data.id) assignedId = data.id;
       }
     } catch (_) {
-      // Fallback in case backend is offline
+      // Fallback for offline / local mode
     }
 
     const userData = {
@@ -72,7 +69,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   const handleDemoSignIn = (demoUserEmail: string, demoUserName: string) => {
     setEmail(demoUserEmail);
-    setPassword("demo");
+    setPassword("demo-password");
     const demoUser = {
       id: "d0000000-0000-0000-0000-000000000000",
       name: demoUserName,
@@ -81,7 +78,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       isDemo: true,
     };
     sessionStorage.setItem("user", JSON.stringify(demoUser));
-    setSuccess(`Welcome ${demoUserName}! Entering HomeVerse...`);
+    setSuccess(`Entering HomeVerse as ${demoUserName}...`);
     setTimeout(() => {
       if (onSuccess) onSuccess(demoUser);
       router.push(redirectTo);
@@ -90,20 +87,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {error && (
-        <div className="p-3 bg-red-950/40 border border-red-800/60 text-red-300 rounded-xl text-xs flex items-center gap-2 font-mono">
+        <div className="p-3 bg-red-950/40 border border-red-800/60 text-red-300 rounded-2xl text-xs flex items-center gap-2 font-mono backdrop-blur-md">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs flex items-center gap-2 font-mono">
+        <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-2xl text-xs flex items-center gap-2 font-mono backdrop-blur-md">
           <Check className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{success}</span>
         </div>
       )}
 
+      {/* Social Auth */}
       <GoogleAuthButton
         onSuccess={(u) => {
           if (onSuccess) onSuccess(u);
@@ -111,44 +109,47 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         }}
       />
 
-      <div className="relative flex items-center justify-center">
-        <div className="w-full border-t border-slate-800" />
-        <span className="absolute bg-[#090e15] px-3 text-[10px] font-mono uppercase text-slate-500 tracking-wider">
-          OR EMAIL
+      <div className="relative flex items-center justify-center my-3">
+        <div className="w-full border-t border-white/[0.08]" />
+        <span className="absolute glass-morphism px-3 py-0.5 rounded-full text-[10px] font-mono uppercase text-slate-400 tracking-wider">
+          OR EMAIL ACCESS
         </span>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label className="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1.5">
-            Email Address
+        <div className="space-y-1.5">
+          <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
+            <span>Email Address</span>
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Mail className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
             <input
               type="email"
               required
-              placeholder="designer@homeverse.ai"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#05070a] border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+              placeholder="architect@domain.com"
+              className="glass-morphism-input w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-slate-500"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1.5">
-            Password
+        <div className="space-y-1.5">
+          <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
+            <span>Password</span>
+            <span className="text-[10px] text-emerald-400 hover:underline cursor-pointer">
+              Forgot?
+            </span>
           </label>
           <div className="relative">
-            <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Lock className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
             <input
               type="password"
               required
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#05070a] border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+              placeholder="••••••••"
+              className="glass-morphism-input w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-slate-500"
             />
           </div>
         </div>
@@ -156,29 +157,43 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? (
-            <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <span>Sign In to Studio</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </>
-          )}
+          <span>{loading ? "Authenticating..." : "Sign In to Studio"}</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
       </form>
 
-      {/* Quick Demo Access */}
-      <div className="pt-2 border-t border-slate-800">
-        <button
-          type="button"
-          onClick={() => handleDemoSignIn(DEMO_EMAIL, DEMO_NAME)}
-          className="w-full p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-[11px] font-mono text-slate-300 flex items-center justify-between transition-all"
-        >
-          <span>⚡ Quick 1-Click Demo (Anisha Paturi)</span>
-          <span className="text-emerald-400">Autofill & Login →</span>
-        </button>
+      {/* 1-Click Quick Demo Sign-Ins */}
+      <div className="pt-3 border-t border-white/[0.08] space-y-2">
+        <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider text-center">
+          ⚡ 1-Click Instant Demo Access
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => handleDemoSignIn("homeowner@homeverse.ai", "Rohan & Priya")}
+            className="p-2.5 rounded-xl glass-morphism hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/30 text-left transition-all cursor-pointer group"
+          >
+            <div className="text-[11px] font-bold text-white group-hover:text-emerald-300 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>Homeowner</span>
+            </div>
+            <div className="text-[9px] text-slate-400 truncate">3BHK Penthouse</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDemoSignIn("architect@homeverse.ai", "Ar. Vikram Sen")}
+            className="p-2.5 rounded-xl glass-morphism hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/30 text-left transition-all cursor-pointer group"
+          >
+            <div className="text-[11px] font-bold text-white group-hover:text-emerald-300 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>Architect</span>
+            </div>
+            <div className="text-[9px] text-slate-400 truncate">Studio Sen Practice</div>
+          </button>
+        </div>
       </div>
     </div>
   );

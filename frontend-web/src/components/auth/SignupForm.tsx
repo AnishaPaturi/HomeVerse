@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Lock, ArrowRight, AlertCircle, Check } from "lucide-react";
+import { User, Mail, Lock, ArrowRight, AlertCircle, Check, ShieldCheck } from "lucide-react";
 import GoogleAuthButton from "./GoogleAuthButton";
 
 interface SignupFormProps {
@@ -29,6 +29,11 @@ export const SignupForm: React.FC<SignupFormProps> = ({
       return;
     }
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -46,7 +51,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         if (data.id) assignedId = data.id;
       }
     } catch (_) {
-      // Offline fallback
+      // Fallback for offline / local mode
     }
 
     const userData = {
@@ -57,7 +62,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({
     };
 
     sessionStorage.setItem("user", JSON.stringify(userData));
-    setSuccess("Account successfully created! Starting house creation flow...");
+    setSuccess("Account successfully created! Starting 9-step home wizard...");
 
     setTimeout(() => {
       if (onSuccess) onSuccess(userData);
@@ -68,20 +73,21 @@ export const SignupForm: React.FC<SignupFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {error && (
-        <div className="p-3 bg-red-950/40 border border-red-800/60 text-red-300 rounded-xl text-xs flex items-center gap-2 font-mono">
+        <div className="p-3 bg-red-950/40 border border-red-800/60 text-red-300 rounded-2xl text-xs flex items-center gap-2 font-mono backdrop-blur-md">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs flex items-center gap-2 font-mono">
+        <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-2xl text-xs flex items-center gap-2 font-mono backdrop-blur-md">
           <Check className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{success}</span>
         </div>
       )}
 
+      {/* Social Auth */}
       <GoogleAuthButton
         onSuccess={(u) => {
           if (onSuccess) onSuccess(u);
@@ -89,61 +95,55 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         }}
       />
 
-      <div className="relative flex items-center justify-center">
-        <div className="w-full border-t border-slate-800" />
-        <span className="absolute bg-[#090e15] px-3 text-[10px] font-mono uppercase text-slate-500 tracking-wider">
-          OR EMAIL REGISTRATION
+      <div className="relative flex items-center justify-center my-3">
+        <div className="w-full border-t border-white/[0.08]" />
+        <span className="absolute glass-morphism px-3 py-0.5 rounded-full text-[10px] font-mono uppercase text-slate-400 tracking-wider">
+          OR REGISTER WITH EMAIL
         </span>
       </div>
 
       <form onSubmit={handleSignup} className="space-y-4">
-        <div>
-          <label className="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1.5">
-            Full Name
-          </label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-mono text-slate-300">Full Name</label>
           <div className="relative">
-            <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <User className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
             <input
               type="text"
               required
-              placeholder="Anisha Paturi"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#05070a] border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+              placeholder="Ananya Sharma"
+              className="glass-morphism-input w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-slate-500"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1.5">
-            Email Address
-          </label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-mono text-slate-300">Email Address</label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Mail className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
             <input
               type="email"
               required
-              placeholder="designer@homeverse.ai"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#05070a] border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+              placeholder="ananya@domain.com"
+              className="glass-morphism-input w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-slate-500"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1.5">
-            Create Password
-          </label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-mono text-slate-300">Password</label>
           <div className="relative">
-            <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Lock className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
             <input
               type="password"
               required
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#05070a] border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-xs"
+              placeholder="At least 6 characters"
+              className="glass-morphism-input w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-slate-500"
             />
           </div>
         </div>
@@ -151,18 +151,18 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? (
-            <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <span>Create Account & Start</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </>
-          )}
+          <span>{loading ? "Creating Account..." : "Create Account & Start"}</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
       </form>
+
+      {/* Security note */}
+      <div className="pt-2 text-center text-[10px] font-mono text-slate-500 flex items-center justify-center gap-1.5">
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <span>By signing up, you agree to our Terms of Architecture Service</span>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowRight } from "lucide-react";
 
 interface GoogleAuthButtonProps {
   onSuccess?: (user: any) => void;
@@ -19,7 +18,6 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      // Direct call to backend google auth endpoint or simulated OAuth flow
       const res = await fetch("http://localhost:8080/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,7 +36,6 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         sessionStorage.setItem("user", JSON.stringify(user));
         if (onSuccess) onSuccess(user);
       } else {
-        // Fallback for seamless developer experience
         const fallbackUser = {
           id: "google-user-verified",
           name: "HomeVerse Creator",
@@ -49,7 +46,6 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         if (onSuccess) onSuccess(fallbackUser);
       }
     } catch (err: any) {
-      // In offline / local development mode, grant session
       const fallbackUser = {
         id: "google-user-dev",
         name: "HomeVerse Explorer",
@@ -68,7 +64,7 @@ export const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       type="button"
       onClick={handleGoogleSignIn}
       disabled={disabled || loading}
-      className="w-full py-3 px-4 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-200 hover:text-white font-mono text-xs flex items-center justify-center gap-3 transition-all cursor-pointer shadow-md disabled:opacity-50"
+      className="glass-morphism w-full py-3.5 px-4 rounded-2xl hover:bg-white/[0.08] border border-white/15 text-slate-200 hover:text-white font-mono text-xs flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99]"
     >
       <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
         <path
