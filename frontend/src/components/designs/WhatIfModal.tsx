@@ -237,7 +237,7 @@ export const WhatIfModal: React.FC<WhatIfModalProps> = ({
     }
   };
 
-  const renderIcon = (iconName: string) => {
+  const renderIcon = (iconName?: string) => {
     switch (iconName) {
       case "Coins":
         return <Coins className="w-5 h-5 text-emerald-500" />;

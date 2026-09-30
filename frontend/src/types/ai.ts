@@ -52,7 +52,7 @@ export interface WhatIfModifiedItem {
   new_material?: string;
   original_cost?: number;
   new_cost?: number;
-  cost_delta?: number;
+  cost_delta: number;
   reason?: string;
 }
 
@@ -62,11 +62,11 @@ export interface WhatIfScenarioResponse {
   query: string;
   scenario_title: string;
   summary: string;
-  design_changes?: string[];
-  furniture_changes?: string[];
-  material_changes?: string[];
+  design_changes: string[];
+  furniture_changes: string[];
+  material_changes: string[];
   cost_summary: WhatIfCostSummary;
-  modified_items?: WhatIfModifiedItem[];
+  modified_items: WhatIfModifiedItem[];
   prompt_preview?: string;
   can_apply?: boolean;
 }

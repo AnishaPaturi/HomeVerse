@@ -45,3 +45,26 @@ export interface CreateProjectInput {
   total_rooms?: number;
   floors?: any[];
 }
+
+export interface ExecutionTask {
+  id: string;
+  project_id?: string;
+  name: string;
+  description?: string;
+  status: string;
+  estimated_cost?: number;
+  actual_cost?: number;
+  phase?: string;
+  duration_days?: number;
+  created_at?: string;
+}
+
+export interface Expense {
+  id: string;
+  project_id?: string;
+  category: string;
+  description?: string;
+  amount: number;
+  date?: string;
+  receipt_url?: string;
+}

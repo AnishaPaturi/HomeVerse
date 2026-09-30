@@ -57,11 +57,49 @@ export interface CheaperAlternative {
   description?: string;
 }
 
+export interface AlternativeItemOption {
+  name: string;
+  price: number;
+  savings: number;
+  image_url?: string;
+  retailer?: string;
+}
+
 export interface BudgetImpactSimulationResponse {
-  cost_delta: number;
-  new_total_estimate: number;
-  budget_status: "within_budget" | "warning" | "exceeded";
-  remaining_amount: number;
-  message: string;
+  project_id?: string;
+  current_room_budget?: number;
+  new_room_budget?: number;
+  delta_amount?: number;
+  total_budget?: number;
+  remaining_budget_before?: number;
+  remaining_budget_after?: number;
+  is_within_budget?: boolean;
+  budget_flexibility?: string;
+  impact_message?: string;
+  cheaper_alternatives?: AlternativeItemOption[];
+  cost_delta?: number;
+  new_total_estimate?: number;
+  budget_status?: "within_budget" | "warning" | "exceeded" | string;
+  remaining_amount?: number;
+  message?: string;
   alternative_items?: CheaperAlternative[];
+}
+
+export interface ShoppingItem {
+  id: string;
+  project_id?: string;
+  name: string;
+  quantity: number;
+  estimated_cost: number;
+  status: string;
+  category?: string;
+  vendor?: string;
+  product_id?: string;
+  product_details?: {
+    name?: string;
+    category?: string;
+    price?: number;
+    image_url?: string;
+    brand?: string;
+  };
 }
