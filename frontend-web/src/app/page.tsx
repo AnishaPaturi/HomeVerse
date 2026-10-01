@@ -23,7 +23,7 @@ import FinalCTA from "@/components/landing/FinalCTA";
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<any | null>(null);
-  const [heroStyle, setHeroStyle] = useState<string>("Japandi");
+  const [heroStyle, setHeroStyle] = useState<string>("Industrial");
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

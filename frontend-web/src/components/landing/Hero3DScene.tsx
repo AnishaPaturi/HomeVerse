@@ -30,7 +30,9 @@ import {
   Grid3X3, 
   Layers, 
   Maximize2, 
+  Minimize2,
   RotateCw, 
+  RotateCcw,
   Plus, 
   Sliders, 
   Info,
@@ -59,8 +61,8 @@ function Sofa3D({
 }) {
   return (
     <group 
-      position={[-0.8, 0, 0]} 
-      rotation={[0, Math.PI / 4, 0]} 
+      position={[-0.2, 0, -0.6]} 
+      rotation={[0, 0, 0]} 
       onClick={(e) => {
         e.stopPropagation();
         if (onClick) onClick();
@@ -131,8 +133,8 @@ function CoffeeTable3D({
 }) {
   return (
     <group 
-      position={[0.5, 0, 0.9]} 
-      rotation={[0, -Math.PI / 8, 0]}
+      position={[-0.2, 0, 0.7]} 
+      rotation={[0, 0, 0]} 
       onClick={(e) => {
         e.stopPropagation();
         if (onClick) onClick();
@@ -189,7 +191,7 @@ function CoffeeTable3D({
 
 function FloorLamp3D({ wireframe = false }: { wireframe?: boolean }) {
   return (
-    <group position={[-2.3, 0, -1.2]}>
+    <group position={[-0.2, 0, -2.5]}>
       <mesh position={[0, 0.02, 0]} castShadow>
         <cylinderGeometry args={[0.25, 0.25, 0.04, 32]} />
         <meshStandardMaterial color="#090d16" metalness={0.8} roughness={0.2} wireframe={wireframe} />
@@ -202,14 +204,14 @@ function FloorLamp3D({ wireframe = false }: { wireframe?: boolean }) {
         <coneGeometry args={[0.32, 0.45, 32, 1, true]} />
         <meshStandardMaterial color="#fef08a" roughness={0.3} side={THREE.DoubleSide} wireframe={wireframe} />
       </mesh>
-      <pointLight position={[0, 2.05, 0]} intensity={1.8} color="#fde047" distance={4} />
+      <pointLight position={[0, 2.05, 0]} intensity={4.5} color="#fde047" distance={8} />
     </group>
   );
 }
 
 function ModernPottedPlant({ wireframe = false }: { wireframe?: boolean }) {
   return (
-    <group position={[2.4, 0, -1.8]}>
+    <group position={[1.4, 0, 0.6]}>
       <mesh position={[0, 0.35, 0]} castShadow>
         <cylinderGeometry args={[0.3, 0.22, 0.7, 32]} />
         <meshStandardMaterial color="#ffffff" roughness={0.2} wireframe={wireframe} />
@@ -228,30 +230,53 @@ function ModernPottedPlant({ wireframe = false }: { wireframe?: boolean }) {
 
 function WallArtCanvas({ accentColor, wireframe = false }: { accentColor: string; wireframe?: boolean }) {
   return (
-    <group position={[0, 2.2, -3.92]}>
+    <group position={[1.8, 2.3, -3.92]}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={[2.4, 1.4, 0.05]} />
         <meshStandardMaterial color="#18181b" roughness={0.3} metalness={0.7} wireframe={wireframe} />
       </mesh>
       <mesh position={[0, 0, 0.03]} receiveShadow>
         <planeGeometry args={[2.28, 1.28]} />
-        <meshStandardMaterial color={accentColor} roughness={0.4} wireframe={wireframe} />
+        <meshStandardMaterial 
+          color={accentColor} 
+          roughness={0.3} 
+          emissive={accentColor} 
+          emissiveIntensity={0.35} 
+          wireframe={wireframe} 
+        />
       </mesh>
     </group>
   );
 }
 
-export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: Hero3DSceneProps) {
+export default function Hero3DScene({ styleName = "Industrial", onStyleChange }: Hero3DSceneProps) {
   const [mounted, setMounted] = useState(false);
   const [activeStyle, setActiveStyle] = useState(styleName);
   
   // Playground Viewport Controls (Point 1 & Point 6)
   const [cameraMode, setCameraMode] = useState<"orbit" | "topdown" | "eye">("orbit");
-  const [lightingPreset, setLightingPreset] = useState<"day" | "sunset" | "night">("day");
+  const [lightingPreset, setLightingPreset] = useState<"day" | "sunset" | "night">("night");
   const [showGrid, setShowGrid] = useState(true);
   const [wireframeMode, setWireframeMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [cameraKey, setCameraKey] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const resetCamera = () => {
+    setCameraMode("orbit");
+    setCameraKey((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isExpanded]);
 
   // Furniture items visibility in playground
   const [visibleItems, setVisibleItems] = useState({
@@ -366,12 +391,24 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
   const getCameraConfig = () => {
     switch (cameraMode) {
       case "topdown":
-        return { position: [0.1, 10, 0.1] as [number, number, number], fov: 35 };
+        return { 
+          position: [0.01, 15.5, 0.01] as [number, number, number], 
+          target: [0, 0, 0] as [number, number, number], 
+          fov: 46 
+        };
       case "eye":
-        return { position: [0, 1.6, 4.2] as [number, number, number], fov: 55 };
+        return { 
+          position: [0, 1.5, 4.0] as [number, number, number], 
+          target: [-0.2, 1.2, -0.6] as [number, number, number], 
+          fov: 55 
+        };
       case "orbit":
       default:
-        return { position: [4.8, 3.8, 5.8] as [number, number, number], fov: 42 };
+        return { 
+          position: [7.2, 5.6, 7.8] as [number, number, number], 
+          target: [0, 1.3, 0] as [number, number, number], 
+          fov: 45 
+        };
     }
   };
 
@@ -379,7 +416,7 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
 
   if (!mounted) {
     return (
-      <div className="w-full h-full min-h-[520px] bg-[#070b10] rounded-3xl flex items-center justify-center border border-white/10">
+      <div className="w-full h-full min-h-[540px] bg-[#070b10] rounded-3xl flex items-center justify-center border border-white/10">
         <div className="flex items-center gap-3 text-emerald-400 text-xs font-mono animate-pulse">
           <Wand2 className="w-4 h-4" />
           <span>LOADING 3D SPATIAL PLAYGROUND...</span>
@@ -389,7 +426,13 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
   }
 
   return (
-    <div className="w-full h-full min-h-[540px] lg:min-h-[620px] relative rounded-3xl overflow-hidden border border-white/15 bg-[#060a0f] shadow-2xl shadow-emerald-950/40 flex flex-col justify-between">
+    <div 
+      className={
+        isExpanded
+          ? "fixed inset-0 z-50 p-4 sm:p-8 bg-[#060a0f]/98 backdrop-blur-2xl flex flex-col justify-between overflow-hidden"
+          : "w-full h-full min-h-[560px] lg:min-h-[660px] relative rounded-3xl overflow-hidden border border-white/15 bg-[#060a0f] shadow-2xl shadow-emerald-950/40 flex flex-col justify-between transition-all"
+      }
+    >
       
       {/* ========================================================================================= */}
       {/* 1. TOP VIEWPORT PLAYGROUND TOOLBAR */}
@@ -479,7 +522,7 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
           </button>
         </div>
 
-        {/* Right: Toggles (Grid, Wireframe, Rotate) */}
+        {/* Right: Toggles (Grid, Wireframe, Rotate, Fit View, Expand) */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setShowGrid(!showGrid)}
@@ -511,6 +554,27 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
           >
             <RotateCw className="w-3 h-3" />
           </button>
+
+          <button
+            onClick={resetCamera}
+            className="px-2.5 py-1 rounded-xl border border-white/10 text-[10px] text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+            title="Reset to Complete Room View"
+          >
+            <RotateCcw className="w-3 h-3 text-emerald-400" />
+            <span>Fit View</span>
+          </button>
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`p-1.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
+              isExpanded
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                : "text-slate-400 hover:text-white border-white/10 hover:bg-white/10"
+            }`}
+            title={isExpanded ? "Exit Fullscreen (ESC)" : "Expand to Fullscreen View"}
+          >
+            {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
@@ -519,7 +583,7 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
       {/* ========================================================================================= */}
       <div className="relative flex-1 w-full h-full min-h-[380px]">
         <Canvas
-          key={`${cameraMode}-${lightingPreset}`}
+          key={`${cameraMode}-${lightingPreset}-${cameraKey}`}
           camera={{ position: cameraConfig.position, fov: cameraConfig.fov }}
           shadows={{ type: THREE.PCFSoftShadowMap }}
           className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -543,10 +607,16 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
 
           {lightingPreset === "night" && (
             <>
-              <ambientLight intensity={0.25} color="#1e1b4b" />
-              <pointLight position={[0, 3.5, 0]} intensity={2.2} color="#fef08a" />
-              <pointLight position={[-2.3, 2.1, -1.2]} intensity={2.5} color="#fde047" />
+              <ambientLight intensity={0.45} color="#1e1b4b" />
+              <directionalLight position={[5, 8, 6]} intensity={0.35} color="#94a3b8" />
+              <pointLight position={[-0.2, 2.2, -2.5]} intensity={4.5} color="#fde047" distance={8} />
+              <pointLight position={[1.8, 2.3, -3.2]} intensity={2.0} color="#ea580c" distance={6} />
+              <pointLight position={[0, 3.2, 0]} intensity={1.2} color="#fef08a" distance={10} />
             </>
+          )}
+
+          {cameraMode === "eye" && (
+            <pointLight position={[0, 1.8, 3.2]} intensity={1.8} color="#fed7aa" distance={8} />
           )}
 
           {/* Floor Slab with PBR material */}
@@ -612,13 +682,14 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
           {/* Orbit Controls */}
           <OrbitControls
             makeDefault
+            target={cameraConfig.target}
             autoRotate={autoRotate}
             autoRotateSpeed={0.6}
             enableZoom={true}
-            maxPolarAngle={Math.PI / 2 - 0.08}
-            minPolarAngle={Math.PI / 6}
-            minDistance={3.5}
-            maxDistance={12}
+            maxPolarAngle={Math.PI / 2 - 0.05}
+            minPolarAngle={Math.PI / 16}
+            minDistance={2.5}
+            maxDistance={28}
           />
         </Canvas>
 
