@@ -58,7 +58,7 @@ export const Hero: React.FC<HeroProps> = ({
               className="glass-morphism hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/15 font-mono text-xs px-6 py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2.5 hover:scale-[1.02]"
             >
               <Play className="w-4 h-4 text-emerald-400 fill-emerald-400" />
-              <span>Watch 2-Min Demo</span>
+              <span>Watch 15-Sec</span>
             </button>
           </div>
 

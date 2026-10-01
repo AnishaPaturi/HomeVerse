@@ -4,8 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Menu, X, Phone, Sparkles } from "lucide-react";
 import Hero from "@/components/landing/Hero";
-import SocialProof from "@/components/landing/SocialProof";
-import ProblemSolution from "@/components/landing/ProblemSolution";
 import KeyBenefits from "@/components/landing/KeyBenefits";
 import UniqueValue from "@/components/landing/UniqueValue";
 import LockedCoordinateViewer from "@/components/landing/LockedCoordinateViewer";
@@ -194,12 +192,6 @@ export default function HomePage() {
         onOpenDemoModal={() => setDemoModalOpen(true)}
         isAuthenticated={!!user}
       />
-
-      {/* Social Proof (Metrics & Architectural Media) */}
-      <SocialProof />
-
-      {/* Problem You Solve (Renovation Paradox vs HomeVerse) */}
-      <ProblemSolution />
 
       {/* Key Benefits (6 Pillars of Spatial Governance) */}
       <KeyBenefits />
