@@ -18,8 +18,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
       title: "Raw Blueprint or Sketch",
       tag: "INPUT INGESTION",
       desc: "Upload any blueprint PDF, developer brochure, or even a smartphone snapshot of a hand-drawn pencil sketch.",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200",
-      detectionOverlay: null,
+      image: "/BluePrint-sample.png",
       callout: "Raw 2D architectural blueprint uploaded by homeowner",
     },
     {
@@ -27,15 +26,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
       title: "AI Computer Vision Detection",
       tag: "GEMINI MULTIMODAL OCR",
       desc: "Our vision AI scans the image, identifying load-bearing walls, partition walls, door swings, and window openings.",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200",
-      detectionOverlay: {
-        boxes: [
-          { label: "Living Room (5.2m × 4.1m)", top: "25%", left: "15%", width: "42%", height: "45%", color: "border-emerald-400 bg-emerald-500/20" },
-          { label: "Balcony Door (1.8m Clearance)", top: "18%", left: "62%", width: "22%", height: "18%", color: "border-teal-400 bg-teal-500/20" },
-          { label: "Dining Area (3.6m × 3.2m)", top: "52%", left: "55%", width: "32%", height: "36%", color: "border-cyan-400 bg-cyan-500/20" },
-        ],
-        scannerActive: true,
-      },
+      image: "/AI-computer-vision-detection.png",
       callout: "Scanning walls, door clearances, and calculating square meters",
     },
     {
@@ -43,13 +34,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
       title: "Clean 2D Vector CAD Layout",
       tag: "GEOMETRIC RECONSTRUCTION",
       desc: "Hand-drawn wobbles and blurry lines are instantly straightened into millimeter-precise architectural vector lines.",
-      image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200",
-      detectionOverlay: {
-        boxes: [
-          { label: "Wall Thickness: 230mm (Brick)", top: "30%", left: "20%", width: "40%", height: "35%", color: "border-emerald-400/80 bg-emerald-500/10" },
-        ],
-        scannerActive: false,
-      },
+      image: "/Clean-2D-Vector-CAD-Layout.png",
       callout: "Standardized CAD geometry with metric dimension anchors",
     },
     {
@@ -58,7 +43,6 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
       tag: "SPATIAL EXTRUSION",
       desc: "Walls rise into 3D space with accurate ceiling heights, daylight openings, and locked coordinate snap points for furniture.",
       image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200",
-      detectionOverlay: null,
       callout: "Ready for live 3D walkthrough, styling, and budget simulation",
     },
   ];
@@ -129,50 +113,30 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
               <img
                 src={current.image}
                 alt={current.title}
-                className="w-full h-full object-cover filter brightness-[0.85] contrast-105 transition-all duration-700"
+                className={
+                  current.step === 1 || current.step === 3
+                    ? "w-full h-full object-contain bg-white p-2 transition-all duration-700"
+                    : current.step === 2
+                    ? "w-full h-full object-contain bg-[#030914] transition-all duration-700"
+                    : "w-full h-full object-cover filter brightness-[0.85] contrast-105 transition-all duration-700"
+                }
               />
-
-              {/* Laser Scan Animation Line on Step 2 */}
-              {current.detectionOverlay?.scannerActive && (
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  <div className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] animate-bounce" />
-                </div>
-              )}
-
-              {/* Bounding Box Visual Overlays */}
-              {current.detectionOverlay?.boxes.map((box, i) => (
-                <div
-                  key={i}
-                  className={`absolute rounded-xl border-2 ${box.color} p-2 flex flex-col justify-between backdrop-blur-sm transition-all duration-500 animate-in fade-in`}
-                  style={{
-                    top: box.top,
-                    left: box.left,
-                    width: box.width,
-                    height: box.height,
-                  }}
-                >
-                  <span className="inline-block bg-slate-950/90 text-emerald-400 font-mono text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded border border-emerald-500/40 w-fit shadow-md">
-                    ✓ {box.label}
-                  </span>
-                  <div className="flex justify-end">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  </div>
-                </div>
-              ))}
-
-              {/* Bottom Caption Pill */}
-              <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-auto glass-morphism px-4 py-2.5 rounded-2xl flex items-center gap-3 text-xs font-mono text-white border border-white/20 shadow-xl">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{current.callout}</span>
-              </div>
             </div>
 
             {/* Explanation Footer */}
             <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-white/10">
               <div className="space-y-1">
-                <h4 className="text-base sm:text-lg font-bold text-white font-editorial">
-                  Step {current.step}: {current.title}
-                </h4>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h4 className="text-base sm:text-lg font-bold text-white font-editorial">
+                    Step {current.step}: {current.title}
+                  </h4>
+                  {current.callout && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      {current.callout}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs sm:text-sm text-slate-300 font-light max-w-2xl leading-relaxed">
                   {current.desc}
                 </p>
