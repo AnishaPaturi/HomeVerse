@@ -34,7 +34,8 @@ import {
   Plus, 
   Sliders, 
   Info,
-  Wand2
+  Wand2,
+  MousePointer
 } from "lucide-react";
 
 interface Hero3DSceneProps {
@@ -250,7 +251,7 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
   const [showGrid, setShowGrid] = useState(true);
   const [wireframeMode, setWireframeMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<string | null>("sofa");
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   // Furniture items visibility in playground
   const [visibleItems, setVisibleItems] = useState({
@@ -393,22 +394,22 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
       {/* ========================================================================================= */}
       {/* 1. TOP VIEWPORT PLAYGROUND TOOLBAR */}
       {/* ========================================================================================= */}
-      <div className="relative z-30 p-3 bg-[#080d14]/90 backdrop-blur-md border-b border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-300">
+      <div className="relative z-30 p-2.5 sm:p-3 bg-[#080d14]/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-xs font-mono text-slate-300">
         {/* Left: Camera Angle Mode Switcher */}
-        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10">
+        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10 shrink-0">
           <button
             onClick={() => {
               setCameraMode("orbit");
               setAutoRotate(true);
             }}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px] transition-all cursor-pointer shrink-0 ${
               cameraMode === "orbit"
                 ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>3D Orbit</span>
+            <Eye className="w-3 h-3" />
+            <span>Orbit</span>
           </button>
 
           <button
@@ -416,14 +417,14 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
               setCameraMode("topdown");
               setAutoRotate(false);
             }}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px] transition-all cursor-pointer shrink-0 ${
               cameraMode === "topdown"
                 ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>2D CAD Plan</span>
+            <Layers className="w-3 h-3" />
+            <span>2D CAD</span>
           </button>
 
           <button
@@ -431,84 +432,84 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
               setCameraMode("eye");
               setAutoRotate(false);
             }}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px] transition-all cursor-pointer shrink-0 ${
               cameraMode === "eye"
                 ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <span>🚶 Eye Walk</span>
+            <span>🚶 Walk</span>
           </button>
         </div>
 
         {/* Center: Lighting Environment Presets */}
-        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10">
+        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10 shrink-0">
           <button
             onClick={() => setLightingPreset("day")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer shrink-0 ${
               lightingPreset === "day"
                 ? "bg-amber-400/20 text-amber-300 border border-amber-400/40"
                 : "text-slate-400 hover:text-white"
             }`}
             title="Daylight (5000K)"
           >
-            <Sun className="w-4 h-4" />
+            <Sun className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setLightingPreset("sunset")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer shrink-0 ${
               lightingPreset === "sunset"
                 ? "bg-orange-500/20 text-orange-300 border border-orange-500/40"
                 : "text-slate-400 hover:text-white"
             }`}
             title="Golden Hour Sunset (3000K)"
           >
-            <Sunset className="w-4 h-4" />
+            <Sunset className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setLightingPreset("night")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer shrink-0 ${
               lightingPreset === "night"
                 ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
                 : "text-slate-400 hover:text-white"
             }`}
             title="Night Architectural Warm Mood"
           >
-            <Moon className="w-4 h-4" />
+            <Moon className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Right: Toggles (Grid, Wireframe, Rotate) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setShowGrid(!showGrid)}
-            className={`px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
+            className={`px-2 py-1 rounded-xl border text-[11px] transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               showGrid ? "bg-white/10 border-white/20 text-white" : "border-transparent text-slate-500"
             }`}
             title="Toggle Metric Grid"
           >
-            <Grid3X3 className="w-3.5 h-3.5" />
+            <Grid3X3 className="w-3 h-3" />
             <span className="hidden sm:inline text-[10px]">Grid</span>
           </button>
 
           <button
             onClick={() => setWireframeMode(!wireframeMode)}
-            className={`px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
+            className={`px-2 py-1 rounded-xl border text-[10px] transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               wireframeMode ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "border-transparent text-slate-500"
             }`}
             title="Toggle Wireframe CAD"
           >
-            <span className="text-[10px]">Wireframe</span>
+            <span>Wireframe</span>
           </button>
 
           <button
             onClick={() => setAutoRotate(!autoRotate)}
-            className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+            className={`p-1.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
               autoRotate ? "text-emerald-400 border-emerald-500/30" : "text-slate-500 border-transparent"
             }`}
             title="Auto-Rotate Camera"
           >
-            <RotateCw className="w-3.5 h-3.5" />
+            <RotateCw className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -621,90 +622,97 @@ export default function Hero3DScene({ styleName = "Japandi", onStyleChange }: He
           />
         </Canvas>
 
-        {/* Interactive Floating Item Inspector Card (Right side) */}
+        {/* AI Copilot Compact Status Pill (Top-Left, non-overlapping) */}
+        <div className="absolute top-3 left-3 z-10 pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-emerald-500/30 text-[11px] font-mono text-emerald-400 shadow-lg">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
+          <span className="font-semibold text-white uppercase tracking-wider">{activeStyle}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-[10px] text-emerald-400/90 font-medium">60 FPS WebGL</span>
+        </div>
+
+        {/* Click Furniture Hint Pill (Top-Right) */}
+        {!selectedItem && (
+          <div className="absolute top-3 right-3 z-10 pointer-events-none hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/70 backdrop-blur-sm border border-white/10 text-[10px] font-mono text-slate-400 shadow-md">
+            <MousePointer className="w-3 h-3 text-emerald-400 shrink-0" />
+            <span>Click furniture to inspect</span>
+          </div>
+        )}
+
+        {/* Interactive Floating Item Inspector Card (Bottom-Right, docked and non-overlapping) */}
         {selectedItem && (
-          <div className="absolute top-4 right-4 z-20 w-64 glass-morphism-card p-4 rounded-2xl border border-white/20 shadow-2xl space-y-3 animate-in fade-in hidden sm:block">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="absolute bottom-3 right-3 z-20 w-64 bg-slate-950/90 backdrop-blur-xl p-3.5 rounded-2xl border border-emerald-500/40 shadow-2xl space-y-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
               <span className="font-mono text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Sliders className="w-3 h-3" />
-                <span>Object Inspector</span>
+                <span>Object Specs</span>
               </span>
               <button 
                 onClick={() => setSelectedItem(null)}
-                className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                className="text-slate-400 hover:text-white text-xs px-1 cursor-pointer transition-colors"
+                aria-label="Close inspector"
               >
                 ✕
               </button>
             </div>
 
             {selectedItem === "sofa" ? (
-              <div className="space-y-2 text-xs font-mono">
-                <div className="font-bold text-white text-sm">3-Seater Platform Sofa</div>
-                <div className="text-[11px] text-slate-400">Dimensions: 2.2m × 0.95m × 0.75m</div>
-                <div className="text-emerald-400 font-bold">Price: ₹ 48,500 (Pepperfry / Custom)</div>
-                <div className="text-[10px] text-slate-400 pt-1">
-                  Clearance: 82cm to Coffee Table ✓
-                </div>
+              <div className="space-y-1 text-xs font-mono">
+                <div className="font-bold text-white text-xs">3-Seater Platform Sofa</div>
+                <div className="text-[11px] text-slate-400">2.2m × 0.95m × 0.75m · Bouclé</div>
+                <div className="text-emerald-400 font-bold text-xs">₹ 48,500 (Verified Vendor)</div>
+                <div className="text-[10px] text-slate-400">Clearance: 82cm to Table ✓</div>
               </div>
             ) : (
-              <div className="space-y-2 text-xs font-mono">
-                <div className="font-bold text-white text-sm">Architectural Coffee Table</div>
-                <div className="text-[11px] text-slate-400">Dimensions: 1.3m × 0.75m × 0.44m</div>
-                <div className="text-emerald-400 font-bold">Price: ₹ 18,200 (CenturyPly Teak / Glass)</div>
-                <div className="text-[10px] text-slate-400 pt-1">
-                  Material: {theme.tableType.toUpperCase()}
-                </div>
+              <div className="space-y-1 text-xs font-mono">
+                <div className="font-bold text-white text-xs">Architectural Coffee Table</div>
+                <div className="text-[11px] text-slate-400">1.3m × 0.75m × 0.44m · {theme.tableType}</div>
+                <div className="text-emerald-400 font-bold text-xs">₹ 18,200 (Teak / Glass)</div>
+                <div className="text-[10px] text-slate-400">Anchor Placed [X: 0.5, Z: 0.9] ✓</div>
               </div>
             )}
           </div>
         )}
+      </div>
 
-        {/* AI Copilot Status Pill (Top-Left) */}
-        <div className="absolute top-4 left-4 z-20 max-w-[270px] glass-morphism p-3 rounded-2xl border border-emerald-500/30 shadow-xl pointer-events-auto">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">
-              <Sparkles className="w-3 h-3 text-emerald-400 animate-spin" />
-              <span>AI Copilot Active</span>
-            </div>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 font-mono border border-emerald-800/60">
-              WebGL 60FPS
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-200 leading-snug italic font-light">
-            "{theme.promptText}"
-          </p>
-        </div>
+      {/* Architectural AI Prompt Tagline Strip */}
+      <div className="relative z-20 px-3.5 py-1.5 bg-[#05080c]/90 backdrop-blur-sm border-t border-white/[0.08] flex items-center gap-2 text-xs text-slate-300 font-mono overflow-hidden shrink-0">
+        <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase font-semibold shrink-0">
+          AI Spec
+        </span>
+        <span className="text-[11px] text-slate-300 truncate font-light">
+          "{theme.promptText}"
+        </span>
       </div>
 
       {/* ========================================================================================= */}
       {/* 3. BOTTOM HUD BAR: LIVE BUDGET GAUGE & STYLE SWITCHER */}
       {/* ========================================================================================= */}
-      <div className="relative z-30 p-3.5 bg-[#080d14]/95 backdrop-blur-md border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="relative z-30 p-2.5 sm:p-3 bg-[#080d14]/95 backdrop-blur-md border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
         {/* Live Budget Counter */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xs">
             ₹
           </div>
           <div>
-            <div className="text-[9px] font-mono uppercase tracking-wider text-slate-400">
+            <div className="text-[9px] font-mono uppercase tracking-wider text-slate-400 leading-none">
               Live Room Budget
             </div>
-            <div className="text-sm font-bold font-mono text-white flex items-center gap-2">
+            <div className="text-xs font-bold font-mono text-white flex items-center gap-2 mt-0.5">
               <span>{theme.budget}</span>
-              <span className="text-[10px] text-emerald-400 font-normal">Within ₹10L Allowance ✓</span>
+              <span className="text-[10px] text-emerald-400 font-normal">Within ₹10L ✓</span>
             </div>
           </div>
         </div>
 
         {/* Interactive Style Switcher */}
-        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-2xl border border-white/10">
+        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full no-scrollbar shrink-0">
           {["Japandi", "Modern", "Scandinavian", "Luxury", "Industrial"].map((style) => (
             <button
               key={style}
               onClick={() => handleStyleSelect(style)}
-              className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ${
                 activeStyle.toLowerCase().includes(style.toLowerCase())
-                  ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/30"
+                  ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
                   : "text-slate-400 hover:text-white"
               }`}
             >

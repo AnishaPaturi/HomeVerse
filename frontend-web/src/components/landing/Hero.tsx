@@ -81,22 +81,6 @@ export const Hero: React.FC<HeroProps> = ({
 
         {/* Right Column: Live Interactive 3D Canvas Studio */}
         <div className="lg:col-span-7 relative">
-          {/* Glass Floating Badges */}
-          <div className="hidden sm:flex absolute -top-4 -left-4 z-20 glass-morphism px-3.5 py-1.5 rounded-full items-center gap-2 text-[11px] font-mono text-slate-200 border border-white/20 shadow-xl">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Style: {heroStyle}</span>
-          </div>
-
-          <div className="hidden sm:flex absolute -bottom-4 right-4 z-20 glass-morphism px-4 py-2 rounded-2xl items-center gap-3 text-[11px] font-mono text-emerald-400 border border-emerald-500/30 shadow-xl">
-            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center font-bold">
-              ₹
-            </div>
-            <div className="text-left">
-              <div className="text-[9px] text-slate-400 uppercase">Live Delta Locked</div>
-              <div className="font-bold text-white">₹ 24,50,000 Total</div>
-            </div>
-          </div>
-
           <Hero3DScene styleName={heroStyle} onStyleChange={onStyleChange} />
         </div>
       </div>

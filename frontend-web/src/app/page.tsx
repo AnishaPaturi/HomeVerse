@@ -65,7 +65,7 @@ export default function HomePage() {
           {/* Brand Logo */}
           <div
             onClick={() => router.push("/")}
-            className="cursor-pointer group flex items-center"
+            className="cursor-pointer group flex items-center shrink-0"
           >
             <span className="font-mono text-base sm:text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
               HOMEVERSE
@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
 
           {/* Spacious Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-10 xl:gap-14 text-xs font-mono tracking-widest text-slate-300">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-10 2xl:gap-12 text-xs font-mono tracking-widest text-slate-300">
             <button
               onClick={() => scrollToSection("key-benefits")}
               className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
@@ -111,7 +111,7 @@ export default function HomePage() {
           </nav>
 
           {/* User Auth Buttons / Primary CTA */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             {user && (
               <div className="flex items-center gap-3">
                 <button
