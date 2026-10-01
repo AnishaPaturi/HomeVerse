@@ -12,16 +12,40 @@ import {
   X,
   Compass,
   Footprints,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
 } from "lucide-react";
 
 interface PlatformDemoProps {
   isAuthenticated?: boolean;
 }
 
+type WalkthroughAngle = "overview" | "front" | "entry" | "window" | "panorama" | "top";
+
+interface WalkthroughOption {
+  id: WalkthroughAngle;
+  label: string;
+  badge: string;
+  transform: string;
+}
+
+const WALKTHROUGH_OPTIONS: WalkthroughOption[] = [
+  { id: "overview", label: "All Angles", badge: "10-VIEW COMPOSITE", transform: "scale(1) translate(0%, 0%)" },
+  { id: "front", label: "Front View", badge: "MAIN PERSPECTIVE", transform: "scale(2.2) translate(36%, 34%)" },
+  { id: "entry", label: "Door Entry", badge: "FOYER ENTRANCE", transform: "scale(2.2) translate(-12%, -1%)" },
+  { id: "window", label: "Window View", badge: "DAYLIGHT & BALCONY", transform: "scale(2.2) translate(-36%, -1%)" },
+  { id: "panorama", label: "360° Panorama", badge: "0° - 270° ROTATION", transform: "scale(1.9) translate(-14%, -32%)" },
+  { id: "top", label: "Top-Down CAD", badge: "ISOMETRIC PLAN", transform: "scale(2.2) translate(34%, -29%)" },
+];
+
 export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = false }) => {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
   const [isWalkthroughModalOpen, setIsWalkthroughModalOpen] = useState(false);
+  const [activeAngle, setActiveAngle] = useState<WalkthroughAngle>("overview");
+  const [isAutoTouring, setIsAutoTouring] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,6 +56,19 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isWalkthroughModalOpen]);
+
+  // Auto-tour timer when activeStep === 4 and isAutoTouring is enabled
+  useEffect(() => {
+    if (activeStep !== 4 || !isAutoTouring) return;
+    const interval = setInterval(() => {
+      setActiveAngle((prev) => {
+        const currentIndex = WALKTHROUGH_OPTIONS.findIndex((o) => o.id === prev);
+        const nextIndex = (currentIndex + 1) % WALKTHROUGH_OPTIONS.length;
+        return WALKTHROUGH_OPTIONS[nextIndex].id;
+      });
+    }, 2800);
+    return () => clearInterval(interval);
+  }, [activeStep, isAutoTouring]);
 
   const pipelineSteps = [
     {
@@ -61,14 +98,27 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
     {
       step: 4,
       title: "Interactive 3D Walkthrough",
-      tag: "360° SPATIAL WALKTHROUGH",
+      tag: "360° SPATIAL TOUR",
       desc: "Step inside your floor plan with true-to-scale first-person walkthroughs, 360° panoramic rotation, door entry vistas, and multi-angle room inspections.",
       image: "/Interactive-3D-digital-twin.png",
-      callout: "Multi-angle 360° spatial walkthrough & digital twin",
+      callout: "Interactive 360° multi-angle walkthrough & digital twin",
     },
   ];
 
   const current = pipelineSteps[activeStep - 1];
+  const activeOption = WALKTHROUGH_OPTIONS.find((o) => o.id === activeAngle) || WALKTHROUGH_OPTIONS[0];
+
+  const handleNextAngle = () => {
+    const currentIndex = WALKTHROUGH_OPTIONS.findIndex((o) => o.id === activeAngle);
+    const nextIndex = (currentIndex + 1) % WALKTHROUGH_OPTIONS.length;
+    setActiveAngle(WALKTHROUGH_OPTIONS[nextIndex].id);
+  };
+
+  const handlePrevAngle = () => {
+    const currentIndex = WALKTHROUGH_OPTIONS.findIndex((o) => o.id === activeAngle);
+    const prevIndex = (currentIndex - 1 + WALKTHROUGH_OPTIONS.length) % WALKTHROUGH_OPTIONS.length;
+    setActiveAngle(WALKTHROUGH_OPTIONS[prevIndex].id);
+  };
 
   return (
     <section id="ai-engine" className="py-24 px-6 lg:px-12 border-t border-white/[0.08] bg-[#05080c] relative">
@@ -81,7 +131,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white font-editorial">
-            From Blueprint to 3D Twin in 4 Visual Steps
+            From Blueprint to 3D Walkthrough in 4 Visual Steps
           </h2>
 
           <p className="text-slate-400 text-sm sm:text-base font-light">
@@ -96,7 +146,10 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
             return (
               <button
                 key={s.step}
-                onClick={() => setActiveStep(s.step)}
+                onClick={() => {
+                  setActiveStep(s.step);
+                  if (s.step !== 4) setIsAutoTouring(false);
+                }}
                 className={`p-4 rounded-2xl text-left transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-2 border ${
                   isActive
                     ? "glass-morphism-card border-emerald-500/60 bg-emerald-500/[0.08] shadow-lg shadow-emerald-500/10 scale-[1.02]"
@@ -129,6 +182,87 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
         {/* Main Visual Comparison Frame */}
         <div className="max-w-5xl mx-auto">
           <div className="glass-morphism rounded-3xl p-4 sm:p-6 border border-white/15 shadow-2xl relative overflow-hidden">
+            {/* Step 4 Interactive Walkthrough Controls Bar */}
+            {current.step === 4 && (
+              <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-xs font-mono mb-4 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <Footprints className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-white font-bold text-[11px] sm:text-xs">
+                    CAMERA WALKTHROUGH:
+                  </span>
+                  <span className="hidden md:inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-mono border border-emerald-500/30">
+                    {activeOption.badge}
+                  </span>
+                </div>
+
+                {/* Perspective Angle Buttons */}
+                <div className="flex flex-wrap items-center gap-1">
+                  {WALKTHROUGH_OPTIONS.map((opt) => {
+                    const isSelected = activeAngle === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setIsAutoTouring(false);
+                          setActiveAngle(opt.id);
+                        }}
+                        className={`px-2.5 py-1 rounded-xl transition-all cursor-pointer text-[11px] font-mono ${
+                          isSelected
+                            ? "bg-emerald-500 text-slate-950 font-bold shadow-md"
+                            : "text-slate-300 hover:text-white hover:bg-white/10"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Navigation & Fullscreen Actions */}
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button
+                    onClick={() => setIsAutoTouring(!isAutoTouring)}
+                    className={`px-2.5 py-1 rounded-xl border text-[11px] font-mono transition-all cursor-pointer flex items-center gap-1 ${
+                      isAutoTouring
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                        : "bg-white/5 text-slate-300 hover:text-white border-white/10 hover:bg-white/10"
+                    }`}
+                    title={isAutoTouring ? "Pause Tour" : "Auto-Play Walkthrough Tour"}
+                  >
+                    {isAutoTouring ? <Pause className="w-3 h-3 text-emerald-400" /> : <Play className="w-3 h-3 text-emerald-400" />}
+                    <span className="hidden sm:inline">{isAutoTouring ? "Pause" : "Auto-Tour"}</span>
+                  </button>
+
+                  <div className="flex items-center rounded-xl bg-white/5 border border-white/10 p-0.5">
+                    <button
+                      onClick={handlePrevAngle}
+                      className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                      title="Previous Angle"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={handleNextAngle}
+                      className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                      title="Next Angle"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setIsWalkthroughModalOpen(true)}
+                    className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer border border-white/10"
+                    title="Fullscreen Walkthrough Inspection"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Display Visual Area */}
             <div
               className={`relative rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[16/8] bg-slate-950 border border-white/10 flex items-center justify-center ${
@@ -138,19 +272,29 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
                 if (current.step === 4) setIsWalkthroughModalOpen(true);
               }}
             >
-              <img
-                src={current.image}
-                alt={current.title}
-                className={
-                  current.step === 1 || current.step === 3
-                    ? "w-full h-full object-contain bg-white p-2 transition-all duration-700"
-                    : current.step === 2
-                    ? "w-full h-full object-contain bg-[#030914] transition-all duration-700"
-                    : "w-full h-full object-contain bg-[#080808] transition-all duration-700 group-hover:scale-[1.01]"
-                }
-              />
+              <div className="w-full h-full overflow-hidden flex items-center justify-center">
+                <img
+                  src={current.image}
+                  alt={current.title}
+                  style={
+                    current.step === 4
+                      ? {
+                          transform: activeOption.transform,
+                          transition: "transform 700ms cubic-bezier(0.16, 1, 0.3, 1)",
+                        }
+                      : undefined
+                  }
+                  className={
+                    current.step === 1 || current.step === 3
+                      ? "w-full h-full object-contain bg-white p-2 transition-all duration-700"
+                      : current.step === 2
+                      ? "w-full h-full object-contain bg-[#030914] transition-all duration-700"
+                      : "w-full h-full object-contain bg-[#080808]"
+                  }
+                />
+              </div>
 
-              {/* Step 4 Walkthrough Fullscreen Trigger */}
+              {/* Step 4 Walkthrough Badge / Fullscreen Trigger */}
               {current.step === 4 && (
                 <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
                   <button
@@ -161,7 +305,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
                     className="px-3 py-1.5 rounded-xl bg-slate-950/85 hover:bg-slate-900 border border-white/20 hover:border-emerald-400/60 text-xs font-mono text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xl backdrop-blur-md"
                   >
                     <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Expand 360° Walkthrough</span>
+                    <span>Expand All 10 Angles</span>
                   </button>
                 </div>
               )}
@@ -193,7 +337,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
                     className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 hover:border-emerald-400/50"
                   >
                     <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Inspect Walkthrough</span>
+                    <span>Inspect 360° Views</span>
                   </button>
                 )}
 
@@ -278,7 +422,7 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
             onClick={(e) => e.stopPropagation()}
           >
             <span className="text-emerald-400 font-bold mr-1 flex items-center gap-1">
-              <Compass className="w-3.5 h-3.5" /> Walkthrough Angles:
+              <Compass className="w-3.5 h-3.5" /> Walkthrough Perspectives:
             </span>
             <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Front View</span>
             <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Left View</span>
