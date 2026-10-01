@@ -1,8 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Scan, Sparkles, CheckCircle2, ArrowRight, Layers, Eye, ShieldCheck } from "lucide-react";
+import {
+  Scan,
+  Sparkles,
+  CheckCircle2,
+  ArrowRight,
+  Eye,
+  Maximize2,
+  X,
+  Compass,
+  Footprints,
+} from "lucide-react";
 
 interface PlatformDemoProps {
   isAuthenticated?: boolean;
@@ -11,6 +21,17 @@ interface PlatformDemoProps {
 export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = false }) => {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(1);
+  const [isWalkthroughModalOpen, setIsWalkthroughModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsWalkthroughModalOpen(false);
+    };
+    if (isWalkthroughModalOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isWalkthroughModalOpen]);
 
   const pipelineSteps = [
     {
@@ -39,11 +60,11 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
     },
     {
       step: 4,
-      title: "Interactive 3D Digital Twin",
-      tag: "SPATIAL EXTRUSION",
-      desc: "Walls rise into 3D space with accurate ceiling heights, daylight openings, and locked coordinate snap points for furniture.",
-      image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200",
-      callout: "Ready for live 3D walkthrough, styling, and budget simulation",
+      title: "Interactive 3D Walkthrough",
+      tag: "360° SPATIAL WALKTHROUGH",
+      desc: "Step inside your floor plan with true-to-scale first-person walkthroughs, 360° panoramic rotation, door entry vistas, and multi-angle room inspections.",
+      image: "/Interactive-3D-digital-twin.png",
+      callout: "Multi-angle 360° spatial walkthrough & digital twin",
     },
   ];
 
@@ -109,7 +130,14 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
         <div className="max-w-5xl mx-auto">
           <div className="glass-morphism rounded-3xl p-4 sm:p-6 border border-white/15 shadow-2xl relative overflow-hidden">
             {/* Display Visual Area */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[16/8] bg-slate-950 border border-white/10 flex items-center justify-center">
+            <div
+              className={`relative rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[16/8] bg-slate-950 border border-white/10 flex items-center justify-center ${
+                current.step === 4 ? "cursor-pointer group" : ""
+              }`}
+              onClick={() => {
+                if (current.step === 4) setIsWalkthroughModalOpen(true);
+              }}
+            >
               <img
                 src={current.image}
                 alt={current.title}
@@ -118,9 +146,25 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
                     ? "w-full h-full object-contain bg-white p-2 transition-all duration-700"
                     : current.step === 2
                     ? "w-full h-full object-contain bg-[#030914] transition-all duration-700"
-                    : "w-full h-full object-cover filter brightness-[0.85] contrast-105 transition-all duration-700"
+                    : "w-full h-full object-contain bg-[#080808] transition-all duration-700 group-hover:scale-[1.01]"
                 }
               />
+
+              {/* Step 4 Walkthrough Fullscreen Trigger */}
+              {current.step === 4 && (
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsWalkthroughModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-slate-950/85 hover:bg-slate-900 border border-white/20 hover:border-emerald-400/60 text-xs font-mono text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-xl backdrop-blur-md"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Expand 360° Walkthrough</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Explanation Footer */}
@@ -142,16 +186,114 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
                 </p>
               </div>
 
-              <button
-                onClick={() => router.push(isAuthenticated ? "/home/new" : "/signup")}
-                className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 shrink-0 hover:scale-105 active:scale-95 flex items-center gap-2"
-              >
-                <span>Try It With Your Plan →</span>
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {current.step === 4 && (
+                  <button
+                    onClick={() => setIsWalkthroughModalOpen(true)}
+                    className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 hover:border-emerald-400/50"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Inspect Walkthrough</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => router.push(isAuthenticated ? "/home/new" : "/signup")}
+                  className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 shrink-0 hover:scale-105 active:scale-95 flex items-center gap-2"
+                >
+                  <span>Try It With Your Plan →</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 360° Spatial Walkthrough Modal for Step 4 */}
+      {isWalkthroughModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex flex-col p-4 sm:p-6 animate-in fade-in duration-300"
+          onClick={() => setIsWalkthroughModalOpen(false)}
+        >
+          {/* Modal Header */}
+          <div
+            className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <Footprints className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-white font-bold text-base sm:text-lg font-editorial">
+                    3D Spatial Walkthrough: Living Room
+                  </h3>
+                  <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono border border-emerald-500/30">
+                    10 PERSPECTIVES • 360° PANORAMA
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 font-mono">
+                  Dimensions: 4.00 m × 3.50 m (14.00 m²) • Ceiling: 2.80 m
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsWalkthroughModalOpen(false);
+                  router.push(isAuthenticated ? "/home/new" : "/signup");
+                }}
+                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider hover:bg-emerald-400 transition-all cursor-pointer"
+              >
+                <span>Generate For My Home →</span>
+              </button>
+              <button
+                onClick={() => setIsWalkthroughModalOpen(false)}
+                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer border border-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Body: High-Res Image View */}
+          <div
+            className="flex-1 flex items-center justify-center overflow-auto py-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative max-w-full max-h-[76vh] rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-[#080808]">
+              <img
+                src="/Interactive-3D-digital-twin.png"
+                alt="3D Spatial Walkthrough Multi-Angle Views"
+                className="w-auto h-auto max-h-[76vh] max-w-full object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer: Angle Guide Pills */}
+          <div
+            className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-center gap-2 text-[11px] font-mono text-slate-300 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-emerald-400 font-bold mr-1 flex items-center gap-1">
+              <Compass className="w-3.5 h-3.5" /> Walkthrough Angles:
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Front View</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Left View</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Right View</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Back View</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Top Left / Right</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Door Entry</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Window View</span>
+            <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">Top-Down CAD</span>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              360° All Sides (0°-270°)
+            </span>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
