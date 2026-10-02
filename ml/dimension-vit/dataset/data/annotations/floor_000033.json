@@ -1,0 +1,176 @@
+{
+  "total_width_m": 10.6,
+  "total_height_m": 13.43,
+  "total_area_sqm": 142.36,
+  "scale_pixels_per_meter": 32.167,
+  "envelope_bbox": [
+    86,
+    40,
+    426,
+    472
+  ],
+  "rooms": [
+    {
+      "room_id": "room_01",
+      "name": "Living Room",
+      "width_m": 7.1,
+      "height_m": 7.08,
+      "area_sqm": 50.27,
+      "bbox_pixels": [
+        86,
+        40,
+        314,
+        267
+      ],
+      "polygon_pixels": [
+        [
+          86,
+          40
+        ],
+        [
+          314,
+          40
+        ],
+        [
+          314,
+          267
+        ],
+        [
+          86,
+          267
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_02",
+      "name": "Dining Room",
+      "width_m": 3.5,
+      "height_m": 7.08,
+      "area_sqm": 24.78,
+      "bbox_pixels": [
+        314,
+        40,
+        426,
+        267
+      ],
+      "polygon_pixels": [
+        [
+          314,
+          40
+        ],
+        [
+          426,
+          40
+        ],
+        [
+          426,
+          267
+        ],
+        [
+          314,
+          267
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_03",
+      "name": "Master Bedroom",
+      "width_m": 3.79,
+      "height_m": 6.35,
+      "area_sqm": 24.07,
+      "bbox_pixels": [
+        86,
+        267,
+        207,
+        471
+      ],
+      "polygon_pixels": [
+        [
+          86,
+          267
+        ],
+        [
+          207,
+          267
+        ],
+        [
+          207,
+          471
+        ],
+        [
+          86,
+          471
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_04",
+      "name": "Bedroom",
+      "width_m": 3.31,
+      "height_m": 6.35,
+      "area_sqm": 21.02,
+      "bbox_pixels": [
+        207,
+        267,
+        313,
+        471
+      ],
+      "polygon_pixels": [
+        [
+          207,
+          267
+        ],
+        [
+          313,
+          267
+        ],
+        [
+          313,
+          471
+        ],
+        [
+          207,
+          471
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_05",
+      "name": "Bathroom",
+      "width_m": 3.5,
+      "height_m": 6.35,
+      "area_sqm": 22.22,
+      "bbox_pixels": [
+        314,
+        267,
+        426,
+        471
+      ],
+      "polygon_pixels": [
+        [
+          314,
+          267
+        ],
+        [
+          426,
+          267
+        ],
+        [
+          426,
+          471
+        ],
+        [
+          314,
+          471
+        ]
+      ],
+      "confidence_target": 1.0
+    }
+  ],
+  "plan_id": "floor_000033",
+  "image_path": "images/floor_000033.png"
+}

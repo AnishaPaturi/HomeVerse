@@ -1,0 +1,144 @@
+{
+  "total_width_m": 11.94,
+  "total_height_m": 13.64,
+  "total_area_sqm": 162.86,
+  "scale_pixels_per_meter": 31.672,
+  "envelope_bbox": [
+    67,
+    40,
+    445,
+    472
+  ],
+  "rooms": [
+    {
+      "room_id": "room_01",
+      "name": "Living Room",
+      "width_m": 7.1,
+      "height_m": 8.87,
+      "area_sqm": 62.98,
+      "bbox_pixels": [
+        67,
+        40,
+        291,
+        320
+      ],
+      "polygon_pixels": [
+        [
+          67,
+          40
+        ],
+        [
+          291,
+          40
+        ],
+        [
+          291,
+          320
+        ],
+        [
+          67,
+          320
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_02",
+      "name": "Balcony",
+      "width_m": 7.1,
+      "height_m": 4.77,
+      "area_sqm": 33.87,
+      "bbox_pixels": [
+        67,
+        320,
+        291,
+        471
+      ],
+      "polygon_pixels": [
+        [
+          67,
+          320
+        ],
+        [
+          291,
+          320
+        ],
+        [
+          291,
+          471
+        ],
+        [
+          67,
+          471
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_03",
+      "name": "Bedroom",
+      "width_m": 4.84,
+      "height_m": 7.06,
+      "area_sqm": 34.17,
+      "bbox_pixels": [
+        291,
+        40,
+        444,
+        263
+      ],
+      "polygon_pixels": [
+        [
+          291,
+          40
+        ],
+        [
+          444,
+          40
+        ],
+        [
+          444,
+          263
+        ],
+        [
+          291,
+          263
+        ]
+      ],
+      "confidence_target": 1.0
+    },
+    {
+      "room_id": "room_04",
+      "name": "Kitchen",
+      "width_m": 4.84,
+      "height_m": 6.58,
+      "area_sqm": 31.85,
+      "bbox_pixels": [
+        291,
+        263,
+        444,
+        471
+      ],
+      "polygon_pixels": [
+        [
+          291,
+          263
+        ],
+        [
+          444,
+          263
+        ],
+        [
+          444,
+          471
+        ],
+        [
+          291,
+          471
+        ]
+      ],
+      "confidence_target": 1.0
+    }
+  ],
+  "plan_id": "floor_000078",
+  "image_path": "images/floor_000078.png"
+}
