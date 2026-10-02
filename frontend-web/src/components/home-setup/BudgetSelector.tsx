@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { DollarSign, ShieldAlert, Sparkles, Check, Sliders, IndianRupee } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Sparkles, Check, IndianRupee } from "lucide-react";
 import { formatCurrency, formatIndianBudget } from "@/lib/utils";
 
 interface BudgetSelectorProps {
@@ -25,23 +25,34 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
   onChange,
 }) => {
   const [budget, setBudget] = useState<number>(initialBudget);
-  const [selectedPreset, setSelectedPreset] = useState<string>("₹20 – ₹35 Lakhs");
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [customInput, setCustomInput] = useState<string>(initialBudget.toString());
   const [flexibility, setFlexibility] = useState<"Strict" | "Moderate" | "Flexible">(initialFlexibility);
 
-  const handlePresetSelect = (preset: typeof BUDGET_PRESETS[0]) => {
-    setSelectedPreset(preset.label);
+  useEffect(() => {
+    if (initialBudget) {
+      setBudget(initialBudget);
+      setCustomInput(initialBudget.toString());
+    }
+  }, [initialBudget]);
+
+  const handleSetBudget = (val: number) => {
+    const safeVal = Math.max(500000, val);
+    setBudget(safeVal);
+    setCustomInput(safeVal.toString());
     setIsCustom(false);
-    setBudget(preset.defaultVal);
-    setCustomInput(preset.defaultVal.toString());
-    onChange(preset.defaultVal, flexibility);
+    onChange(safeVal, flexibility);
+  };
+
+  const handlePresetSelect = (preset: typeof BUDGET_PRESETS[0]) => {
+    handleSetBudget(preset.defaultVal);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
     setBudget(val);
     setCustomInput(val.toString());
+    setIsCustom(false);
     onChange(val, flexibility);
   };
 
@@ -59,49 +70,69 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
     onChange(budget, flex);
   };
 
+  // Slider boundaries
+  const sliderMin = 500000; // ₹5 Lakhs
+  const sliderMax = Math.max(10000000, budget); // ₹1 Crore (or dynamic if custom > 1 Cr)
+
+  // Accurately calibrated marks across the slider track
+  const sliderMarks = [
+    { label: "₹5 Lakhs", value: 500000 },
+    { label: "₹25 Lakhs", value: 2500000 },
+    { label: "₹50 Lakhs", value: 5000000 },
+    { label: "₹75 Lakhs", value: 7500000 },
+    { label: "₹1 Crore", value: 10000000 },
+  ];
+
+  // Calculate percentage of budget on slider for visual track fill
+  const sliderPercent = Math.min(
+    100,
+    Math.max(0, ((Math.min(sliderMax, budget) - sliderMin) / (sliderMax - sliderMin)) * 100)
+  );
+
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm">
-      <div className="mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-full text-xs font-semibold mb-2">
+    <div className="bg-[#090e15] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-8">
+      {/* Title & Header */}
+      <div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full text-xs font-mono font-semibold mb-2">
           <IndianRupee className="w-3.5 h-3.5" />
-          Financial Foundation
+          <span>FINANCIAL FOUNDATION</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
           What&apos;s your budget for this home?
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs sm:text-sm text-slate-400 font-light mt-1">
           This established budget actively calibrates AI recommendations, furniture scale, material tiering, and shopping items.
         </p>
       </div>
 
       {/* Preset Pills Grid */}
-      <div className="mb-8">
-        <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block mb-3">
+      <div>
+        <label className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider block mb-3">
           Choose your approximate budget tier
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {BUDGET_PRESETS.map((preset) => {
-            const active = selectedPreset === preset.label && !isCustom;
+            const active = !isCustom && budget >= preset.min && budget <= preset.max;
             return (
               <button
                 key={preset.label}
                 type="button"
                 onClick={() => handlePresetSelect(preset)}
-                className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                   active
-                    ? "border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/20 ring-2 ring-indigo-600/30"
-                    : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 bg-transparent"
+                    ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10"
+                    : "border-slate-800 hover:border-slate-700 bg-slate-950/60 text-slate-300"
                 }`}
               >
                 <div>
-                  <span className={`text-sm font-bold block ${active ? "text-indigo-600 dark:text-indigo-400" : "text-gray-900 dark:text-white"}`}>
+                  <span className={`text-sm font-bold font-mono block ${active ? "text-emerald-400" : "text-white"}`}>
                     {preset.label}
                   </span>
-                  <span className="text-xs text-gray-400">Typical 2-3 BHK Interior</span>
+                  <span className="text-xs text-slate-400 font-light">Typical Indian Residence</span>
                 </div>
                 <div
                   className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                    active ? "border-indigo-600 bg-indigo-600 text-white" : "border-gray-300 dark:border-zinc-700"
+                    active ? "border-emerald-500 bg-emerald-500 text-slate-950 font-bold" : "border-slate-700"
                   }`}
                 >
                   {active && <Check className="w-3 h-3 stroke-[3]" />}
@@ -113,21 +144,21 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
           <button
             type="button"
             onClick={() => setIsCustom(true)}
-            className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between ${
+            className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
               isCustom
-                ? "border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/20 ring-2 ring-indigo-600/30"
-                : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 bg-transparent"
+                ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10"
+                : "border-slate-800 hover:border-slate-700 bg-slate-950/60 text-slate-300"
             }`}
           >
             <div>
-              <span className={`text-sm font-bold block ${isCustom ? "text-indigo-600 dark:text-indigo-400" : "text-gray-900 dark:text-white"}`}>
+              <span className={`text-sm font-bold font-mono block ${isCustom ? "text-emerald-400" : "text-white"}`}>
                 Custom Budget
               </span>
-              <span className="text-xs text-gray-400">Input exact figure</span>
+              <span className="text-xs text-slate-400 font-light">Input exact figure below</span>
             </div>
             <div
               className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                isCustom ? "border-indigo-600 bg-indigo-600 text-white" : "border-gray-300 dark:border-zinc-700"
+                isCustom ? "border-emerald-500 bg-emerald-500 text-slate-950 font-bold" : "border-slate-700"
               }`}
             >
               {isCustom && <Check className="w-3 h-3 stroke-[3]" />}
@@ -137,51 +168,125 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
       </div>
 
       {/* Slider + Custom Input Box */}
-      <div className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl p-6 mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div className="bg-slate-950/80 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs text-gray-500 font-medium">Selected Budget Amount</span>
-            <div className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mt-1">
-              {formatIndianBudget(budget)}
+            <span className="text-xs text-slate-400 font-mono uppercase tracking-wider font-semibold">
+              Selected Budget Amount
+            </span>
+            <div className="text-3xl sm:text-4xl font-extrabold text-white mt-1 font-mono tracking-tight flex items-baseline gap-2.5">
+              <span className="text-emerald-400">{formatIndianBudget(budget)}</span>
+              <span className="text-xs text-slate-400 font-normal">
+                (₹{budget.toLocaleString("en-IN")})
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-2.5">
-            <span className="text-gray-400 font-bold">₹</span>
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 shadow-sm">
+            <span className="text-emerald-400 font-bold font-mono text-base">₹</span>
             <input
               type="text"
               value={customInput}
               onChange={handleCustomInputChange}
-              className="bg-transparent font-bold text-gray-900 dark:text-white text-base focus:outline-none w-32"
+              className="bg-transparent font-bold text-white text-base focus:outline-none w-36 font-mono"
               placeholder="e.g. 2500000"
+              aria-label="Custom Budget Amount"
             />
           </div>
         </div>
 
-        {/* Range Slider */}
-        <input
-          type="range"
-          min={500000}
-          max={10000000}
-          step={50000}
-          value={Math.min(10000000, Math.max(500000, budget))}
-          onChange={handleSliderChange}
-          className="w-full h-2.5 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-        />
+        {/* Quick Pick Chips */}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <span className="text-xs font-mono text-slate-400">Quick Select:</span>
+          {[1000000, 1500000, 2500000, 3500000, 5000000, 7500000, 10000000].map((amt) => {
+            const isSelected = budget === amt;
+            return (
+              <button
+                key={amt}
+                type="button"
+                onClick={() => handleSetBudget(amt)}
+                className={`px-3 py-1 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                    : "bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80"
+                }`}
+              >
+                {formatIndianBudget(amt)}
+              </button>
+            );
+          })}
+        </div>
 
-        <div className="flex justify-between items-center text-xs text-gray-400 mt-2 font-medium">
-          <span>₹5 Lakhs</span>
-          <span>₹25 Lakhs</span>
-          <span>₹50 Lakhs</span>
-          <span>₹1 Crore</span>
+        {/* Range Slider Container with Calibrated Marks */}
+        <div className="pt-3 pb-2">
+          <div className="relative w-full">
+            <input
+              type="range"
+              min={sliderMin}
+              max={sliderMax}
+              step={50000}
+              value={Math.min(sliderMax, Math.max(sliderMin, budget))}
+              onChange={handleSliderChange}
+              style={{
+                background: `linear-gradient(to right, #10b981 0%, #14b8a6 ${sliderPercent}%, #1e293b ${sliderPercent}%, #1e293b 100%)`,
+              }}
+              className="w-full h-3 rounded-lg appearance-none cursor-pointer accent-emerald-400 transition-all"
+              aria-label="Budget Slider"
+            />
+          </div>
+
+          {/* Mathematically Calibrated Marks - Exact Alignment */}
+          <div className="relative w-full h-8 mt-3 select-none">
+            {sliderMarks.map((m, idx) => {
+              const percent = Math.min(
+                100,
+                Math.max(0, ((m.value - sliderMin) / (sliderMax - sliderMin)) * 100)
+              );
+              const isCurrent = Math.abs(budget - m.value) < 100000;
+
+              const transform =
+                idx === 0
+                  ? "translateX(0%)"
+                  : idx === sliderMarks.length - 1
+                  ? "translateX(-100%)"
+                  : "translateX(-50%)";
+
+              return (
+                <div
+                  key={m.value}
+                  className="absolute top-0 flex flex-col items-center cursor-pointer group"
+                  style={{ left: `${percent}%`, transform }}
+                  onClick={() => handleSetBudget(m.value)}
+                >
+                  {/* Tick Pip */}
+                  <div
+                    className={`w-1 h-2 rounded-full mb-1 transition-colors ${
+                      budget >= m.value ? "bg-emerald-400" : "bg-slate-700 group-hover:bg-slate-500"
+                    }`}
+                  />
+                  {/* Clickable Label */}
+                  <button
+                    type="button"
+                    className={`text-[11px] font-mono whitespace-nowrap transition-colors cursor-pointer ${
+                      isCurrent
+                        ? "text-emerald-400 font-bold underline"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Budget Flexibility */}
       <div>
-        <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block mb-2">
+        <label className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider block mb-2">
           Budget Flexibility
         </label>
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-slate-400 font-light mb-4">
           Tells the AI whether it can suggest upgrades or value alternatives that slightly exceed target ceilings.
         </p>
 
@@ -211,25 +316,25 @@ export const BudgetSelector: React.FC<BudgetSelectorProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => handleFlexibilityChange(item.id)}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                   active
-                    ? "border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/20 ring-2 ring-indigo-600/30"
-                    : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700"
+                    ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-2 ring-emerald-500/30"
+                    : "border-slate-800 hover:border-slate-700 bg-slate-950/60 text-slate-300"
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-sm font-bold ${active ? "text-indigo-600 dark:text-indigo-400" : "text-gray-900 dark:text-white"}`}>
+                  <span className={`text-sm font-bold font-mono ${active ? "text-emerald-400" : "text-white"}`}>
                     {item.title}
                   </span>
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                      active ? "border-indigo-600 bg-indigo-600 text-white" : "border-gray-300 dark:border-zinc-700"
+                      active ? "border-emerald-500 bg-emerald-500 text-slate-950 font-bold" : "border-slate-700"
                     }`}
                   >
                     {active && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
+                <p className="text-xs text-slate-400 font-light">{item.desc}</p>
               </button>
             );
           })}
