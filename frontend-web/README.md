@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HomeVerse Frontend Web
 
-## Getting Started
+Next.js web application for HomeVerse — AI-powered spatial interior design, 3D digital twins, and budget planning.
 
-First, run the development server:
+## 🚀 Key Modules
+- **9-Step Home Creation Wizard (`/home/new`)**:
+  - Interactive property type and floor count selection
+  - Fully editable room configuration (Bedrooms, Bathrooms, Balconies)
+  - Mathematically calibrated budget slider with quick milestone chips
+  - Vector floorplan blueprint ingestion & AI computer vision room detection
+- **3D Spatial Studio & AR/VR Playground (`/project/[id]/rooms/[id]/playground`)**:
+  - React Three Fiber interactive viewport with transform gizmos and PBR materials
+  - 2D CAD floorplan editor and WebSpeech voice assistant
+  - First-person 3D architectural walkthrough
+- **Dashboard & Studio Settings (`/dashboard`)**:
+  - User-scoped project workspace with Indian budget overview
+  - Live dynamic notifications drawer with auto-polling and relative timestamps
+  - Danger Zone account termination with confirmation modal
+
+## 🛠️ Development Setup
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Run local development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 3. Typecheck without emitting
+npx tsc --noEmit
+
+# 4. Build for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Application runs at [http://localhost:3000](http://localhost:3000).
