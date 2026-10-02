@@ -23,6 +23,10 @@ class Budget(Base):
     def allocated_budget(self) -> float:
         return self.total_budget - self.remaining_amount
 
+    @allocated_budget.setter
+    def allocated_budget(self, value: float) -> None:
+        pass
+
     project = relationship("Project", back_populates="budgets")
     allocations = relationship("BudgetAllocation", back_populates="budget", cascade="all, delete-orphan")
     categories = relationship("BudgetCategory", back_populates="budget", cascade="all, delete-orphan")

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight, AlertCircle, Check, Sparkles } from "lucide-react";
 import GoogleAuthButton from "./GoogleAuthButton";
+import { setStoredUser } from "@/lib/auth";
 
 interface LoginFormProps {
   onSuccess?: (user: any) => void;
@@ -33,12 +34,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setError(null);
     setSuccess(null);
 
-    let assignedId = "d0000000-0000-0000-0000-000000000000";
+    let assignedId = "";
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       const res = await fetch(
-        `http://localhost:8080/api/auth/login?email=${encodeURIComponent(email)}`,
-        { method: "POST" }
+        `http://localhost:8080/api/auth/login?email=${encodeURIComponent(cleanEmail)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, password }),
+        }
       );
       if (res.ok) {
         const data = await res.json();
@@ -49,15 +55,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
 
     const userData = {
-      id: assignedId,
+      id: assignedId || "d0000000-0000-0000-0000-000000000000",
       name:
-        email.split("@")[0].charAt(0).toUpperCase() +
-        email.split("@")[0].slice(1),
-      email,
+        cleanEmail.split("@")[0].charAt(0).toUpperCase() +
+        cleanEmail.split("@")[0].slice(1),
+      email: cleanEmail,
       plan: "Pro Designer",
     };
 
-    sessionStorage.setItem("user", JSON.stringify(userData));
+    setStoredUser(userData);
     setSuccess("Welcome back! Redirecting to studio...");
 
     setTimeout(() => {
@@ -74,11 +80,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     const demoUser = {
       id: "d0000000-0000-0000-0000-000000000000",
       name: demoUserName,
-      email: demoUserEmail,
+      email: demoUserEmail.trim().toLowerCase(),
       plan: "Pro Designer",
       isDemo: true,
     };
-    sessionStorage.setItem("user", JSON.stringify(demoUser));
+    setStoredUser(demoUser);
     setSuccess(`Entering HomeVerse as ${demoUserName}...`);
     setTimeout(() => {
       if (onSuccess) onSuccess(demoUser);

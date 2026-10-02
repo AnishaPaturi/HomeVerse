@@ -29,6 +29,7 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     id: Optional[UUID] = None
     user_id: Optional[UUID] = None
+    email: Optional[str] = None
     floor_plan_url: Optional[str] = None
     lifestyle: Optional[Dict[str, Any]] = None
     preferences: Optional[Dict[str, Any]] = None

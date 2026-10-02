@@ -29,6 +29,8 @@ from app.core.input_validation import sanitize_text
 from app.core.exceptions import UnauthorizedException, ValidationErrorException, ResourceNotFoundException
 from app.core.analytics import track_event
 from app.services.email_service import send_password_reset_email
+from app.services.account_purge import AccountPurgeService
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -43,12 +45,16 @@ DEMO_USER_ID = UUID("d0000000-0000-0000-0000-000000000000")
 )
 def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     """Registers a new user with optional password hashing and sanitized name."""
-    db_user = db.query(UserModel).filter(UserModel.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower()
+    db_user = db.query(UserModel).filter(func.lower(UserModel.email) == clean_email).first()
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
+
+    # Purge any legacy orphaned traces for this email to guarantee a clean slate
+    AccountPurgeService.purge_user(db, email=clean_email)
 
     pwd_hash = None
     if user_in.password:
@@ -59,7 +65,7 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
 
     user = UserModel(
         name=sanitize_text(user_in.name),
-        email=user_in.email,
+        email=clean_email,
         password_hash=pwd_hash,
         plan=user_in.plan or "Free",
     )
@@ -86,6 +92,7 @@ def get_demo_user(db: Session = Depends(get_db)):
     """Returns or seeds the official development/testing demo user."""
     demo_user = db.query(UserModel).filter(UserModel.id == DEMO_USER_ID).first()
     if not demo_user:
+        AccountPurgeService.purge_user(db, user_id=DEMO_USER_ID, email="designer@homeverse.ai")
         demo_user = UserModel(
             id=DEMO_USER_ID,
             name="Anisha Paturi",
@@ -113,17 +120,20 @@ def login_user(
     1. Query param `email` for existing development/testing workflows.
     2. JSON body `credentials` (email + password) with bcrypt verification.
     """
-    target_email = credentials.email if credentials else email
-    if not target_email:
+    raw_email = credentials.email if credentials else email
+    if not raw_email:
         raise ValidationErrorException(message="Email address is required for login.")
+    target_email = raw_email.strip().lower()
 
-    user = db.query(UserModel).filter(UserModel.email == target_email).first()
+    user = db.query(UserModel).filter(func.lower(UserModel.email) == target_email).first()
 
     # If logging in as demo email, auto-seed
-    if not user and target_email.lower() in ["designer@homeverse.ai", "demo@homeverse.ai"]:
+    if not user and target_email in ["designer@homeverse.ai", "demo@homeverse.ai"]:
         return get_demo_user(db)
 
     if not user:
+        # Purge any legacy orphaned traces for this email to guarantee a clean slate
+        AccountPurgeService.purge_user(db, email=target_email)
         # Create lightweight session user for development
         user = UserModel(
             name=target_email.split("@")[0].capitalize(),
@@ -346,21 +356,23 @@ class DeleteUserAccountRequest(BaseModel):
 
 @router.delete("/delete-account")
 def delete_user_account(payload: DeleteUserAccountRequest, db: Session = Depends(get_db)):
-    """Permanently deletes user account and all associated projects and preferences."""
+    """Permanently deletes user account and completely purges all associated data traces from the database."""
     clean_email = payload.email.strip().lower()
-    user = db.query(UserModel).filter(UserModel.email == clean_email).first()
+    user = db.query(UserModel).filter(func.lower(UserModel.email) == clean_email).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Account not found with this email address.",
-        )
+        AccountPurgeService.purge_user(db, email=clean_email)
+        return {
+            "success": True,
+            "message": f"Account {clean_email} has been permanently deleted.",
+            "projects_deleted": 0,
+        }
 
-    db.delete(user)
-    db.commit()
+    purge_result = AccountPurgeService.purge_user(db, user=user)
 
     return {
         "success": True,
         "message": f"Account {clean_email} has been permanently deleted.",
+        "projects_deleted": purge_result.get("projects_purged", 0),
     }
 
 

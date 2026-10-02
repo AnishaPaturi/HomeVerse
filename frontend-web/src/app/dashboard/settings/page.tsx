@@ -56,7 +56,8 @@ export default function SettingsDashboardPage() {
     setDeleteError(null);
 
     try {
-      const res = await deleteUserAccount(currentUser?.email);
+      const targetEmail = currentUser?.email || getStoredUser()?.email;
+      const res = await deleteUserAccount(targetEmail);
       if (res && res.success) {
         // Full clean redirect to login page with deletion notification
         window.location.href = "/login?deleted=true";

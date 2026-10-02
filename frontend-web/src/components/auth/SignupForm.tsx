@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, ArrowRight, AlertCircle, Check, ShieldCheck } from "lucide-react";
 import GoogleAuthButton from "./GoogleAuthButton";
+import { setStoredUser } from "@/lib/auth";
 
 interface SignupFormProps {
   onSuccess?: (user: any) => void;
@@ -38,30 +39,37 @@ export const SignupForm: React.FC<SignupFormProps> = ({
     setError(null);
     setSuccess(null);
 
-    let assignedId = "d0000000-0000-0000-0000-000000000000";
+    let assignedId = "";
 
     try {
       const res = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), name: name.trim(), password }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.id) assignedId = data.id;
+      } else {
+        const errData = await res.json().catch(() => null);
+        if (errData && errData.detail) {
+          setError(errData.detail);
+          setLoading(false);
+          return;
+        }
       }
     } catch (_) {
-      // Fallback for offline / local mode
+      // Fallback for offline mode
     }
 
     const userData = {
-      id: assignedId,
-      name,
-      email,
+      id: assignedId || "d0000000-0000-0000-0000-000000000000",
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       plan: "Pro Designer",
     };
 
-    sessionStorage.setItem("user", JSON.stringify(userData));
+    setStoredUser(userData);
     setSuccess("Account successfully created! Starting 9-step home wizard...");
 
     setTimeout(() => {

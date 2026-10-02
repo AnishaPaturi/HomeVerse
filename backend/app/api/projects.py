@@ -38,6 +38,12 @@ def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
     Supports 7-step wizard: property_type, bhk, area, floor_plan, budget, lifestyle, preferences
     """
     user_id = project_in.user_id
+    if (not user_id or str(user_id) == "00000000-0000-0000-0000-000000000000") and project_in.email:
+        clean_email = project_in.email.strip().lower()
+        user_by_email = db.query(UserModel).filter(UserModel.email.ilike(clean_email)).first()
+        if user_by_email:
+            user_id = user_by_email.id
+
     if not user_id or str(user_id) == "00000000-0000-0000-0000-000000000000":
         user_id = get_or_create_default_user(db)
 
@@ -66,7 +72,6 @@ def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
         budget_obj = BudgetModel(
             project_id=p_id,
             total_budget=project_in.budget,
-            allocated_budget=0.0,
             spent_amount=0.0,
             remaining_amount=project_in.budget
         )
@@ -115,9 +120,23 @@ def create_project(project_in: ProjectCreate, db: Session = Depends(get_db)):
 
 @router.get("", response_model=List[ProjectSchema])
 @router.get("/", response_model=List[ProjectSchema])
-def get_projects(db: Session = Depends(get_db)):
-    """List all projects."""
-    return db.query(ProjectModel).order_by(ProjectModel.created_at.desc()).all()
+def get_projects(
+    user_id: Optional[UUID] = None,
+    email: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """List projects, optionally filtered by user if user_id or email is supplied."""
+    query = db.query(ProjectModel)
+    if user_id:
+        query = query.filter(ProjectModel.user_id == user_id)
+    elif email:
+        clean_email = email.strip().lower()
+        user = db.query(UserModel).filter(UserModel.email.ilike(clean_email)).first()
+        if user:
+            query = query.filter(ProjectModel.user_id == user.id)
+        else:
+            return []
+    return query.order_by(ProjectModel.created_at.desc()).all()
 
 @router.get("/user/{user_id}", response_model=List[ProjectSchema])
 def list_user_projects(user_id: UUID, db: Session = Depends(get_db)):

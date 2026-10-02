@@ -43,6 +43,8 @@ class LifestyleQuestionnaire(BaseModel):
 class CalculateStyleRequest(BaseModel):
     reactions: List[ReactionItem]
     questionnaire: Optional[LifestyleQuestionnaire] = None
+    email: Optional[str] = None
+    user_id: Optional[UUID] = None
 
 class StyleProfileOut(BaseModel):
     primary_style: str
@@ -60,7 +62,12 @@ def get_reference_images():
     return analyzer.get_reference_catalog()
 
 @router.post("/calculate-style", response_model=StyleProfileOut)
-def calculate_style_profile(payload: CalculateStyleRequest, db: Session = Depends(get_db)):
+def calculate_style_profile(
+    payload: CalculateStyleRequest,
+    email: Optional[str] = None,
+    user_id: Optional[UUID] = None,
+    db: Session = Depends(get_db)
+):
     """
     Evaluates reactions (LIKE, DISLIKE, SKIP) and questionnaire answers
     to quantify primary style, secondary style, wood tone, and palette.
@@ -70,7 +77,16 @@ def calculate_style_profile(payload: CalculateStyleRequest, db: Session = Depend
     profile = analyzer.compute_style_profile(reactions_dict, q_dict)
 
     # Persist or update user preferences
-    user = db.query(UserModel).filter(UserModel.id == DEMO_USER_ID).first()
+    target_id = payload.user_id or user_id
+    target_email = payload.email or email
+    user = None
+    if target_id:
+        user = db.query(UserModel).filter(UserModel.id == target_id).first()
+    elif target_email:
+        user = db.query(UserModel).filter(UserModel.email.ilike(target_email.strip())).first()
+    if not user:
+        user = db.query(UserModel).filter(UserModel.id == DEMO_USER_ID).first()
+
     if user:
         pref = db.query(UserPreferenceModel).filter(UserPreferenceModel.user_id == user.id).first()
         if not pref:
@@ -86,9 +102,20 @@ def calculate_style_profile(payload: CalculateStyleRequest, db: Session = Depend
 
 @router.get("", response_model=StyleProfileOut)
 @router.get("/", response_model=StyleProfileOut)
-def get_current_preferences(db: Session = Depends(get_db)):
+def get_current_preferences(
+    email: Optional[str] = None,
+    user_id: Optional[UUID] = None,
+    db: Session = Depends(get_db)
+):
     """Retrieves the active user's saved preference & style profile."""
-    user = db.query(UserModel).filter(UserModel.id == DEMO_USER_ID).first()
+    user = None
+    if user_id:
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    elif email:
+        user = db.query(UserModel).filter(UserModel.email.ilike(email.strip())).first()
+    if not user and not email and not user_id:
+        user = db.query(UserModel).filter(UserModel.id == DEMO_USER_ID).first()
+
     if user and user.preferences:
         pref = user.preferences
         return {

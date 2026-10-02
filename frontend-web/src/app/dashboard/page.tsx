@@ -67,7 +67,15 @@ export default function DashboardPage() {
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/projects");
+      const stored = getStoredUser();
+      const params = new URLSearchParams();
+      if (stored?.id && stored.id !== "u-demo-123" && stored.id !== "d0000000-0000-0000-0000-000000000000") {
+        params.append("user_id", stored.id);
+      } else if (stored?.email) {
+        params.append("email", stored.email);
+      }
+      const queryString = params.toString() ? `?${params.toString()}` : "";
+      const res = await fetch(`http://localhost:8080/api/projects${queryString}`);
       if (res.ok) {
         const data: Project[] = await res.json();
         setProjects(data || []);

@@ -26,11 +26,13 @@ import {
   Box
 } from "lucide-react";
 
+import { getStoredUser, clearStoredUser } from "@/lib/auth";
+
 interface Design {
   id: string;
   style: string;
   image_url: string;
-  selected: boolean;
+  selected?: boolean;
 }
 
 interface Project {
@@ -43,7 +45,7 @@ interface Project {
   spatialScore?: number;
   completeness?: number;
   budgetAdherence?: number;
-  designs: Design[];
+  designs?: Design[];
 }
 
 export default function ProfilePage() {
@@ -54,82 +56,61 @@ export default function ProfilePage() {
 
   // Load user session and projects
   useEffect(() => {
-    const userSession = sessionStorage.getItem("user");
-    if (!userSession) {
+    const user = getStoredUser();
+    if (!user) {
       router.push("/login");
       return;
     }
+    setCurrentUser(user);
+    const activeUser = user;
 
-    const parsedUser = JSON.parse(userSession);
-    setCurrentUser(parsedUser);
+    async function loadUserSpaces() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (activeUser.id && activeUser.id !== "u-demo-123" && activeUser.id !== "d0000000-0000-0000-0000-000000000000") {
+          params.append("user_id", activeUser.id);
+        } else if (activeUser.email) {
+          params.append("email", activeUser.email);
+        }
+        const q = params.toString() ? `?${params.toString()}` : "";
+        const res = await fetch(`http://localhost:8080/api/projects${q}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProjects(data || []);
+        } else {
+          setProjects([]);
+        }
+      } catch {
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    // Initial mock projects with SaaS workspace health stats
-    setProjects([
-      {
-        id: "proj-1",
-        title: "Sunset Boulevard Living Space",
-        room_type: "Living Room",
-        thumbnail: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=400",
-        created_at: new Date().toISOString(),
-        lastEdited: "Edited 2h ago",
-        spatialScore: 96,
-        completeness: 92,
-        budgetAdherence: 94,
-        designs: [
-          { id: "des-1", style: "Japandi", image_url: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=400", selected: true },
-          { id: "des-2", style: "Modern Luxury", image_url: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=400", selected: false },
-        ],
-      },
-      {
-        id: "proj-2",
-        title: "Master Suite Sanctuary",
-        room_type: "Master Bedroom",
-        thumbnail: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=400",
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        lastEdited: "Edited 1d ago",
-        spatialScore: 94,
-        completeness: 88,
-        budgetAdherence: 98,
-        designs: [
-          { id: "des-3", style: "Scandinavian", image_url: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=400", selected: true },
-        ],
-      },
-      {
-        id: "proj-3",
-        title: "Minimalist Culinary Kitchen",
-        room_type: "Kitchen & Dining",
-        thumbnail: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=400",
-        created_at: new Date(Date.now() - 259200000).toISOString(),
-        lastEdited: "Edited 3d ago",
-        spatialScore: 91,
-        completeness: 85,
-        budgetAdherence: 90,
-        designs: [
-          { id: "des-4", style: "Modern", image_url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=400", selected: true },
-        ],
-      },
-    ]);
-    setLoading(false);
+    loadUserSpaces();
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("user");
+    clearStoredUser();
     router.push("/login");
   };
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (confirm("Are you sure you want to delete this space?")) {
+      try {
+        await fetch(`http://localhost:8080/api/projects/${id}`, { method: "DELETE" });
+      } catch (err) {
+        console.warn("Failed to delete space on server:", err);
+      }
       setProjects((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
-  const recentActivity = [
-    { time: "12:42 PM", action: "Changed living room flooring to European White Oak", icon: "🪵" },
-    { time: "12:38 PM", action: "Added IKEA KIVIK 3-seat sectional to 3D scene", icon: "🛋️" },
-    { time: "12:31 PM", action: "Generated Japandi locked-coordinate variation", icon: "🎨" },
-    { time: "11:15 AM", action: "Executed spatial clearance audit (96% score)", icon: "✓" },
-    { time: "Yesterday", action: "Exported scene graph to Three.js JSON & Blender .py", icon: "📤" },
-  ];
+  const recentActivity = projects.length > 0 ? [
+    { time: "Today", action: `Active workspace: ${projects[0].title}`, icon: "🪵" },
+    { time: "Recent", action: "Floorplan and spatial configurations synced", icon: "✓" },
+  ] : [];
 
   return (
     <div className="min-h-screen bg-[#070b10] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -232,16 +213,18 @@ export default function ProfilePage() {
                 {/* Thumbnail Image */}
                 <div className="relative h-48 overflow-hidden border-b border-slate-800">
                   <img
-                    src={proj.thumbnail}
+                    src={proj.thumbnail || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=400"}
                     alt={proj.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-emerald-400 border border-white/10">
-                    {proj.room_type}
+                    {proj.room_type || "Space"}
                   </div>
-                  <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-slate-300 border border-white/10">
-                    {proj.lastEdited}
-                  </div>
+                  {proj.lastEdited && (
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-slate-300 border border-white/10">
+                      {proj.lastEdited}
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Body */}
@@ -251,16 +234,16 @@ export default function ProfilePage() {
                       {proj.title}
                     </h3>
                     <div className="flex items-center gap-4 text-[11px] font-mono text-slate-400 mt-1">
-                      <span>{proj.designs.length} Design Variations</span>
+                      <span>{proj.designs?.length || 0} Design Variations</span>
                       <span>•</span>
-                      <span className="text-emerald-400">Score {proj.spatialScore}%</span>
+                      <span className="text-emerald-400">Score {proj.spatialScore || 95}%</span>
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between font-mono text-xs">
                     <button
-                      onClick={() => router.push(`/studio?projectId=${proj.id}&style=${proj.designs[0]?.style || "Modern"}`)}
+                      onClick={() => router.push(`/studio?projectId=${proj.id}&style=${proj.designs?.[0]?.style || "Modern"}`)}
                       className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
                     >
                       <span>Open 3D Studio</span>
@@ -278,6 +261,16 @@ export default function ProfilePage() {
                 </div>
               </div>
             ))}
+
+            {projects.length === 0 && (
+              <div className="col-span-1 md:col-span-2 rounded-3xl bg-[#090e15] border border-white/[0.08] p-8 text-center flex flex-col items-center justify-center space-y-3">
+                <FolderOpen className="w-10 h-10 text-emerald-400" />
+                <h3 className="font-bold text-white text-sm font-mono">No spaces configured yet</h3>
+                <p className="text-xs text-slate-400 font-light max-w-sm">
+                  Your studio space portfolio is fresh and clean. Click create new space to upload a blueprint or start a design.
+                </p>
+              </div>
+            )}
 
             {/* "+ New Project" Card */}
             <div
@@ -306,18 +299,24 @@ export default function ProfilePage() {
           </h2>
 
           <div className="rounded-3xl bg-[#090e15] border border-white/[0.08] p-6 space-y-3 font-mono text-xs">
-            {recentActivity.map((act, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-base">{act.icon}</span>
-                  <span className="font-sans font-light text-slate-200">{act.action}</span>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((act, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">{act.icon}</span>
+                    <span className="font-sans font-light text-slate-200">{act.action}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">{act.time}</span>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">{act.time}</span>
+              ))
+            ) : (
+              <div className="p-4 text-center text-slate-500 text-xs">
+                No recent activity recorded. Create your first space to get started.
               </div>
-            ))}
+            )}
           </div>
         </div>
 

@@ -28,6 +28,7 @@ import { RoomSelector } from "@/components/home-setup/RoomSelector";
 import { DesignStyleSelector } from "@/components/home-setup/DesignStyleSelector";
 import { GenerationStatus, GenerationStep } from "@/components/ai/GenerationStatus";
 import { projectApi } from "@/lib/projects";
+import { getStoredUser } from "@/lib/auth";
 import { budgetApi } from "@/lib/budgets";
 import { generateUUID } from "@/lib/utils";
 
@@ -141,7 +142,8 @@ export default function NewHomePage() {
       });
     }
 
-    const projectPayload = {
+    const storedUser = getStoredUser();
+    const projectPayload: any = {
       name: projectName,
       home_type: propertyType,
       floors_count: floorCount,
@@ -152,6 +154,13 @@ export default function NewHomePage() {
       design_style: designStyle,
       floors: floorList,
     };
+
+    if (storedUser?.id && storedUser.id !== "u-demo-123") {
+      projectPayload.user_id = storedUser.id;
+    }
+    if (storedUser?.email) {
+      projectPayload.email = storedUser.email;
+    }
 
     try {
       const res = await projectApi.createProject(projectPayload);
