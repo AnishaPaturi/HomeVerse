@@ -12,7 +12,7 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const propertyLabel = project.home_type || project.property_type || "Residence";
-  const displayBudget = project.total_budget || project.budget || 1500000;
+  const displayBudget = project.total_budget || project.budget || 0;
 
   return (
     <div className="glass-morphism-card rounded-3xl p-6 sm:p-7 border border-white/10 hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 shadow-2xl relative overflow-hidden flex flex-col justify-between group">
@@ -38,25 +38,29 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Configuration:</span>
             <span className="text-slate-200">
-              {project.bhk ? `${project.bhk} BHK` : `${project.total_rooms || 4} Rooms`}
+              {project.bhk
+                ? `${project.bhk} BHK`
+                : project.total_rooms
+                ? `${project.total_rooms} Rooms`
+                : "Custom Layout"}
             </span>
           </div>
-          {project.floors_count && (
+          {project.floors_count ? (
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Levels:</span>
               <span className="text-slate-200">{project.floors_count} Floor(s)</span>
             </div>
-          )}
-          {project.area_sqft && (
+          ) : null}
+          {project.area_sqft ? (
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Built-Up Area:</span>
               <span className="text-slate-200">{project.area_sqft} sq.ft</span>
             </div>
-          )}
+          ) : null}
           <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
             <span className="text-slate-500">Indian Budget:</span>
             <span className="text-emerald-400 font-bold">
-              {formatIndianBudget(displayBudget)}
+              {displayBudget > 0 ? formatIndianBudget(displayBudget) : "Pending Setup"}
             </span>
           </div>
         </div>
@@ -65,7 +69,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
       <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
         <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
           <Sparkles className="w-3 h-3 text-emerald-400" />
-          <span>{project.design_style || "Japandi"} Theme</span>
+          <span>{project.design_style || "Contemporary"} Theme</span>
         </span>
 
         <Link

@@ -1,7 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import auth, projects, designs, ai, recommend, preferences
+from app.api import (
+    auth,
+    projects,
+    designs,
+    ai,
+    recommend,
+    preferences,
+    budget,
+    rooms,
+    execution,
+    notifications,
+    shopping,
+    floorplan,
+    scenes,
+    walkthrough,
+    users,
+)
 from app.db.base import Base
 from app.db.session import engine
 
@@ -65,11 +81,20 @@ app.add_middleware(
 
 # Register routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
+app.include_router(budget.router, prefix="/api/budget", tags=["Budget"])
+app.include_router(rooms.router, prefix="/api", tags=["Rooms"])
 app.include_router(designs.router, prefix="/api/designs", tags=["Designs"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(recommend.router, tags=["default"])
 app.include_router(preferences.router, prefix="/api/preferences", tags=["Preferences & Style"])
+app.include_router(execution.router, prefix="/api", tags=["Execution & Tasks"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(shopping.router, prefix="/api", tags=["Shopping"])
+app.include_router(floorplan.router, prefix="/api", tags=["Floorplan"])
+app.include_router(scenes.router, prefix="/api", tags=["Scenes"])
+app.include_router(walkthrough.router, prefix="/api", tags=["Walkthrough"])
 
 # V2 Microservices Pipeline Router (Optional)
 try:

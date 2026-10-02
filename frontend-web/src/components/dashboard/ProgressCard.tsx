@@ -4,8 +4,8 @@ import React from "react";
 import { CheckCircle2, Clock, Sparkles, Layers } from "lucide-react";
 
 interface ProgressCardProps {
-  completedRooms: number;
-  totalRooms: number;
+  completedRooms?: number;
+  totalRooms?: number;
   activeDesignStyle?: string;
   overallProgress?: number;
   designProgress?: number;
@@ -13,14 +13,19 @@ interface ProgressCardProps {
 }
 
 export const ProgressCard: React.FC<ProgressCardProps> = ({
-  completedRooms = 2,
-  totalRooms = 4,
-  activeDesignStyle = "Japandi",
+  completedRooms = 0,
+  totalRooms = 0,
+  activeDesignStyle = "Contemporary",
   overallProgress,
-  designProgress = 85,
-  procurementProgress = 60,
+  designProgress = 0,
+  procurementProgress = 0,
 }) => {
-  const percentage = overallProgress ?? (totalRooms > 0 ? Math.round((completedRooms / totalRooms) * 100) : 0);
+  const percentage =
+    overallProgress !== undefined
+      ? overallProgress
+      : totalRooms > 0
+      ? Math.min(100, Math.round((completedRooms / totalRooms) * 100))
+      : 0;
 
   return (
     <div className="glass-morphism-card rounded-3xl p-6 sm:p-7 border border-white/10 backdrop-blur-xl relative overflow-hidden shadow-2xl flex flex-col justify-between">
@@ -38,14 +43,14 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
         </div>
 
         <div className="text-3xl font-extrabold text-white font-mono mb-2 tracking-tight">
-          {completedRooms} / {totalRooms} Rooms Ready
+          {totalRooms > 0 ? `${completedRooms} / ${totalRooms} Rooms Ready` : "0 Rooms Configured"}
         </div>
 
         <p className="text-xs text-slate-400 font-light leading-relaxed mb-6">
-          Spatial CAD engine is progressively estimating room budgets, material swatches, and contractor execution schedules across your multi-floor model.
+          Spatial CAD engine dynamically tracks room blueprints, materials selection, and execution schedules across this residence.
         </p>
 
-        {/* Multi-track indicators */}
+        {/* Multi-track dynamic indicators */}
         <div className="space-y-3 mb-6 font-mono text-xs">
           <div>
             <div className="flex justify-between items-center text-slate-300 text-[11px] mb-1">
@@ -62,13 +67,13 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
 
           <div>
             <div className="flex justify-between items-center text-slate-300 text-[11px] mb-1">
-              <span>Catalog Sourcing & Procurement</span>
-              <span className="text-teal-400 font-bold">{procurementProgress}%</span>
+              <span>Execution & Tasks Complete</span>
+              <span className="text-teal-400 font-bold">{percentage}%</span>
             </div>
             <div className="w-full bg-white/[0.06] h-2 rounded-full overflow-hidden p-0.5 border border-white/[0.08]">
               <div
                 className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500"
-                style={{ width: `${procurementProgress}%` }}
+                style={{ width: `${percentage}%` }}
               />
             </div>
           </div>
