@@ -97,8 +97,8 @@ export const PlatformDemo: React.FC<PlatformDemoProps> = ({ isAuthenticated = fa
     },
     {
       step: 4,
-      title: "Interactive 3D Walkthrough",
-      tag: "360° SPATIAL TOUR",
+      title: "3D Walkthrough",
+      tag: "360° SPATIAL WALKTHROUGH",
       desc: "Step inside your floor plan with true-to-scale first-person walkthroughs, 360° panoramic rotation, door entry vistas, and multi-angle room inspections.",
       image: "/Interactive-3D-digital-twin.png",
       callout: "Interactive 360° multi-angle walkthrough & digital twin",
