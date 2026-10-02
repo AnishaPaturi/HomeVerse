@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Bell, Check, Sparkles, TrendingUp, Truck, CheckCircle2 } from "lucide-react";
 
 interface NotificationItem {
   id: string;
@@ -14,7 +15,7 @@ interface NotificationItem {
 const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "n1",
-    title: "Budget Alert",
+    title: "Budget Allocation Optimal",
     message: "65% of allocated living room budget has been utilized. Remaining contingency: ₹2.80L.",
     type: "budget_alert",
     read: false,
@@ -22,23 +23,23 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "n2",
-    title: "Milestone Achieved",
-    message: "Civil and Demolition works completed ahead of schedule. Ready for electrical rough-in.",
+    title: "Milestone Verified",
+    message: "Civil and Demolition structural shell completed. Ready for electrical rough-in.",
     type: "milestone",
     read: false,
     created_at: "1 hour ago",
   },
   {
     id: "n3",
-    title: "Order Dispatched",
-    message: "L-Shape Modular Sectional Sofa is on the way from Havenly Living. Tracking: HV-88219.",
+    title: "Material Dispatched",
+    message: "L-Shape Modular Sectional Sofa is in transit from Havenly Living. Tracking: HV-88219.",
     type: "delivery",
     read: false,
     created_at: "3 hours ago",
   },
   {
     id: "n4",
-    title: "Value Engineering Tip",
+    title: "Value Engineering Insight",
     message: "Switching to engineered walnut coffee table saves ₹9,500 with matching finish warmth.",
     type: "recommendation",
     read: true,
@@ -62,7 +63,7 @@ export const NotificationBell: React.FC = () => {
         }
       }
     } catch {
-      // Keep canonical default notifications if API is running elsewhere
+      // Keep canonical default notifications
     }
   };
 
@@ -73,9 +74,7 @@ export const NotificationBell: React.FC = () => {
   const markAllRead = async () => {
     try {
       await fetch("http://localhost:8080/api/notifications/read-all", { method: "PUT" });
-    } catch {
-      // Handled in state
-    }
+    } catch {}
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
   };
@@ -83,9 +82,7 @@ export const NotificationBell: React.FC = () => {
   const markAsRead = async (id: string) => {
     try {
       await fetch(`http://localhost:8080/api/notifications/${id}/read`, { method: "PUT" });
-    } catch {
-      // Handled in state
-    }
+    } catch {}
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
@@ -95,13 +92,29 @@ export const NotificationBell: React.FC = () => {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "budget_alert":
-        return <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400">Budget</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            Budget
+          </span>
+        );
       case "milestone":
-        return <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400">Milestone</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            Milestone
+          </span>
+        );
       case "delivery":
-        return <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-400">Delivery</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-teal-500/10 border border-teal-500/30 text-teal-400">
+            Logistics
+          </span>
+        );
       default:
-        return <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-400">AI Tip</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+            AI Copilot
+          </span>
+        );
     }
   };
 
@@ -109,20 +122,13 @@ export const NotificationBell: React.FC = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition"
+        className="relative p-2.5 rounded-full glass-morphism hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
         title="Notifications"
         aria-label="View notifications"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+        <Bell className="w-4 h-4 text-emerald-400" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-zinc-900">
+          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-mono font-bold text-slate-950 ring-2 ring-[#06090e] shadow-sm animate-pulse">
             {unreadCount}
           </span>
         )}
@@ -131,12 +137,14 @@ export const NotificationBell: React.FC = () => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-3 w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
+          <div className="absolute right-0 mt-3 w-96 max-w-[calc(100vw-2rem)] rounded-3xl glass-morphism-card border border-white/15 bg-[#090e15]/95 backdrop-blur-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Notifications</h3>
+                <h3 className="font-bold text-white text-sm font-editorial">
+                  Studio Activity & Alerts
+                </h3>
                 {unreadCount > 0 && (
-                  <span className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">
                     {unreadCount} new
                   </span>
                 )}
@@ -144,7 +152,7 @@ export const NotificationBell: React.FC = () => {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium transition"
+                  className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 hover:underline transition cursor-pointer"
                 >
                   Mark all read
                 </button>
@@ -156,31 +164,33 @@ export const NotificationBell: React.FC = () => {
                 <div
                   key={n.id}
                   onClick={() => !n.read && markAsRead(n.id)}
-                  className={`p-3 rounded-xl border text-xs transition cursor-pointer ${
+                  className={`p-3 rounded-2xl border text-xs transition cursor-pointer ${
                     n.read
-                      ? "bg-transparent border-gray-100 dark:border-zinc-800/60 text-gray-600 dark:text-zinc-400"
-                      : "bg-indigo-50/40 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/40 text-gray-900 dark:text-zinc-200"
+                      ? "bg-transparent border-white/[0.06] text-slate-400 hover:bg-white/[0.03]"
+                      : "bg-emerald-500/[0.05] border-emerald-500/25 text-slate-200 hover:bg-emerald-500/[0.08]"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center space-x-2">
                       {getTypeBadge(n.type)}
-                      <span className="font-semibold text-gray-900 dark:text-white">{n.title}</span>
+                      <span className="font-semibold text-white">{n.title}</span>
                     </div>
                     {!n.read && (
-                      <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
                     )}
                   </div>
-                  <p className="mt-1 text-gray-600 dark:text-zinc-300 leading-relaxed">{n.message}</p>
-                  <div className="mt-2 text-[10px] text-gray-400 dark:text-zinc-500">
-                    {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  <p className="text-slate-300 text-[11px] leading-relaxed font-light">{n.message}</p>
+                  <div className="mt-2 text-[10px] text-slate-500 font-mono">
+                    {n.created_at}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-zinc-800 text-center">
-              <span className="text-[11px] text-gray-400 dark:text-zinc-500">HomeVerse Notification Engine</span>
+            <div className="mt-3 pt-2.5 border-t border-white/[0.08] text-center">
+              <span className="text-[10px] text-slate-500 font-mono">
+                HomeVerse Spatial OS Intelligence
+              </span>
             </div>
           </div>
         </>

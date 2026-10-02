@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { formatIndianBudget } from "@/lib/utils";
-import { ArrowRight, IndianRupee, Layers } from "lucide-react";
+import { ArrowRight, IndianRupee, Layers, Sparkles } from "lucide-react";
 
 interface BudgetSummaryProps {
   projectName?: string;
@@ -34,45 +34,55 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
   const percentage = totalBudget > 0 ? Math.min(100, Math.round((actualEstimate / totalBudget) * 100)) : 0;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-sm">
+    <div className="glass-morphism-card rounded-3xl p-6 sm:p-7 border border-white/10 backdrop-blur-xl relative overflow-hidden shadow-2xl">
+      {/* Ambient background glow */}
+      <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-black text-gray-900 dark:text-white">{projectName}</h3>
-        <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
-          Live Project
+        <div>
+          <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block">
+            Budget Envelope
+          </span>
+          <h3 className="text-xl font-bold text-white font-editorial">{projectName}</h3>
+        </div>
+        <span className="text-[10px] font-mono font-semibold px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full">
+          Live Twin
         </span>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-gray-500 font-semibold mb-6">
-        <span>{totalRooms} Rooms</span>
-        <span>{completionPercentage}% Complete</span>
+      <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-5">
+        <span>{totalRooms} Configured Rooms</span>
+        <span>{completionPercentage}% Estimated</span>
       </div>
 
-      <div className="border-t border-b border-gray-100 dark:border-zinc-800 py-4 mb-4">
-        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block">Total Budget</span>
-        <div className="text-3xl font-black text-gray-900 dark:text-white mt-0.5">
+      <div className="border-t border-b border-white/[0.08] py-4 mb-5">
+        <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">
+          Total Indian Budget Allocation
+        </span>
+        <div className="text-3xl font-extrabold text-white font-mono mt-1 tracking-tight">
           {formatIndianBudget(totalBudget)}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mt-4 text-xs font-medium">
-          <div>
-            <span className="text-gray-400 block">Estimated:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{formatIndianBudget(estimatedCost)}</span>
+        <div className="grid grid-cols-2 gap-4 mt-4 text-xs font-mono">
+          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <span className="text-slate-400 block text-[10px]">Estimated / Committed:</span>
+            <span className="text-white font-bold">{formatIndianBudget(estimatedCost || actualEstimate)}</span>
           </div>
-          <div>
-            <span className="text-gray-400 block">Remaining:</span>
-            <span className="text-emerald-500 font-bold">{formatIndianBudget(remainingAmount)}</span>
+          <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
+            <span className="text-slate-400 block text-[10px]">Remaining Contingency:</span>
+            <span className="text-emerald-400 font-bold">{formatIndianBudget(remainingAmount)}</span>
           </div>
         </div>
       </div>
 
       <div className="mb-6">
-        <div className="flex justify-between items-center text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">
+        <div className="flex justify-between items-center text-xs font-mono text-slate-300 mb-2">
           <span>Allocation Committed</span>
-          <span>{percentage}%</span>
+          <span className="text-emerald-400 font-bold">{percentage}%</span>
         </div>
-        <div className="w-full bg-gray-100 dark:bg-zinc-800 h-3 rounded-full overflow-hidden p-0.5">
+        <div className="w-full bg-white/[0.06] h-2.5 rounded-full overflow-hidden p-0.5 border border-white/[0.08]">
           <div
-            className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-emerald-500 via-teal-400 to-[#a3e635] h-full rounded-full transition-all duration-500"
             style={{ width: `${percentage}%` }}
           />
         </div>
@@ -80,10 +90,10 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
 
       <Link
         href={`/project/${projectId}`}
-        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-indigo-600/20 transition-all"
+        className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-105 active:scale-[0.99] text-slate-950 font-mono font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
       >
-        Continue Designing
-        <ArrowRight className="w-4 h-4" />
+        <span>Continue Designing</span>
+        <ArrowRight className="w-4 h-4 text-slate-950" />
       </Link>
     </div>
   );
