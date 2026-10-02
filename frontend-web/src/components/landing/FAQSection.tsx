@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, HelpCircle, Sparkles } from "lucide-react";
 
 export const FAQSection: React.FC = () => {
@@ -96,12 +97,12 @@ export const FAQSection: React.FC = () => {
           <p className="text-xs font-mono text-slate-400">
             Have a custom architectural inquiry or enterprise studio requirement?
           </p>
-          <a
-            href="#contact"
-            className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 hover:text-emerald-300 underline font-semibold"
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 hover:text-emerald-300 underline font-semibold cursor-pointer"
           >
             <span>Talk directly to our architectural engineering team →</span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
