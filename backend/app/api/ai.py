@@ -1112,6 +1112,72 @@ def copilot_chat_endpoint(chat_req: AIChatRequest, db: Session = Depends(get_db)
     return AIService.handle_copilot_chat(db, chat_req)
 
 
+from app.ai.dimension_service import dimension_service
+from app.ai.dimension_schemas import (
+    DimensionInferenceRequest,
+    DimensionInferenceResponse
+)
+
+@router.post(
+    "/floorplan/dimensions",
+    response_model=DimensionInferenceResponse,
+    summary="ViT Floor Plan Dimension Prediction & Geometric Validation",
+    description="Accepts floor plan image via file upload or base64 and returns verified room dimensions."
+)
+async def predict_floorplan_dimensions(
+    file: Optional[UploadFile] = File(None),
+    target_room: Optional[str] = Form(None),
+    ceiling_height_m: float = Form(2.8),
+    image_base64: Optional[str] = Form(None)
+):
+    """
+    Vision Transformer Dimension Intelligence for Step 6/7.
+    Predicts metric width, depth, height, area, and physical validation confidence.
+    """
+    if file is not None:
+        content = await file.read()
+        return dimension_service.infer_dimensions(
+            image_input=content,
+            target_room=target_room,
+            ceiling_height_m=ceiling_height_m
+        )
+    elif image_base64:
+        return dimension_service.infer_dimensions(
+            image_input=image_base64,
+            target_room=target_room,
+            ceiling_height_m=ceiling_height_m
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must provide either an uploaded image file or image_base64 string."
+        )
+
+
+@router.post(
+    "/floorplan/dimensions/json",
+    response_model=DimensionInferenceResponse,
+    summary="ViT Floor Plan Dimension Prediction (JSON body)"
+)
+async def predict_floorplan_dimensions_json(
+    req: DimensionInferenceRequest
+):
+    """
+    JSON endpoint for Vision Transformer dimension prediction via base64 or URL.
+    """
+    if not req.image_base64 and not req.image_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either image_base64 or image_url must be provided in request body."
+        )
+
+    return dimension_service.infer_dimensions(
+        image_input=req.image_base64 or req.image_url,
+        target_room=req.target_room,
+        ceiling_height_m=req.standard_ceiling_height_m
+    )
+
+
 
 
 
