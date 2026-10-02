@@ -2,18 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Menu, X, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Menu, X, Sparkles, Phone } from "lucide-react";
 import Hero from "@/components/landing/Hero";
-import KeyBenefits from "@/components/landing/KeyBenefits";
-import UniqueValue from "@/components/landing/UniqueValue";
-import LockedCoordinateViewer from "@/components/landing/LockedCoordinateViewer";
 import PlatformDemo from "@/components/landing/PlatformDemo";
 import DesignFeatures from "@/components/landing/DesignFeatures";
+import LockedCoordinateViewer from "@/components/landing/LockedCoordinateViewer";
 import ProductDemoVideo from "@/components/landing/ProductDemoVideo";
-import HowItWorks from "@/components/landing/HowItWorks";
-import ThreeDShowcase from "@/components/landing/ThreeDShowcase";
-import TrustBadges from "@/components/landing/TrustBadges";
-import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
 import ContactSection from "@/components/landing/ContactSection";
 import FinalCTA from "@/components/landing/FinalCTA";
@@ -75,13 +69,7 @@ export default function HomePage() {
           </div>
 
           {/* Spacious Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-10 2xl:gap-12 text-xs font-mono tracking-widest text-slate-300">
-            <button
-              onClick={() => scrollToSection("key-benefits")}
-              className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
-            >
-              CAPABILITIES
-            </button>
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-8 2xl:gap-10 text-xs font-mono tracking-widest text-slate-300">
             <button
               onClick={() => scrollToSection("ai-engine")}
               className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
@@ -92,13 +80,25 @@ export default function HomePage() {
               onClick={() => scrollToSection("compare-styles")}
               className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
             >
-              3D STUDIO
+              STYLES
             </button>
             <button
-              onClick={() => scrollToSection("workflow")}
+              onClick={() => scrollToSection("locked-coordinates")}
               className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
             >
-              PROCESS
+              LOCKED COORDINATES
+            </button>
+            <button
+              onClick={() => scrollToSection("demo-video")}
+              className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
+            >
+              DEMO
+            </button>
+            <button
+              onClick={() => scrollToSection("faq")}
+              className="hover:text-emerald-400 transition-colors cursor-pointer py-1"
+            >
+              FAQ
             </button>
             <button
               onClick={() => scrollToSection("contact")}
@@ -153,12 +153,6 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="lg:hidden mt-3 pt-3 border-t border-white/[0.08] flex flex-col space-y-3 pb-2 animate-in fade-in">
             <button
-              onClick={() => scrollToSection("key-benefits")}
-              className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
-            >
-              CAPABILITIES
-            </button>
-            <button
               onClick={() => scrollToSection("ai-engine")}
               className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
             >
@@ -168,19 +162,32 @@ export default function HomePage() {
               onClick={() => scrollToSection("compare-styles")}
               className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
             >
-              3D STUDIO & STYLES
+              ARCHITECTURAL STYLES
             </button>
             <button
-              onClick={() => scrollToSection("workflow")}
+              onClick={() => scrollToSection("locked-coordinates")}
               className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
             >
-              ARCHITECTURAL PROCESS
+              LOCKED COORDINATES
+            </button>
+            <button
+              onClick={() => scrollToSection("demo-video")}
+              className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
+            >
+              PRODUCT DEMO
+            </button>
+            <button
+              onClick={() => scrollToSection("faq")}
+              className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
+            >
+              FAQ
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer"
+              className="text-left text-xs font-mono py-2 text-slate-300 hover:text-emerald-400 cursor-pointer flex items-center gap-1.5"
             >
-              CONTACT & CONSULTATION
+              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>CONTACT & HUBS</span>
             </button>
           </div>
         )}
@@ -193,12 +200,6 @@ export default function HomePage() {
         onOpenDemoModal={() => setDemoModalOpen(true)}
         isAuthenticated={!!user}
       />
-
-      {/* Key Benefits (6 Pillars of Spatial Governance) */}
-      <KeyBenefits />
-
-      {/* Unique Value Proposition */}
-      <UniqueValue />
 
       {/* Spatial Computer Vision Pipeline with Real Images */}
       <PlatformDemo isAuthenticated={!!user} />
@@ -218,18 +219,6 @@ export default function HomePage() {
 
       {/* Product Demo (Video) with interactive chapters */}
       <ProductDemoVideo />
-
-      {/* Complete Modified 6-Stage Architectural Flow */}
-      <HowItWorks />
-
-      {/* Browser-First 3D Engine in User-Friendly Terms */}
-      <ThreeDShowcase isAuthenticated={!!user} />
-
-      {/* Trust Badges (RERA, ISO 27001, 256-Bit SSL, WebGL) */}
-      <TrustBadges />
-
-      {/* Clear Pricing (Transparent Indian Rupee Tiers) */}
-      <PricingSection />
 
       {/* FAQ Section (Interactive Accordion) */}
       <FAQSection />
@@ -254,43 +243,35 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-8 text-slate-400">
-              <button onClick={() => scrollToSection("key-benefits")} className="hover:text-white cursor-pointer">
-                Capabilities
-              </button>
               <button onClick={() => scrollToSection("ai-engine")} className="hover:text-white cursor-pointer">
-                AI Vision
+                AI Scanner
               </button>
               <button onClick={() => scrollToSection("compare-styles")} className="hover:text-white cursor-pointer">
-                3D Studio
+                Architectural Styles
               </button>
-              <button onClick={() => scrollToSection("workflow")} className="hover:text-white cursor-pointer">
-                Process
+              <button onClick={() => scrollToSection("locked-coordinates")} className="hover:text-white cursor-pointer">
+                Locked Coordinates
               </button>
-              <button onClick={() => scrollToSection("pricing")} className="hover:text-white cursor-pointer">
-                Pricing
+              <button onClick={() => scrollToSection("demo-video")} className="hover:text-white cursor-pointer">
+                Product Demo
+              </button>
+              <button onClick={() => scrollToSection("faq")} className="hover:text-white cursor-pointer">
+                FAQ
               </button>
               <button onClick={() => scrollToSection("contact")} className="hover:text-white cursor-pointer">
                 Contact
               </button>
-              <button onClick={() => router.push("/login")} className="hover:text-white cursor-pointer">
-                Sign In
-              </button>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-white/[0.04] text-[11px] text-slate-600">
             <div>
-              © {new Date().getFullYear()} HomeVerse AI Technologies Inc. All rights reserved. Built for Indian residential architecture.
+              © {new Date().getFullYear()} HomeVerse Inc. Mathematical budget governance & spatial architecture.
             </div>
-            <div className="flex items-center gap-3 text-slate-400">
-              <span className="flex items-center gap-1 text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Next.js 16 Turbopack (Sub-Second Paint)</span>
-              </span>
-              <span>·</span>
-              <span>Three.js 60FPS</span>
-              <span>·</span>
-              <span>Gemini Multimodal</span>
+            <div className="flex items-center gap-6">
+              <span>Privacy Shield</span>
+              <span>Terms of Service</span>
+              <span>RERA Registered</span>
             </div>
           </div>
         </div>
@@ -299,7 +280,7 @@ export default function HomePage() {
       {/* Global Interactive Demo Modal */}
       {demoModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in">
-          <div className="w-full max-w-3xl rounded-3xl glass-morphism-card border border-white/20 p-6 space-y-4 shadow-2xl">
+          <div className="w-full max-w-3xl rounded-3xl glass-morphism border border-white/20 p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <span className="font-mono text-xs font-bold text-emerald-400 flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5" />
@@ -312,23 +293,14 @@ export default function HomePage() {
                 ✕
               </button>
             </div>
-            <div className="relative rounded-2xl overflow-hidden aspect-video bg-slate-950 flex items-center justify-center border border-white/10">
-              <img
-                src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200"
-                alt="Demo preview"
-                className="w-full h-full object-cover filter brightness-90"
+            <div className="relative rounded-2xl overflow-hidden aspect-video bg-black flex items-center justify-center border border-white/10">
+              <video
+                src="/demo-video.mp4"
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain"
               />
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center space-y-3 p-6 text-center">
-                <div className="p-4 rounded-full bg-emerald-500 text-slate-950 font-bold shadow-2xl">
-                  ▶
-                </div>
-                <span className="font-editorial text-lg text-white">
-                  Real-time Spatial CAD & Budget Delta Simulation
-                </span>
-                <p className="text-xs text-slate-300 max-w-md font-light">
-                  Watch how furniture swaps instantly update overall project budgets across civil, modular millwork, and lighting categories.
-                </p>
-              </div>
             </div>
             <div className="flex justify-end pt-2">
               <button
