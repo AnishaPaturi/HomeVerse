@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight, AlertCircle, Check, Sparkles } from "lucide-react";
 import GoogleAuthButton from "./GoogleAuthButton";
@@ -137,9 +138,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="space-y-1.5">
           <label className="text-xs font-mono text-slate-300 flex items-center justify-between">
             <span>Password</span>
-            <span className="text-[10px] text-emerald-400 hover:underline cursor-pointer">
+            <Link
+              href="/forgot-password"
+              className="text-[10px] text-emerald-400 hover:underline cursor-pointer transition-colors"
+            >
               Forgot?
-            </span>
+            </Link>
           </label>
           <div className="relative">
             <Lock className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />

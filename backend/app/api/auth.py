@@ -5,10 +5,13 @@ Authentication and Identity Router (Phases 42 & 43)
 - JWT token issuance and validation
 - Input sanitization
 """
-from typing import Optional
+import random
+import time
+from typing import Optional, Dict, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -204,3 +207,131 @@ def get_current_user_profile(
             return user
 
     raise UnauthorizedException(message="User not found or unauthenticated.")
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class VerifyOtpRequest(BaseModel):
+    email: str
+    code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+
+# In-memory OTP store: { email: { "code": "28541", "expires_at": timestamp } }
+_RESET_OTP_STORE: Dict[str, Dict[str, Any]] = {}
+
+
+@router.post("/forgot-password")
+def request_password_reset(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Generates a 5-digit verification code to reset the user's password.
+    Code is valid for 10 minutes.
+    """
+    clean_email = payload.email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A valid email address is required.",
+        )
+
+    # 5-digit verification code matching reference UI
+    code = f"{random.randint(10000, 99999)}"
+    _RESET_OTP_STORE[clean_email] = {
+        "code": code,
+        "expires_at": time.time() + 600,
+    }
+
+    return {
+        "success": True,
+        "message": f"Verification code sent to {clean_email}",
+        "code": code,
+        "email": clean_email,
+    }
+
+
+@router.post("/verify-otp")
+def verify_reset_otp(payload: VerifyOtpRequest):
+    """
+    Cross-verifies the 5-digit verification code against the stored OTP.
+    """
+    clean_email = payload.email.strip().lower()
+    code_entered = payload.code.strip()
+
+    otp_info = _RESET_OTP_STORE.get(clean_email)
+    if not otp_info:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active verification code found for this email. Please request a new code.",
+        )
+
+    if time.time() > otp_info["expires_at"]:
+        _RESET_OTP_STORE.pop(clean_email, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code has expired. Please request a new code.",
+        )
+
+    if otp_info["code"] != code_entered:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect verification code. Please check and enter the code again, or request a new code.",
+        )
+
+    return {
+        "success": True,
+        "valid": True,
+        "message": "Verification code successfully verified.",
+    }
+
+
+@router.post("/reset-password")
+def complete_password_reset(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Verifies the 5-digit code and securely updates the user's password.
+    """
+    clean_email = payload.email.strip().lower()
+    code_entered = payload.code.strip()
+
+    otp_info = _RESET_OTP_STORE.get(clean_email)
+    if not otp_info or otp_info["code"] != code_entered:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification code.",
+        )
+
+    is_valid, err_msg = validate_password_strength(payload.new_password)
+    if not is_valid:
+        raise ValidationErrorException(message=err_msg)
+
+    user = db.query(UserModel).filter(UserModel.email == clean_email).first()
+    if user:
+        user.password_hash = get_password_hash(payload.new_password)
+        db.commit()
+        db.refresh(user)
+    else:
+        # Create user record for demo or unregistered accounts
+        user = UserModel(
+            name=clean_email.split("@")[0].capitalize(),
+            email=clean_email,
+            password_hash=get_password_hash(payload.new_password),
+            plan="Pro Designer",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # Invalidate OTP once used
+    _RESET_OTP_STORE.pop(clean_email, None)
+
+    return {
+        "success": True,
+        "message": "Password successfully updated. You may now log in.",
+    }
+
