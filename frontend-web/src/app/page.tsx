@@ -24,6 +24,7 @@ export default function HomePage() {
   const [heroStyle, setHeroStyle] = useState<string>("Industrial");
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedStyleId, setSelectedStyleId] = useState<string>("empty");
 
   useEffect(() => {
     const userSession = sessionStorage.getItem("user");
@@ -203,10 +204,17 @@ export default function HomePage() {
       <PlatformDemo isAuthenticated={!!user} />
 
       {/* All 6 Design Styles Portrayed on the EXACT SAME ROOM */}
-      <DesignFeatures isAuthenticated={!!user} />
+      <DesignFeatures
+        isAuthenticated={!!user}
+        selectedStyleId={selectedStyleId}
+        onSelectStyle={(st) => setSelectedStyleId(st)}
+      />
 
       {/* Locked Coordinate Rendering: Plain Bare Room vs Fully Furnished */}
-      <LockedCoordinateViewer />
+      <LockedCoordinateViewer
+        selectedStyleId={selectedStyleId}
+        onStyleChange={(st) => setSelectedStyleId(st)}
+      />
 
       {/* Product Demo (Video) with interactive chapters */}
       <ProductDemoVideo />

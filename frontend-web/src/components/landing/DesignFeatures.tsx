@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Palette, IndianRupee, Box, Eye, SlidersHorizontal, ArrowRight } from "lucide-react";
+import { Sparkles, Palette, IndianRupee, Box, Eye, SlidersHorizontal, ArrowRight, ArrowDown, X } from "lucide-react";
 
 interface DesignFeaturesProps {
   isAuthenticated?: boolean;
+  selectedStyleId?: string;
+  onSelectStyle?: (styleId: string) => void;
 }
 
 interface StyleProfile {
@@ -25,7 +27,11 @@ interface StyleProfile {
   isStartingShell?: boolean;
 }
 
-export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated = false }) => {
+export const DesignFeatures: React.FC<DesignFeaturesProps> = ({
+  isAuthenticated = false,
+  selectedStyleId: externalSelectedStyleId,
+  onSelectStyle,
+}) => {
   const router = useRouter();
 
   // Starting bare room shell + 6 architectural styles portrayed on the EXACT SAME ROOM
@@ -138,13 +144,77 @@ export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated 
     },
   ];
 
-  // Empty room is the default starting image
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("empty");
+  // Internal state with support for controlled prop
+  const [internalSelectedStyleId, setInternalSelectedStyleId] = useState<string>("empty");
+  const selectedStyleId = externalSelectedStyleId ?? internalSelectedStyleId;
+
   const [compareMode, setCompareMode] = useState<"full" | "split">("full");
   const [sliderPos, setSliderPos] = useState<number>(50);
 
+  // Auto-scroll countdown state after style selection
+  const [autoScrollNotice, setAutoScrollNotice] = useState<string | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const currentStyle = stylesOnSameRoom.find((s) => s.id === selectedStyleId) || stylesOnSameRoom[0];
   const isViewingEmptyShell = selectedStyleId === "empty";
+
+  // Cleanup scroll timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSelectStyle = (styleId: string) => {
+    setInternalSelectedStyleId(styleId);
+    onSelectStyle?.(styleId);
+
+    // Clear any previous scroll timer
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+
+    if (styleId === "empty") {
+      setCompareMode("full");
+      setAutoScrollNotice(null);
+      return;
+    }
+
+    // Automatically after 2 sec moves from style to Locked-Coordinate Architecture
+    const chosen = stylesOnSameRoom.find((s) => s.id === styleId);
+    setAutoScrollNotice(`Selected ${chosen?.name || styleId} · Moving to Locked-Coordinate Slider in 2s...`);
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      setAutoScrollNotice(null);
+      const target = document.getElementById("locked-coordinates");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 2000);
+  };
+
+  const cancelAutoScroll = () => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    setAutoScrollNotice(null);
+  };
+
+  const jumpToLockedCoordinatesNow = () => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    setAutoScrollNotice(null);
+    const target = document.getElementById("locked-coordinates");
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <section id="compare-styles" className="py-24 px-6 lg:px-12 bg-[#070b10] border-t border-white/[0.08] relative">
@@ -173,12 +243,7 @@ export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated 
             return (
               <button
                 key={style.id}
-                onClick={() => {
-                  setSelectedStyleId(style.id);
-                  if (style.id === "empty") {
-                    setCompareMode("full");
-                  }
-                }}
+                onClick={() => handleSelectStyle(style.id)}
                 className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center gap-2 border ${
                   isSelected
                     ? "bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/30 border-emerald-400 scale-105"
@@ -194,6 +259,36 @@ export const DesignFeatures: React.FC<DesignFeaturesProps> = ({ isAuthenticated 
             );
           })}
         </div>
+
+        {/* 2-Second Auto-Scroll Notification Banner */}
+        {autoScrollNotice && (
+          <div className="max-w-xl mx-auto -mt-6 animate-fadeIn">
+            <div className="glass-morphism border border-emerald-500/40 bg-emerald-950/40 px-4 py-2.5 rounded-2xl flex items-center justify-between gap-3 text-xs font-mono text-emerald-200 shadow-xl">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>{autoScrollNotice}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={jumpToLockedCoordinatesNow}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Go Now</span>
+                  <ArrowDown className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelAutoScroll}
+                  className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  title="Stay here"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Stage: The Room Portrayed In Selected Style */}
         <div className="max-w-6xl mx-auto">
