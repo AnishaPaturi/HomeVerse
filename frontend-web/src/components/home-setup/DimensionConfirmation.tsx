@@ -15,18 +15,24 @@ export interface DetectedRoom {
   ground_truth_imperial?: string;
   dimension_error_pct?: number;
   is_dimensionally_accurate?: boolean;
+  dimension_source?: string;
+  scale_status?: string;
 }
 
 interface DimensionConfirmationProps {
   rooms: DetectedRoom[];
   onConfirm: () => void;
   onCorrect: () => void;
+  gatekeeperError?: string | null;
+  isConfirming?: boolean;
 }
 
 export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
   rooms,
   onConfirm,
   onCorrect,
+  gatekeeperError,
+  isConfirming = false,
 }) => {
   return (
     <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm">
@@ -54,6 +60,13 @@ export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
         </button>
       </div>
 
+      {gatekeeperError && (
+        <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-3 text-rose-600 dark:text-rose-400 text-xs font-medium">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-500" />
+          <span>{gatekeeperError}</span>
+        </div>
+      )}
+
       {/* Structured Room List adhering to Detected Room -> Detected Dimensions -> Ground Truth -> Error % -> Confidence */}
       <div className="space-y-3 mb-6">
         {rooms.map((r, idx) => {
@@ -76,6 +89,11 @@ export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
                   <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                     {r.room_type}
                   </span>
+                  {r.dimension_source && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      src: {r.dimension_source}
+                    </span>
+                  )}
                 </div>
 
                 {/* 2. Detected Dimensions (Metric & Imperial) */}
@@ -134,10 +152,11 @@ export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
       <button
         type="button"
         onClick={onConfirm}
-        className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-indigo-600/25 transition-all text-sm flex items-center justify-center gap-2"
+        disabled={isConfirming}
+        className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-indigo-600/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
       >
         <Check className="w-4 h-4 stroke-[3]" />
-        Confirm Measurements & Continue to 3D Model
+        <span>{isConfirming ? "Gatekeeper Verifying Scene..." : "Confirm Measurements & Continue to 3D Model"}</span>
       </button>
     </div>
   );

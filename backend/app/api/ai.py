@@ -1115,8 +1115,103 @@ def copilot_chat_endpoint(chat_req: AIChatRequest, db: Session = Depends(get_db)
 from app.ai.dimension_service import dimension_service
 from app.ai.dimension_schemas import (
     DimensionInferenceRequest,
-    DimensionInferenceResponse
+    DimensionInferenceResponse,
+    BlueprintAnalysisResult,
+    ScaleCalibrationRequest,
+    MissingDimensionsSubmission,
+    FinalSceneConfirmationRequest,
+    CanonicalSceneResponse
 )
+
+@router.post(
+    "/floorplan/analyze-blueprint",
+    response_model=BlueprintAnalysisResult,
+    summary="Multi-Stage Blueprint Understanding & Dimension Extraction",
+    description="Analyzes blueprint, extracts authentic labels, reads text dimensions, validates geometry, and identifies missing rooms."
+)
+async def analyze_blueprint_endpoint(
+    file: Optional[UploadFile] = File(None),
+    image_base64: Optional[str] = Form(None),
+    user_known_scale_m: Optional[float] = Form(None)
+):
+    """
+    Step 6 Intelligence Layer:
+    Detects walls, rooms, authentic labels, printed dimensions, and establishes scale.
+    """
+    if file is not None:
+        content = await file.read()
+        return dimension_service.analyze_blueprint(
+            image_input=content,
+            image_name=file.filename,
+            user_known_scale_m=user_known_scale_m
+        )
+    elif image_base64:
+        return dimension_service.analyze_blueprint(
+            image_input=image_base64,
+            image_name="uploaded_blueprint.png",
+            user_known_scale_m=user_known_scale_m
+        )
+    else:
+        # Default benchmark analysis
+        return dimension_service.analyze_blueprint(
+            image_input="frontend-web/public/templates/modern_north_layout-a.jpg",
+            image_name="modern_north_layout-a.jpg",
+            user_known_scale_m=user_known_scale_m
+        )
+
+
+@router.post(
+    "/floorplan/calibrate-scale",
+    response_model=BlueprintAnalysisResult,
+    summary="Calibrate Blueprint Scale with Known User Reference",
+    description="Used when an entire blueprint lacks explicit dimensions. Converts pixels to meters from one user reference."
+)
+def calibrate_scale_endpoint(req: ScaleCalibrationRequest):
+    """
+    Case B Scale Calibration: User supplies one reference dimension (e.g. 12.0m overall house width).
+    """
+    if not dimension_service._cached_analysis:
+        dimension_service.analyze_blueprint(
+            image_input="frontend-web/public/templates/modern_north_layout-a.jpg",
+            image_name="modern_north_layout-a.jpg"
+        )
+    return dimension_service.analyze_blueprint(
+        image_input="frontend-web/public/templates/modern_north_layout-a.jpg",
+        image_name="modern_north_layout-a.jpg",
+        user_known_scale_m=req.reference_length_m
+    )
+
+
+@router.post(
+    "/floorplan/submit-dimensions",
+    response_model=BlueprintAnalysisResult,
+    summary="Submit User Verified Dimensions for Missing Rooms",
+    description="Step 6A Missing Dimensions resolution. Sets dimension_source to 'user' and scale_status to 'user_verified'."
+)
+def submit_missing_dimensions_endpoint(req: MissingDimensionsSubmission):
+    """
+    Receives user-entered dimensions for rooms where dimensions were absent on the blueprint.
+    """
+    return dimension_service.submit_missing_dimensions(req)
+
+
+@router.post(
+    "/floorplan/confirm-scene",
+    response_model=CanonicalSceneResponse,
+    summary="Gatekeeper: Confirm Dimensions and Unlock 3D Canonical Scene",
+    description="Enforces strict gatekeeper constraints before allowing React Three Fiber scene creation."
+)
+def confirm_canonical_scene_endpoint(req: FinalSceneConfirmationRequest):
+    """
+    Strict Gatekeeper:
+    Checks analysis_complete, all_rooms_have_dimensions, scale_verified, and user_confirmed.
+    Only returns confirmed canonical scene when all conditions are satisfied.
+    """
+    return dimension_service.confirm_canonical_scene(
+        user_confirmed=req.user_confirmed,
+        confirmed_rooms=req.confirmed_rooms
+    )
+
 
 @router.post(
     "/floorplan/dimensions",
