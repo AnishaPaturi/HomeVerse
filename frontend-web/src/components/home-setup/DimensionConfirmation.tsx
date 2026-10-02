@@ -63,7 +63,7 @@ export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
                 {r.area_sqm} m² ({(r.area_sqm * 10.764).toFixed(0)} sq ft)
               </span>
               <span className="text-[11px] text-emerald-500 font-semibold">
-                {Math.round(r.confidence * 100)}% detection accuracy
+                {r.confidence > 1 ? Math.round(r.confidence) : Math.round(r.confidence * 100)}% detection accuracy
               </span>
             </div>
           </div>

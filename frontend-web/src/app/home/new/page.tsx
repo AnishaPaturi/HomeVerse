@@ -62,14 +62,53 @@ export default function NewHomePage() {
     "/templates/modern_north_layout-a.jpg"
   );
 
+  // Helper to dynamically build room list matching the configured bedrooms, bathrooms, and balconies
+  const generateRoomsForLayout = (beds: number, baths: number, bals: number) => {
+    const list = [
+      { name: "Living Room", room_type: "living_room", width_m: 5.5, length_m: 6.5, area_sqm: 35.75, confidence: 98 },
+      { name: "Kitchen & Dining", room_type: "kitchen", width_m: 4.0, length_m: 5.0, area_sqm: 20.0, confidence: 95 },
+    ];
+
+    for (let i = 1; i <= beds; i++) {
+      const isMaster = i === 1;
+      list.push({
+        name: isMaster ? "Master Bedroom" : `Bedroom ${i}`,
+        room_type: isMaster ? "master_bedroom" : "bedroom",
+        width_m: isMaster ? 4.5 : 4.0,
+        length_m: isMaster ? 5.0 : 4.5,
+        area_sqm: isMaster ? 22.5 : 18.0,
+        confidence: 96,
+      });
+    }
+
+    for (let j = 1; j <= baths; j++) {
+      const isMaster = j === 1;
+      list.push({
+        name: isMaster ? "Master Bathroom" : `Bathroom ${j}`,
+        room_type: "bathroom",
+        width_m: 2.5,
+        length_m: 2.4,
+        area_sqm: 6.0,
+        confidence: 94,
+      });
+    }
+
+    for (let k = 1; k <= bals; k++) {
+      list.push({
+        name: k === 1 ? "Main Balcony" : `Balcony ${k}`,
+        room_type: "balcony",
+        width_m: 2.0,
+        length_m: 3.5,
+        area_sqm: 7.0,
+        confidence: 92,
+      });
+    }
+
+    return list;
+  };
+
   // Step 6: Dimensions
-  const [detectedRooms, setDetectedRooms] = useState([
-    { name: "Living Room", room_type: "living_room", width_m: 5.5, length_m: 6.5, area_sqm: 35.75, confidence: 98 },
-    { name: "Kitchen & Dining", room_type: "kitchen", width_m: 4.0, length_m: 5.0, area_sqm: 20.0, confidence: 95 },
-    { name: "Master Bedroom", room_type: "master_bedroom", width_m: 4.5, length_m: 5.0, area_sqm: 22.5, confidence: 96 },
-    { name: "Guest Bedroom", room_type: "bedroom", width_m: 4.0, length_m: 4.5, area_sqm: 18.0, confidence: 93 },
-    { name: "Study Room", room_type: "office", width_m: 3.5, length_m: 4.0, area_sqm: 14.0, confidence: 91 },
-  ]);
+  const [detectedRooms, setDetectedRooms] = useState(() => generateRoomsForLayout(3, 2, 2));
   const [isEditingDimensions, setIsEditingDimensions] = useState(false);
 
   // Step 7: Room Focus
@@ -351,6 +390,7 @@ export default function NewHomePage() {
                 setBedroomsCount(beds);
                 setBathroomsCount(baths);
                 setBalconiesCount(bals);
+                setDetectedRooms(generateRoomsForLayout(beds, baths, bals));
               }}
             />
           )}
