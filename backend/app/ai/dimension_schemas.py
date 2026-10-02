@@ -11,10 +11,14 @@ class RoomDimensionPrediction(BaseModel):
     model_config = {"extra": "ignore"}
 
     room_name: str = Field(..., description="Canonical or custom room name")
+    source_label: Optional[str] = Field(default=None, description="Exact label as printed on floor plan")
     width: float = Field(..., description="Width in meters")
     depth: float = Field(..., description="Depth / length in meters")
     height: float = Field(default=2.8, description="Ceiling height in meters")
     area: float = Field(..., description="Floor area in square meters")
+    detected_imperial: Optional[str] = Field(default=None, description="Dimensions formatted in feet & inches")
+    ground_truth_imperial: Optional[str] = Field(default=None, description="Exact dimensions printed on blueprint")
+    dimension_error_pct: Optional[float] = Field(default=None, description="Error percentage vs ground truth")
     raw_area_predicted: Optional[float] = Field(default=None, description="Raw uncalibrated neural prediction")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Model & geometric validation confidence score")
     is_valid: bool = Field(default=True, description="True if passes physical geometry constraints")

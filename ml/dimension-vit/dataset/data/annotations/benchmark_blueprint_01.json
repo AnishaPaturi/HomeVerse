@@ -1,0 +1,160 @@
+{
+  "plan_id": "benchmark_blueprint_01",
+  "name": "Modern North Facing 3BHK CAD Layout",
+  "source_image": "modern_north_layout-a.jpg",
+  "description": "Authentic architectural CAD layout with printed imperial dimensions",
+  "total_area_sqft": 1850.0,
+  "total_area_sqm": 171.87,
+  "rooms": [
+    {
+      "source_label": "DRAWING ROOM",
+      "name": "Drawing Room",
+      "room_type": "drawing_room",
+      "dimension_imperial": "11'11\" × 12'11\"",
+      "width_m": 3.63,
+      "length_m": 3.94,
+      "area_sqm": 14.31,
+      "area_sqft": 154.0
+    },
+    {
+      "source_label": "BEDROOM-02",
+      "name": "Bedroom-02",
+      "room_type": "bedroom",
+      "dimension_imperial": "11'9\" × 12'3\"",
+      "width_m": 3.58,
+      "length_m": 3.73,
+      "area_sqm": 13.35,
+      "area_sqft": 143.7
+    },
+    {
+      "source_label": "BEDROOM-01",
+      "name": "Bedroom-01",
+      "room_type": "bedroom",
+      "dimension_imperial": "11'5\" × 14'5\"",
+      "width_m": 3.48,
+      "length_m": 4.39,
+      "area_sqm": 15.29,
+      "area_sqft": 164.6
+    },
+    {
+      "source_label": "MASTER BEDROOM",
+      "name": "Master Bedroom",
+      "room_type": "master_bedroom",
+      "dimension_imperial": "11'11\" × 14'11\"",
+      "width_m": 3.63,
+      "length_m": 4.55,
+      "area_sqm": 16.51,
+      "area_sqft": 177.7
+    },
+    {
+      "source_label": "DINING",
+      "name": "Dining",
+      "room_type": "dining_room",
+      "dimension_imperial": "17'6\" × 11'2\"",
+      "width_m": 5.33,
+      "length_m": 3.40,
+      "area_sqm": 18.16,
+      "area_sqft": 195.5
+    },
+    {
+      "source_label": "LIVING",
+      "name": "Living",
+      "room_type": "living_room",
+      "dimension_imperial": "10'9\" × 5'5\"",
+      "width_m": 3.28,
+      "length_m": 1.65,
+      "area_sqm": 5.41,
+      "area_sqft": 58.2
+    },
+    {
+      "source_label": "KITCHEN",
+      "name": "Kitchen",
+      "room_type": "kitchen",
+      "dimension_imperial": "11'5\" × 9'9\"",
+      "width_m": 3.48,
+      "length_m": 2.97,
+      "area_sqm": 10.33,
+      "area_sqft": 111.2
+    },
+    {
+      "source_label": "PUJA",
+      "name": "Puja",
+      "room_type": "puja",
+      "dimension_imperial": "6'4\" × 4'5\"",
+      "width_m": 1.93,
+      "length_m": 1.35,
+      "area_sqm": 2.61,
+      "area_sqft": 28.1
+    },
+    {
+      "source_label": "TOILET 1",
+      "name": "Toilet 1",
+      "room_type": "bathroom",
+      "dimension_imperial": "5'0\" × 7'11\"",
+      "width_m": 1.52,
+      "length_m": 2.41,
+      "area_sqm": 3.66,
+      "area_sqft": 39.4
+    },
+    {
+      "source_label": "TOILET 2",
+      "name": "Toilet 2",
+      "room_type": "bathroom",
+      "dimension_imperial": "5'0\" × 7'11\"",
+      "width_m": 1.52,
+      "length_m": 2.41,
+      "area_sqm": 3.66,
+      "area_sqft": 39.4
+    },
+    {
+      "source_label": "TOILET 3",
+      "name": "Toilet 3",
+      "room_type": "bathroom",
+      "dimension_imperial": "6'0\" × 9'0\"",
+      "width_m": 1.83,
+      "length_m": 2.74,
+      "area_sqm": 5.01,
+      "area_sqft": 54.0
+    },
+    {
+      "source_label": "FOYER",
+      "name": "Foyer",
+      "room_type": "foyer",
+      "dimension_imperial": "11'11\" × 5'4\"",
+      "width_m": 3.63,
+      "length_m": 1.63,
+      "area_sqm": 5.92,
+      "area_sqft": 63.7
+    },
+    {
+      "source_label": "LOBBY",
+      "name": "Lobby",
+      "room_type": "foyer",
+      "dimension_imperial": "5'0\" × 4'2\"",
+      "width_m": 1.52,
+      "length_m": 1.27,
+      "area_sqm": 1.93,
+      "area_sqft": 20.8
+    },
+    {
+      "source_label": "SITOUT",
+      "name": "Sitout",
+      "room_type": "balcony",
+      "dimension_imperial": "5'3\" WIDE",
+      "width_m": 1.60,
+      "length_m": 2.44,
+      "area_sqm": 3.90,
+      "area_sqft": 42.0
+    },
+    {
+      "source_label": "UTILITY",
+      "name": "Utility",
+      "room_type": "utility",
+      "dimension_imperial": "5'3\" WIDE",
+      "width_m": 1.60,
+      "length_m": 2.13,
+      "area_sqm": 3.41,
+      "area_sqft": 36.7
+    }
+  ]
+}

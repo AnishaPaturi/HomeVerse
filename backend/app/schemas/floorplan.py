@@ -4,6 +4,8 @@ from datetime import datetime
 import uuid
 
 class DetectedRoomSchema(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     name: str
     room_type: str
     width_m: float
@@ -12,6 +14,14 @@ class DetectedRoomSchema(BaseModel):
     confidence: float = 0.95
     suggested_budget_share: float = 0.20
     coordinates: Optional[Dict[str, Any]] = None
+    source_label: Optional[str] = None
+    detected_imperial: Optional[str] = None
+    ground_truth_imperial: Optional[str] = None
+    ground_truth_w_m: Optional[float] = None
+    ground_truth_l_m: Optional[float] = None
+    ground_truth_area_sqm: Optional[float] = None
+    dimension_error_pct: Optional[float] = None
+    is_dimensionally_accurate: Optional[bool] = True
 
 class FloorplanAnalysisResponse(BaseModel):
     floorplan_id: uuid.UUID

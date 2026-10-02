@@ -9,6 +9,11 @@ interface EditableRoom {
   width_m: number;
   length_m: number;
   area_sqm: number;
+  source_label?: string;
+  detected_imperial?: string;
+  ground_truth_imperial?: string;
+  dimension_error_pct?: number;
+  is_dimensionally_accurate?: boolean;
 }
 
 interface DimensionCorrectionProps {
