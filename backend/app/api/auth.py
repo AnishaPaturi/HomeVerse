@@ -339,3 +339,28 @@ def complete_password_reset(payload: ResetPasswordRequest, db: Session = Depends
         "message": "Password successfully updated. You may now log in.",
     }
 
+
+class DeleteUserAccountRequest(BaseModel):
+    email: str
+
+
+@router.delete("/delete-account")
+def delete_user_account(payload: DeleteUserAccountRequest, db: Session = Depends(get_db)):
+    """Permanently deletes user account and all associated projects and preferences."""
+    clean_email = payload.email.strip().lower()
+    user = db.query(UserModel).filter(UserModel.email == clean_email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found with this email address.",
+        )
+
+    db.delete(user)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Account {clean_email} has been permanently deleted.",
+    }
+
+

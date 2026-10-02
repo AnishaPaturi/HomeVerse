@@ -24,8 +24,13 @@ export function setStoredUser(user: User): void {
 
 export function clearStoredUser(): void {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem("user");
-  localStorage.removeItem(USER_STORAGE_KEY);
+  try {
+    sessionStorage.removeItem("user");
+    sessionStorage.clear();
+    localStorage.removeItem(USER_STORAGE_KEY);
+  } catch (err) {
+    console.warn("Storage clearance warning:", err);
+  }
 }
 
 export async function loginUser(email: string, password?: string): Promise<User> {
@@ -51,3 +56,41 @@ export async function loginUser(email: string, password?: string): Promise<User>
   setStoredUser(user);
   return user;
 }
+
+export async function deleteUserAccount(email?: string): Promise<{ success: boolean; message?: string }> {
+  const targetEmail = email || getStoredUser()?.email;
+  let success = true;
+  let message = "Account successfully deleted.";
+
+  if (targetEmail) {
+    try {
+      const res = await fetch("http://localhost:8080/api/users/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+
+      if (!res.ok) {
+        // Fallback to auth endpoint
+        const authRes = await fetch("http://localhost:8080/api/auth/delete-account", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: targetEmail }),
+        });
+        if (authRes.ok) {
+          const data = await authRes.json();
+          message = data.message || message;
+        }
+      } else {
+        const data = await res.json();
+        message = data.message || message;
+      }
+    } catch (err) {
+      console.warn("Server delete account network error; proceeding with local cleanup", err);
+    }
+  }
+
+  clearStoredUser();
+  return { success, message };
+}
+

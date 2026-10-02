@@ -321,6 +321,25 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Section: Danger Zone & Account Deletion */}
+        <div className="pt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-rose-500/[0.04] border border-rose-500/20">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-rose-300 font-mono flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span>DANGER ZONE: ACCOUNT TERMINATION</span>
+            </h3>
+            <p className="text-xs text-slate-400 font-light">
+              Permanently delete your HomeVerse account, all 3D digital twins, and Indian budget envelopes.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/dashboard/settings#danger-zone")}
+            className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-xs font-mono font-bold transition-all cursor-pointer shadow-lg shadow-rose-950/40"
+          >
+            Delete Account Option
+          </button>
+        </div>
+
       </main>
 
     </div>

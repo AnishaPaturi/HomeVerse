@@ -13,6 +13,8 @@ import {
   User as UserIcon,
   LogOut,
   ChevronDown,
+  Settings,
+  Trash2,
 } from "lucide-react";
 import { getStoredUser, clearStoredUser } from "@/lib/auth";
 import { User } from "@/types/user";
@@ -127,11 +129,27 @@ export const Navbar: React.FC = () => {
                       <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Style Preferences</span>
                     </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Studio Settings</span>
+                    </Link>
                   </div>
-                  <div className="pt-1 border-t border-white/[0.08]">
+                  <div className="pt-1 border-t border-white/[0.08] space-y-0.5">
+                    <Link
+                      href="/dashboard/settings#danger-zone"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Account</span>
+                    </Link>
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors text-left cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>

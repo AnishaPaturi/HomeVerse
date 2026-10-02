@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignupForm } from "@/components/auth/SignupForm";
-import { Sparkles, ArrowLeft, Star, ShieldCheck, Lock } from "lucide-react";
+import { Sparkles, ArrowLeft, Star, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isDeleted = searchParams.get("deleted") === "true";
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const [authMode, setAuthMode] = useState<"login" | "signup">(initialMode);
 
@@ -110,6 +111,19 @@ function AuthContent() {
           <div className="glass-morphism-card rounded-3xl p-7 sm:p-9 border border-white/15 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] backdrop-blur-2xl space-y-6 relative overflow-hidden">
             {/* Ambient inner card accent */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Account Deleted Success Banner */}
+            {isDeleted && (
+              <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-xs flex items-start gap-2.5 shadow-lg shadow-emerald-950/40">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold text-white block">Account Deleted Successfully</span>
+                  <span className="text-[11px] text-slate-300">
+                    Your HomeVerse account, active 3D models, and Indian budget envelopes have been permanently wiped.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Segmented Glass Switcher [Sign In] [Create Account] */}
             <div className="p-1 rounded-2xl glass-morphism border border-white/10 flex items-center gap-1">

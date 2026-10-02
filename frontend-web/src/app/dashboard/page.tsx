@@ -25,6 +25,7 @@ import {
   ShoppingBag,
   RefreshCw,
   FolderOpen,
+  Settings,
 } from "lucide-react";
 import { formatIndianBudget } from "@/lib/utils";
 
@@ -270,6 +271,14 @@ export default function DashboardPage() {
             >
               <Compass className="w-4 h-4 text-emerald-400" />
               <span>Style Preferences</span>
+            </Link>
+
+            <Link
+              href="/dashboard/settings"
+              title="Studio & Account Settings"
+              className="p-3 rounded-full glass-morphism hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center justify-center"
+            >
+              <Settings className="w-4 h-4 text-emerald-400" />
             </Link>
           </div>
         </div>
