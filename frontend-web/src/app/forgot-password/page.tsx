@@ -9,14 +9,12 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Check,
   AlertCircle,
   ShieldCheck,
   RotateCcw,
-  Sparkles,
   RefreshCw,
-  Copy,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 
 function ForgotPasswordContent() {
@@ -28,7 +26,6 @@ function ForgotPasswordContent() {
   // Form states
   const [email, setEmail] = useState("");
   const [digits, setDigits] = useState<string[]>(["", "", "", "", ""]);
-  const [generatedCode, setGeneratedCode] = useState<string>("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,17 +35,11 @@ function ForgotPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [shakeError, setShakeError] = useState(false);
 
   // Resend cooldown timer (starts at 30s)
   const [cooldown, setCooldown] = useState(0);
-
-  // Simulated email toast notification
-  const [dispatchedToast, setDispatchedToast] = useState<{
-    email: string;
-    code: string;
-    copied?: boolean;
-  } | null>(null);
 
   // Auto-redirect timer for success screen
   const [redirectCountdown, setRedirectCountdown] = useState(3);
@@ -101,13 +92,8 @@ function ForgotPasswordContent() {
     setTimeout(() => setShakeError(false), 600);
   };
 
-  // Helper to generate a 5-digit verification code
-  const create5DigitCode = () => {
-    return Math.floor(10000 + Math.random() * 90000).toString();
-  };
-
   // -------------------------------------------------------------
-  // STEP 1: Send Verification Code
+  // STEP 1: Send Verification Code via Email
   // -------------------------------------------------------------
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,8 +106,7 @@ function ForgotPasswordContent() {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
-
-    let assignedCode = create5DigitCode();
+    setInfoNotice(null);
 
     try {
       const res = await fetch("http://localhost:8080/api/auth/forgot-password", {
@@ -130,27 +115,31 @@ function ForgotPasswordContent() {
         body: JSON.stringify({ email: cleanEmail }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.code) {
-          assignedCode = String(data.code);
-        }
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setLoading(false);
+        setError(data?.detail || "Failed to send verification code. Please check your email address and try again.");
+        return;
+      }
+
+      setCooldown(30);
+      setDigits(["", "", "", "", ""]);
+      setLoading(false);
+      setStep("verify");
+
+      // Check if SMTP is not configured yet
+      if (data?.email_delivered === false) {
+        setInfoNotice(
+          "Notice: SMTP credentials are not yet configured in backend/.env. Please configure SMTP_USER and SMTP_PASSWORD in backend/.env to receive verification emails in your inbox."
+        );
+      } else {
+        setInfoNotice(null);
       }
     } catch (_) {
-      // Graceful offline fallback
+      setLoading(false);
+      setError("Unable to reach HomeVerse authentication server at http://localhost:8080. Please ensure the backend server is running.");
     }
-
-    setGeneratedCode(assignedCode);
-    setCooldown(30);
-    setDigits(["", "", "", "", ""]);
-    setLoading(false);
-    setStep("verify");
-
-    // Show simulated email dispatch notification toast
-    setDispatchedToast({
-      email: cleanEmail,
-      code: assignedCode,
-    });
   };
 
   // -------------------------------------------------------------
@@ -174,7 +163,6 @@ function ForgotPasswordContent() {
   const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace") {
       if (!digits[index] && index > 0) {
-        // Move back to previous box and clear it
         digitRefs[index - 1]?.current?.focus();
         const newDigits = [...digits];
         newDigits[index - 1] = "";
@@ -202,18 +190,8 @@ function ForgotPasswordContent() {
     digitRefs[nextIndex]?.current?.focus();
   };
 
-  const handleAutoFillCode = () => {
-    if (!generatedCode) return;
-    const splitCode = generatedCode.split("").slice(0, 5);
-    setDigits(splitCode);
-    setError(null);
-    digitRefs[4]?.current?.focus();
-  };
-
   // Cross-verification logic as explicitly requested by user:
-  // "the verification code is to be sent to email with which user registered and then that that code
-  // when entered in the web needs to crossverified if it is right or not
-  // if yes all user to set a new password if not ask user to enter the code again or ask if the code needs to be resent"
+  // Code is verified on backend; NEVER displayed on website
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const enteredCode = digits.join("").trim();
@@ -227,8 +205,6 @@ function ForgotPasswordContent() {
     setLoading(true);
     setError(null);
 
-    let isServerValid = false;
-
     try {
       const res = await fetch("http://localhost:8080/api/auth/verify-otp", {
         method: "POST",
@@ -236,31 +212,27 @@ function ForgotPasswordContent() {
         body: JSON.stringify({ email: email.trim().toLowerCase(), code: enteredCode }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.valid) isServerValid = true;
+      const data = await res.json().catch(() => null);
+      setLoading(false);
+
+      if (res.ok && (data?.valid || data?.success)) {
+        setSuccessMsg("Verification code confirmed!");
+        setError(null);
+        setTimeout(() => {
+          setSuccessMsg(null);
+          setStep("password");
+        }, 500);
+      } else {
+        triggerShake();
+        setError(
+          data?.detail ||
+            "Incorrect verification code. Please check your email inbox and enter the code again, or click 'Resend Code'."
+        );
       }
     } catch (_) {
-      // Backend offline fallback: cross-verify with client generated code
-    }
-
-    // Direct cross-verification check
-    const isCodeMatch = enteredCode === generatedCode || isServerValid;
-
-    setLoading(false);
-
-    if (isCodeMatch) {
-      setSuccessMsg("Verification code confirmed!");
-      setError(null);
-      setTimeout(() => {
-        setSuccessMsg(null);
-        setStep("password");
-      }, 600);
-    } else {
+      setLoading(false);
       triggerShake();
-      setError(
-        "Incorrect verification code. Please check and enter the code again, or click 'Resend Code' to receive a new one."
-      );
+      setError("Could not reach authentication server to verify code. Please ensure the backend is running.");
     }
   };
 
@@ -277,7 +249,6 @@ function ForgotPasswordContent() {
     setError(null);
     setSuccessMsg(null);
 
-    const newCode = create5DigitCode();
     const cleanEmail = email.trim().toLowerCase();
 
     try {
@@ -286,31 +257,33 @@ function ForgotPasswordContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail }),
       });
+
+      const data = await res.json().catch(() => null);
+      setLoading(false);
+
       if (res.ok) {
-        const data = await res.json();
-        if (data.code) {
-          setGeneratedCode(String(data.code));
+        setCooldown(30);
+        setDigits(["", "", "", "", ""]);
+        setSuccessMsg("A new 5-digit verification code has been dispatched to your email inbox.");
+
+        if (data?.email_delivered === false) {
+          setInfoNotice(
+            "Notice: SMTP credentials are not yet configured in backend/.env. Please configure SMTP_USER and SMTP_PASSWORD in backend/.env to receive verification emails in your inbox."
+          );
+        } else {
+          setInfoNotice(null);
         }
+
+        setTimeout(() => {
+          digitRefs[0]?.current?.focus();
+        }, 100);
       } else {
-        setGeneratedCode(newCode);
+        setError(data?.detail || "Failed to resend verification code. Please try again.");
       }
     } catch (_) {
-      setGeneratedCode(newCode);
+      setLoading(false);
+      setError("Cannot connect to server to resend code. Please verify backend server is running.");
     }
-
-    setCooldown(30);
-    setDigits(["", "", "", "", ""]);
-    setLoading(false);
-
-    // Refresh email dispatch notification toast
-    setDispatchedToast({
-      email: cleanEmail,
-      code: newCode,
-    });
-
-    setTimeout(() => {
-      digitRefs[0]?.current?.focus();
-    }, 100);
   };
 
   // -------------------------------------------------------------
@@ -338,10 +311,10 @@ function ForgotPasswordContent() {
     setError(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const enteredCode = digits.join("").trim() || generatedCode;
+    const enteredCode = digits.join("").trim();
 
     try {
-      await fetch("http://localhost:8080/api/auth/reset-password", {
+      const res = await fetch("http://localhost:8080/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -350,6 +323,14 @@ function ForgotPasswordContent() {
           new_password: password,
         }),
       });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setLoading(false);
+        setError(data?.detail || "Failed to reset password. The code may have expired.");
+        return;
+      }
     } catch (_) {
       // Local fallback
     }
@@ -368,12 +349,12 @@ function ForgotPasswordContent() {
 
     setLoading(false);
     setStep("success");
-    setDispatchedToast(null);
   };
 
   // Circular Back Button Handler
   const handleCircularBack = () => {
     setError(null);
+    setInfoNotice(null);
     if (step === "email") {
       router.push("/login");
     } else if (step === "verify") {
@@ -387,7 +368,7 @@ function ForgotPasswordContent() {
 
   return (
     <div className="min-h-screen bg-[#06090e] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between relative overflow-hidden">
-      {/* Background Architectural Canvas & Ambient Lighting (matching Landing / Login) */}
+      {/* Background Architectural Canvas & Ambient Lighting */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div
           className="absolute inset-0 bg-cover bg-center filter brightness-[0.32] contrast-105 scale-105 transition-all duration-1000"
@@ -430,41 +411,6 @@ function ForgotPasswordContent() {
           <span>Back to Sign In</span>
         </button>
       </header>
-
-      {/* Simulated Email Dispatch Floating Banner / Developer Convenience Toast */}
-      {dispatchedToast && step === "verify" && (
-        <aside aria-label="Simulated email notification" className="max-w-md mx-auto w-full px-6 pt-4 relative z-20">
-          <div className="rounded-2xl p-4 bg-[#0a151b]/95 border border-emerald-500/30 shadow-2xl backdrop-blur-xl flex items-start gap-3 text-xs">
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-              <Mail className="w-3.5 h-3.5" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-mono font-bold text-emerald-400 uppercase tracking-wider text-[11px]">
-                  Email Dispatched (Test Mode)
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">Just now</span>
-              </div>
-              <p className="text-slate-300 text-[11px] leading-snug">
-                Sent 5-digit code to <span className="text-white font-mono">{dispatchedToast.email}</span>:
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="font-mono text-base font-extrabold text-[#a3e635] tracking-widest bg-black/40 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
-                  {dispatchedToast.code}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAutoFillCode}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-mono text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>Auto-fill</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </aside>
-      )}
 
       {/* Main Glassmorphic Card Container (Matching Pinterest Sample UI & Color Schema) */}
       <main className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 my-auto relative z-10">
@@ -633,6 +579,7 @@ function ForgotPasswordContent() {
                     onClick={() => {
                       setStep("email");
                       setError(null);
+                      setInfoNotice(null);
                     }}
                     className="text-slate-400 hover:text-white underline ml-1 cursor-pointer"
                   >
@@ -640,6 +587,14 @@ function ForgotPasswordContent() {
                   </button>
                 </div>
               </div>
+
+              {/* Informative SMTP setup reminder notice (if credentials not yet set) */}
+              {infoNotice && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-300">
+                  <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+                  <span className="leading-relaxed">{infoNotice}</span>
+                </div>
+              )}
 
               {/* Error Box with clear actions as requested: "ask user to enter the code again or ask if the code needs to be resent" */}
               {error && (
@@ -672,7 +627,7 @@ function ForgotPasswordContent() {
               {/* Success validation pulse */}
               {successMsg && (
                 <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-2.5 text-xs text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 animate-bounce" />
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                   <span>{successMsg}</span>
                 </div>
               )}

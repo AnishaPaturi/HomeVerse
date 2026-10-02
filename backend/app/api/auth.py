@@ -28,6 +28,7 @@ from app.core.security import (
 from app.core.input_validation import sanitize_text
 from app.core.exceptions import UnauthorizedException, ValidationErrorException, ResourceNotFoundException
 from app.core.analytics import track_event
+from app.services.email_service import send_password_reset_email
 
 router = APIRouter()
 
@@ -248,11 +249,14 @@ def request_password_reset(payload: ForgotPasswordRequest, db: Session = Depends
         "expires_at": time.time() + 600,
     }
 
+    # Dispatch code directly to the user's email inbox via SMTP
+    email_delivered = send_password_reset_email(to_email=clean_email, code=code)
+
     return {
         "success": True,
         "message": f"Verification code sent to {clean_email}",
-        "code": code,
         "email": clean_email,
+        "email_delivered": email_delivered,
     }
 
 

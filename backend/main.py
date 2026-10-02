@@ -71,9 +71,12 @@ app.include_router(ai.router, prefix="/api/ai", tags=["AI Engine"])
 app.include_router(recommend.router, tags=["default"])
 app.include_router(preferences.router, prefix="/api/preferences", tags=["Preferences & Style"])
 
-# V2 Microservices Pipeline Router
-from app.v2.gateway import router as v2_router
-app.include_router(v2_router.router, prefix="/api/v2", tags=["V2 Pipeline"])
+# V2 Microservices Pipeline Router (Optional)
+try:
+    from app.v2.gateway import router as v2_router
+    app.include_router(v2_router.router, prefix="/api/v2", tags=["V2 Pipeline"])
+except ImportError:
+    pass
 
 from fastapi.staticfiles import StaticFiles
 import os
