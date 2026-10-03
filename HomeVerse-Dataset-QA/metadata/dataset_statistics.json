@@ -1,0 +1,16 @@
+{
+  "layouts": 100,
+  "images": 300,
+  "splits": {
+    "validation": 45,
+    "train": 210,
+    "test": 45
+  },
+  "scale_modes": {
+    "reference_object": 64,
+    "scale_bar": 86,
+    "none": 40,
+    "dimensioned": 110
+  },
+  "seed": 2026
+}
