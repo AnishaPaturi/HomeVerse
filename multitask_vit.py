@@ -128,7 +128,7 @@ class MultiTaskViT(nn.Module):
         }
 
     @torch.no_grad()
-    def predict_unseen_plan(self, image_path, conf_threshold=0.35, device="cpu"):
+    def predict_unseen_plan(self, image_path, conf_threshold=0.20, nms_threshold=0.30, device="cpu"):
         """
         End-to-End Inference:
         Input: Any unseen floor-plan image -> Output: rooms + dimensions in meters
@@ -154,10 +154,35 @@ class MultiTaskViT(nn.Module):
         probs = pred_logits.softmax(-1)
         scores, labels = probs[:, :self.num_classes].max(dim=-1)
 
-        detected_rooms = []
         keep = scores >= conf_threshold
+        if keep.sum() == 0:
+            return {
+                "image_path": str(image_path),
+                "image_size": [orig_w, orig_h],
+                "estimated_scale_px_per_m": round(orig_scale, 2),
+                "room_count": 0,
+                "rooms": [],
+            }
 
-        for score, label_id, box in zip(scores[keep], labels[keep], pred_boxes[keep]):
+        boxes_filt = pred_boxes[keep]
+        scores_filt = scores[keep]
+        labels_filt = labels[keep]
+
+        if nms_threshold is not None and len(boxes_filt) > 1:
+            import torchvision.ops as ops
+            boxes_xyxy = box_cxcywh_to_xyxy(boxes_filt)
+            boxes_xyxy_px = boxes_xyxy.clone()
+            boxes_xyxy_px[:, 0] *= orig_w
+            boxes_xyxy_px[:, 2] *= orig_w
+            boxes_xyxy_px[:, 1] *= orig_h
+            boxes_xyxy_px[:, 3] *= orig_h
+            nms_idx = ops.nms(boxes_xyxy_px, scores_filt, iou_threshold=nms_threshold)
+            boxes_filt = boxes_filt[nms_idx]
+            scores_filt = scores_filt[nms_idx]
+            labels_filt = labels_filt[nms_idx]
+
+        detected_rooms = []
+        for score, label_id, box in zip(scores_filt, labels_filt, boxes_filt):
             cx, cy, bw, bh = box.tolist()
             x0 = max(0.0, cx - bw / 2.0)
             y0 = max(0.0, cy - bh / 2.0)
