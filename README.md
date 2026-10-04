@@ -1,9 +1,8 @@
 # HomeVerse
 
-> **"Turnkey AI-Powered Spatial Architecture & Interactive 3D Living Spaces across Web and Mobile."**
+> **"Turnkey AI-Powered Spatial Architecture & Interactive 3D Living Spaces."**
 
 [![Next.js](https://img.shields.io/badge/Next.js-14%2F15%2F16_Turbopack-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![Flutter](https://img.shields.io/badge/Flutter-3.x_Cross--Platform-02569B?style=flat-square&logo=flutter)](https://flutter.dev/)
 [![React Three Fiber](https://img.shields.io/badge/React_Three_Fiber-R3F-blue?style=flat-square&logo=three.js)](https://docs.pmnd.rs/react-three-fiber)
 [![FastAPI](https://img.shields.io/badge/FastAPI-v0.100+-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL_%7C_SQLite-003B57?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
@@ -14,19 +13,16 @@
 
 ## 🏛️ System Architecture
 
-HomeVerse uses a **unified, multi-client architecture** where the desktop web application and the mobile application share the exact same backend, database, authentication, budget constraints, AI system, and 3D spatial scene graph.
+HomeVerse uses a modern client-server architecture pairing a Next.js 3D Web application with a high-performance FastAPI backend, database, AI system, and 3D spatial scene graph.
 
 ```text
                                 HOMEVERSE
                                     │
-                      ┌─────────────┴─────────────┐
-                      │                           │
-               FRONTEND-WEB                  MOBILE APP
-             Next.js (React)               Flutter (Dart)
-                      │                           │
-                      └─────────────┬─────────────┘
+                                    ▼
+                              FRONTEND-WEB
+                             Next.js (React)
                                     │
-                             REST / WS API
+                              REST / WS API
                                     │
                                  BACKEND
                              FastAPI (Python)
@@ -37,7 +33,7 @@ HomeVerse uses a **unified, multi-client architecture** where the desktop web ap
         (Single Source)      (Agent Swarm)        (3D GLBs & Images)
 ```
 
-> **Design a room on the website → close your laptop → open the Flutter app on your phone → see the exact same room, materials, and budget status in real time.**
+> **Design a room in your browser → see real-time updates, materials, and budget allocations in interactive 3D.**
 
 ---
 
@@ -63,7 +59,7 @@ Replaces generic onboarding with an interactive architectural flow:
 9. **Design Style DNA**: Modern, Scandinavian, Luxury, Minimalist, Japandi, Industrial.
 
 ### 3. Canonical 3D Scene Graph
-A platform-agnostic scene JSON format ensures identical spatial state across Three.js/R3F on Web and Flutter on Mobile:
+A platform-agnostic scene JSON format ensures persistent spatial state across Three.js/R3F:
 ```json
 {
   "room_id": "r-101",
@@ -88,8 +84,7 @@ A platform-agnostic scene JSON format ensures identical spatial state across Thr
 ```
 
 ### 4. Interactive 3D Studio, AR/VR & 2D CAD
-- **Web Studio**: React Three Fiber viewport with transform gizmos, PBR material explorer, 2D CAD blueprint editor, and WebSpeech voice assistant.
-- **Mobile Studio**: 3D scene preview, spatial properties inspector, and floating AI Copilot drawer.
+- **Spatial 3D Studio**: React Three Fiber viewport with transform gizmos, PBR material explorer, 2D CAD blueprint editor, and WebSpeech voice assistant.
 - **First-Person Walkthrough**: Seamless floor-by-floor and room-by-room navigation through the 3D living space.
 
 ### 5. Dynamic Live Notifications Engine
