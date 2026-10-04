@@ -5,7 +5,7 @@
     1030
   ],
   "estimated_scale_px_per_m": 78.0,
-  "room_count": 10,
+  "room_count": 9,
   "rooms": [
     {
       "type": "Living Room",
@@ -173,27 +173,6 @@
       "length_m": 3.19,
       "area_m2": 14.51,
       "bbox_area_m2": 14.51,
-      "is_rectangular_estimate": true
-    },
-    {
-      "type": "Bedroom",
-      "confidence": 0.1963,
-      "bbox_normalized": [
-        0.6447,
-        0.064,
-        0.2053,
-        0.2715
-      ],
-      "bbox_pixels": [
-        984,
-        66,
-        313,
-        280
-      ],
-      "width_m": 4.02,
-      "length_m": 3.58,
-      "area_m2": 14.39,
-      "bbox_area_m2": 14.39,
       "is_rectangular_estimate": true
     },
     {
