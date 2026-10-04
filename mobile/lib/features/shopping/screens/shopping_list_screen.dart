@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/network/api_client.dart';
@@ -49,45 +50,49 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final total = _items.fold<double>(0.0, (sum, item) => sum + item.estimatedCost);
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        title: const Text("Procurement & Shopping"),
+        title: Text(
+          "Procurement & Shopping",
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGold))
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryEmerald))
           : Column(
               children: [
-                // Total Summary Card
+                // Total Summary Glass Card
                 Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.borderDark),
-                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.all(18),
+                  decoration: AppTheme.glassCardDecoration,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Total Procurement Cost", style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                          const SizedBox(height: 4),
+                          Text(
+                            "TOTAL PROCUREMENT ENVELOPE",
+                            style: GoogleFonts.spaceMono(color: AppTheme.textMuted, fontSize: 10, letterSpacing: 0.6),
+                          ),
+                          const SizedBox(height: 5),
                           Text(
                             CurrencyFormatter.formatIndianBudget(total),
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: GoogleFonts.spaceMono(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF34D399)),
                           ),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGold.withOpacity(0.15),
+                          color: AppTheme.primaryEmerald.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.primaryEmerald.withOpacity(0.35)),
                         ),
                         child: Text(
-                          "${_items.length} Items",
-                          style: const TextStyle(color: AppTheme.primaryGold, fontWeight: FontWeight.bold, fontSize: 12),
+                          "${_items.length} SKUs",
+                          style: GoogleFonts.spaceMono(color: const Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 11),
                         ),
                       ),
                     ],
@@ -95,26 +100,35 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 ),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     itemCount: _items.length,
                     itemBuilder: (ctx, i) {
                       final item = _items[i];
-                      return Card(
+                      final isDelivered = item.status.toLowerCase() == "delivered";
+                      final statusColor = isDelivered ? const Color(0xFF34D399) : const Color(0xFF38BDF8);
+
+                      return Container(
                         margin: const EdgeInsets.only(bottom: 12),
+                        decoration: AppTheme.glassCardDecoration,
                         child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           leading: Container(
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: AppTheme.surfaceDark,
-                              borderRadius: BorderRadius.circular(10),
+                              color: AppTheme.primaryEmerald.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.primaryEmerald.withOpacity(0.2)),
                             ),
-                            child: const Icon(Icons.shopping_bag_outlined, color: AppTheme.primaryGold),
+                            child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF34D399), size: 22),
                           ),
-                          title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          title: Text(
+                            item.name,
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                          ),
                           subtitle: Text(
                             "${item.vendor ?? 'Curated'} • Qty: ${item.quantity}",
-                            style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                            style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11),
                           ),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -122,18 +136,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                             children: [
                               Text(
                                 CurrencyFormatter.formatIndianBudget(item.estimatedCost),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: GoogleFonts.spaceMono(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentGreen.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(4),
+                                  color: statusColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: statusColor.withOpacity(0.3)),
                                 ),
                                 child: Text(
-                                  item.status,
-                                  style: const TextStyle(fontSize: 10, color: AppTheme.accentGreen, fontWeight: FontWeight.bold),
+                                  item.status.toUpperCase(),
+                                  style: GoogleFonts.spaceMono(fontSize: 9, color: statusColor, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],

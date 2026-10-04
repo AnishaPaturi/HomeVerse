@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/budget_model.dart';
+import '../../../shared/widgets/brand_widgets.dart';
 
 class BudgetOverviewScreen extends StatefulWidget {
   final String projectId;
@@ -56,47 +58,71 @@ class _BudgetOverviewScreenState extends State<BudgetOverviewScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: AppTheme.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0x33FFFFFF)),
+        ),
         title: Row(
-          children: const [
-            Icon(Icons.auto_awesome, color: AppTheme.primaryGold),
-            SizedBox(width: 8),
-            Text("What-If Simulation", style: TextStyle(fontSize: 16)),
+          children: [
+            const Icon(Icons.auto_awesome, color: Color(0xFF34D399), size: 20),
+            const SizedBox(width: 8),
+            Text(
+              "What-If Simulation",
+              style: GoogleFonts.spaceMono(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text("Simulate scenario:", style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
-            SizedBox(height: 12),
-            Text("• Reduce budget by ₹1 Lakh (value engineers materials)", style: TextStyle(fontSize: 12)),
-            SizedBox(height: 6),
-            Text("• Upgrade to Italian Marble (+₹75,000)", style: TextStyle(fontSize: 12)),
-            SizedBox(height: 6),
-            Text("• Maximize storage with ceiling lofts (+₹42,500)", style: TextStyle(fontSize: 12)),
+          children: [
+            Text(
+              "AI Real-time Value Engineering Scenario:",
+              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: 14),
+            _buildSimulationRow("• Value Engineer Finishes", "-₹1,00,000", const Color(0xFF34D399)),
+            const SizedBox(height: 8),
+            _buildSimulationRow("• Upgrade to Italian Marble", "+₹75,000", const Color(0xFFF59E0B)),
+            const SizedBox(height: 8),
+            _buildSimulationRow("• Ceiling Height Millwork Lofts", "+₹42,500", const Color(0xFF38BDF8)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Close", style: TextStyle(color: AppTheme.textMuted)),
+            child: Text("Close", style: GoogleFonts.spaceMono(color: AppTheme.textMuted)),
           ),
-          ElevatedButton(
+          GradientButton(
+            height: 38,
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Simulated savings: ₹1,00,000 preserved via alternative laminate finishes."),
-                  backgroundColor: AppTheme.accentGreen,
+                SnackBar(
+                  content: Text(
+                    "Simulated savings applied: ₹1,00,000 preserved via alternative laminate textures.",
+                    style: GoogleFonts.inter(color: const Color(0xFF020617), fontWeight: FontWeight.w600),
+                  ),
+                  backgroundColor: AppTheme.primaryEmerald,
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
             },
-            child: const Text("Run -₹1L Simulation"),
+            child: const Text("Apply -₹1L Strategy"),
           ),
         ],
       ),
+    );
+  }
+
+  static Widget _buildSimulationRow(String title, String diff, Color diffColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
+        Text(diff, style: GoogleFonts.spaceMono(fontSize: 12, fontWeight: FontWeight.bold, color: diffColor)),
+      ],
     );
   }
 
@@ -104,7 +130,8 @@ class _BudgetOverviewScreenState extends State<BudgetOverviewScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryGold)),
+        backgroundColor: AppTheme.backgroundDark,
+        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryEmerald)),
       );
     }
 
@@ -114,89 +141,154 @@ class _BudgetOverviewScreenState extends State<BudgetOverviewScreen> {
     final pct = total > 0 ? (estimated / total * 100).toInt() : 0;
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        title: const Text("Project Budget"),
+        title: Text(
+          "Turnkey Budget Hub",
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calculate_outlined, color: AppTheme.primaryGold),
+            icon: const Icon(Icons.auto_awesome, color: Color(0xFF34D399)),
             tooltip: "What-If Simulator",
             onPressed: _showWhatIfDialog,
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // Header Card
-          Card(
-            child: Padding(
+          // Header Glass Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: AppTheme.glassCardDecoration,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Turnkey Indian Budget Envelope",
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryEmerald.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.primaryEmerald.withOpacity(0.35)),
+                      ),
+                      child: Text(
+                        "${_budget?.flexibility.toUpperCase()} FLEX",
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 9,
+                          color: const Color(0xFF34D399),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildMetricCol("Total Envelope", CurrencyFormatter.formatIndianBudget(total)),
+                    _buildMetricCol("Allocated", CurrencyFormatter.formatIndianBudget(estimated), const Color(0xFF38BDF8)),
+                    _buildMetricCol("Reserve / Savings", CurrencyFormatter.formatIndianBudget(remaining), const Color(0xFF34D399)),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: pct / 100,
+                    backgroundColor: const Color(0x1AFFFFFF),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryEmerald),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "$pct% committed to active room schemes",
+                      style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted),
+                    ),
+                    Text(
+                      "${100 - pct}% Unallocated Buffer",
+                      style: GoogleFonts.spaceMono(fontSize: 10, color: const Color(0xFF34D399)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Allocations
+          Text(
+            "Room & Category Allocations (${_budget?.allocations.length ?? 0})",
+            style: GoogleFonts.spaceMono(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          ...(_budget?.allocations ?? []).map((alloc) {
+            final double allocTotal = alloc.allocatedAmount > 0 ? alloc.allocatedAmount : 1;
+            final double allocPct = (alloc.estimatedAmount / allocTotal).clamp(0.0, 1.0);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
+              decoration: AppTheme.glassCardDecoration,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        "Turnkey Budget Overview",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      Text(
+                        alloc.roomName ?? alloc.category,
+                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryIndigo.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.primaryIndigo.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          "${_budget?.flexibility} Flexibility",
-                          style: const TextStyle(fontSize: 11, color: AppTheme.primaryIndigo, fontWeight: FontWeight.bold),
+                      Text(
+                        CurrencyFormatter.formatIndianBudget(alloc.estimatedAmount),
+                        style: GoogleFonts.spaceMono(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: const Color(0xFF34D399),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricCol("Total Budget", CurrencyFormatter.formatIndianBudget(total)),
-                      _buildMetricCol("Estimated", CurrencyFormatter.formatIndianBudget(estimated), Colors.amber),
-                      _buildMetricCol("Remaining", CurrencyFormatter.formatIndianBudget(remaining), AppTheme.accentGreen),
+                      Text(alloc.category, style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11)),
+                      Text(
+                        "Cap: ${CurrencyFormatter.formatIndianBudget(alloc.allocatedAmount)}",
+                        style: GoogleFonts.spaceMono(fontSize: 10, color: AppTheme.textMuted),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: pct / 100,
-                    backgroundColor: AppTheme.surfaceDark,
-                    color: pct > 90 ? AppTheme.accentRose : AppTheme.primaryGold,
-                    minHeight: 8,
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: allocPct,
+                      backgroundColor: const Color(0x14FFFFFF),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        allocPct > 0.95 ? AppTheme.accentRose : AppTheme.primaryTeal,
+                      ),
+                      minHeight: 4,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text("$pct% Committed to current designs", style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Allocations
-          const Text("Room & Trade Allocations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 12),
-          ...(_budget?.allocations ?? []).map((alloc) => Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  title: Text(alloc.roomName ?? alloc.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text(alloc.category, style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(CurrencyFormatter.formatIndianBudget(alloc.estimatedAmount), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text("Limit: ${CurrencyFormatter.formatIndianBudget(alloc.allocatedAmount)}", style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
-                    ],
-                  ),
-                ),
-              )),
+            );
+          }),
         ],
       ),
     );
@@ -206,9 +298,15 @@ class _BudgetOverviewScreenState extends State<BudgetOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.spaceMono(fontSize: 9, letterSpacing: 0.5, color: AppTheme.textMuted),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          value,
+          style: GoogleFonts.spaceMono(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+        ),
       ],
     );
   }

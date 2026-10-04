@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../models/project_model.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/widgets/brand_widgets.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final String projectId;
@@ -60,44 +62,45 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryGold)),
+        backgroundColor: AppTheme.backgroundDark,
+        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryEmerald)),
       );
     }
 
     final p = _project!;
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        title: Text(p.name),
+        title: Text(
+          p.name,
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.currency_rupee_rounded, color: AppTheme.primaryGold),
+            icon: const Icon(Icons.currency_rupee_rounded, color: AppTheme.primaryEmerald),
             tooltip: "Budget",
             onPressed: () => context.push('/project/${p.id}/budget'),
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined),
+            icon: const Icon(Icons.shopping_bag_outlined, color: AppTheme.primaryTeal),
             tooltip: "Procurement",
             onPressed: () => context.push('/project/${p.id}/shopping'),
           ),
           IconButton(
-            icon: const Icon(Icons.explore_outlined),
+            icon: const Icon(Icons.explore_outlined, color: AppTheme.primaryLime),
             tooltip: "3D Walkthrough",
             onPressed: () => context.push('/project/${p.id}/walkthrough'),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // Project Meta Card
+          // Project Meta Glass Card
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.borderDark),
-            ),
+            padding: const EdgeInsets.all(20),
+            decoration: AppTheme.glassCardDecoration,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -106,37 +109,53 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   children: [
                     Text(
                       "${p.bhk} BHK • ${p.propertyType.toUpperCase()}",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                      style: GoogleFonts.spaceMono(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
                     ),
                     Text(
                       CurrencyFormatter.formatIndianBudget(p.totalBudget),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryGold),
+                      style: GoogleFonts.spaceMono(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: const Color(0xFF34D399),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
                   "Design Theme: ${p.designStyle} • Flexibility: ${p.budgetFlexibility}",
-                  style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                  style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 12),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 18),
+
+                // 2 Action Buttons matching web
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
+                      child: GradientButton(
                         onPressed: () => context.push('/project/${p.id}/walkthrough'),
-                        icon: const Icon(Icons.explore_rounded, size: 16),
-                        label: const Text("House Walkthrough", style: TextStyle(fontSize: 12)),
+                        icon: Icons.explore_rounded,
+                        height: 42,
+                        child: const Text("3D Walkthrough"),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => context.push('/project/${p.id}/budget'),
-                        icon: const Icon(Icons.pie_chart_outline, size: 16),
-                        label: const Text("Budget Hub", style: TextStyle(fontSize: 12)),
+                        icon: const Icon(Icons.pie_chart_outline, size: 16, color: Colors.white),
+                        label: Text(
+                          "Budget Hub",
+                          style: GoogleFonts.spaceMono(fontSize: 12, color: Colors.white),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppTheme.borderDark),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          side: const BorderSide(color: Color(0x33FFFFFF)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         ),
                       ),
                     ),
@@ -147,39 +166,142 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           ),
           const SizedBox(height: 24),
 
-          const Text("House Rooms", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          // Studio Quick Navigation Grid (matching web studio tools)
+          Row(
+            children: [
+              Expanded(
+                child: _buildStudioActionCard(
+                  "Shopping & PO",
+                  "Procurement",
+                  Icons.shopping_bag_outlined,
+                  AppTheme.primaryTeal,
+                  () => context.push('/project/${p.id}/shopping'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStudioActionCard(
+                  "Budget Plan",
+                  "Turnkey Hub",
+                  Icons.currency_rupee_rounded,
+                  AppTheme.primaryEmerald,
+                  () => context.push('/project/${p.id}/budget'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Rooms Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Digital Twin Rooms (${p.rooms.length})",
+                style: GoogleFonts.spaceMono(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                "TAP TO ENTER 3D",
+                style: GoogleFonts.spaceMono(
+                  fontSize: 10,
+                  color: AppTheme.textMuted,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
 
-          ...p.rooms.map((r) => Card(
+          ...p.rooms.map((r) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
+                decoration: AppTheme.glassCardDecoration,
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   leading: Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceDark,
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppTheme.primaryEmerald.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.primaryEmerald.withOpacity(0.25)),
                     ),
-                    child: const Icon(Icons.meeting_room_outlined, color: AppTheme.primaryGold),
+                    child: const Icon(Icons.meeting_room_outlined, color: Color(0xFF34D399), size: 22),
                   ),
-                  title: Text(r.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text("${r.areaSqm} sqm • ${r.width}m × ${r.length}m", style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                  title: Text(
+                    r.name,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    "${r.areaSqm} sqm • ${r.width}m × ${r.length}m",
+                    style: GoogleFonts.inter(color: AppTheme.textMuted, fontSize: 11),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (r.estimatedBudget != null)
                         Text(
                           CurrencyFormatter.formatIndianBudget(r.estimatedBudget!),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          style: GoogleFonts.spaceMono(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: const Color(0xFF34D399),
+                          ),
                         ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppTheme.textMuted),
                     ],
                   ),
                   onTap: () => context.push('/project/${p.id}/rooms/${r.id}'),
                 ),
               )),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStudioActionCard(String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0x1AFFFFFF), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.spaceMono(color: AppTheme.textMuted, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
