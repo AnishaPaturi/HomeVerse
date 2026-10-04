@@ -70,24 +70,43 @@ GROUND_TRUTH_PRINTED_ROOMS = [
 
 
 def test_real_floorplan(image_path="6th floor layout.jpeg",
-                        checkpoint="checkpoints/multitask/multitask_vit_best.pt",
+                        checkpoint=None,
+                        img_size=384,
+                        use_segmentation=True,
+                        calibrate_ocr=True,
                         conf_thresh=0.20,
                         out_dir="evaluation_results"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Testing real floor plan on device: {device}")
+    print(f"Testing real floor plan on device: {device} | Resolution: {img_size}x{img_size}")
     img_p = Path(image_path)
     if not img_p.exists():
         raise FileNotFoundError(f"Real floor plan not found at: {img_p}")
 
-    model = MultiTaskViT().to(device)
+    model_name = "google/vit-base-patch16-384" if img_size == 384 else "google/vit-base-patch16-224"
+    model = MultiTaskViT(pretrained_model_name=model_name, img_size=img_size).to(device)
+
+    # Resolve default checkpoint
+    if checkpoint is None:
+        ckpt_candidate = Path("checkpoints/multitask/multitask_vit_384_best.pt" if img_size == 384 else "checkpoints/multitask/multitask_vit_best.pt")
+        if ckpt_candidate.exists():
+            checkpoint = str(ckpt_candidate)
+        else:
+            checkpoint = "checkpoints/multitask/multitask_vit_best.pt"
+
     ckpt_p = Path(checkpoint)
     if ckpt_p.exists():
-        model.load_state_dict(torch.load(ckpt_p, map_location=device))
+        model.load_state_dict(torch.load(ckpt_p, map_location=device), strict=False)
         print(f"Loaded multi-task checkpoint from {ckpt_p}")
     else:
-        print(f"Checkpoint {ckpt_p} not found, using initialized model.")
+        print(f"Checkpoint {ckpt_p} not found, using initialized weights.")
 
-    results = model.predict_unseen_plan(str(img_p), conf_threshold=conf_thresh, device=device)
+    results = model.predict_unseen_plan(
+        str(img_p),
+        conf_threshold=conf_thresh,
+        use_segmentation=use_segmentation,
+        calibrate_ocr=calibrate_ocr,
+        device=device
+    )
 
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -102,24 +121,24 @@ def test_real_floorplan(image_path="6th floor layout.jpeg",
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print("\n" + "="*70)
+    print("\n" + "="*75)
     print(f"EVALUATION ON REAL UNSEEN PLAN: {image_path}")
-    print("="*70)
+    print("="*75)
     print(f"Image Resolution:           {results['image_size'][0]} x {results['image_size'][1]}")
-    print(f"Estimated Metric Scale:     {results['estimated_scale_px_per_m']} px/meter")
+    print(f"Estimated Metric Scale:     {results['estimated_scale_px_per_m']} px/meter (Source: {results.get('scale_source', 'N/A')})")
     print(f"Total Detected Rooms:       {results['room_count']}")
-    print("-" * 70)
-    print(f"{'Detected Room':<22} | {'Conf':<6} | {'Width (m)':<10} | {'Length (m)':<10} | {'Area (m²)':<10}")
-    print("-" * 70)
+    print("-" * 75)
+    print(f"{'Detected Room':<22} | {'Conf':<6} | {'Width (m)':<10} | {'Length (m)':<10} | {'Area (m²)':<10} | {'Geom Source'}")
+    print("-" * 75)
     for r in results["rooms"]:
-        print(f"{r['type']:<22} | {r['confidence']:<6.2f} | {r['width_m']:<10.2f} | {r['length_m']:<10.2f} | {r['area_m2']:<10.2f}")
-    print("="*70)
+        print(f"{r['type']:<22} | {r['confidence']:<6.2f} | {r['width_m']:<10.2f} | {r['length_m']:<10.2f} | {r['area_m2']:<10.2f} | {r.get('geometry_source', 'bbox')}")
+    print("="*75)
 
     # Compare with ground truth printed dimensions
     print("\nCOMPARISON WITH PRINTED DIMENSIONS ON 6th floor layout.jpeg:")
-    print("-" * 75)
-    print(f"{'Room Name':<18} | {'Printed (ft)':<14} | {'Printed (m)':<14} | {'Model Pred (m)':<14}")
-    print("-" * 75)
+    print("-" * 80)
+    print(f"{'Room Name':<18} | {'Printed (m)':<14} | {'Model Pred (m)':<16} | {'Error'}")
+    print("-" * 80)
     used_pred_indices = set()
     for gt in GROUND_TRUTH_PRINTED_ROOMS:
         match = None
@@ -156,15 +175,14 @@ def test_real_floorplan(image_path="6th floor layout.jpeg",
             used_pred_indices.add(match_idx)
             pred_w, pred_l = match['width_m'], match['length_m']
             gt_w, gt_l = gt['printed_width_m'], gt['printed_length_m']
-            # Direct vs Transposed orientation comparison
             err_direct = (abs(pred_w - gt_w)/gt_w + abs(pred_l - gt_l)/gt_l) / 2 * 100
             err_transposed = (abs(pred_l - gt_w)/gt_w + abs(pred_w - gt_l)/gt_l) / 2 * 100
             mean_err = min(err_direct, err_transposed)
             pred_m_str = f"{pred_w:.2f} x {pred_l:.2f}"
-            print(f"{gt['name']:<18} | {gt['printed_ft']:<14} | {gt_m_str:<14} | {pred_m_str:<14} (Err: {mean_err:.1f}%)")
+            print(f"{gt['name']:<18} | {gt_m_str:<14} | {pred_m_str:<16} | {mean_err:.1f}% error ({match.get('geometry_source', 'bbox')})")
         else:
-            print(f"{gt['name']:<18} | {gt['printed_ft']:<14} | {gt_m_str:<14} | {'Not Detected':<14}")
-    print("-" * 75)
+            print(f"{gt['name']:<18} | {gt_m_str:<14} | {'Not Detected':<16} | N/A")
+    print("-" * 80)
 
     return results
 
@@ -172,7 +190,18 @@ def test_real_floorplan(image_path="6th floor layout.jpeg",
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, default="6th floor layout.jpeg")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/multitask/multitask_vit_best.pt")
+    parser.add_argument("--checkpoint", type=str, default=None)
+    parser.add_argument("--img-size", type=int, default=384, choices=[224, 384])
     parser.add_argument("--conf", type=float, default=0.20)
+    parser.add_argument("--no-seg", action="store_true", help="Disable segmentation head")
+    parser.add_argument("--no-ocr", action="store_true", help="Disable OCR scale calibration")
     args = parser.parse_args()
-    test_real_floorplan(args.image, args.checkpoint, args.conf)
+
+    test_real_floorplan(
+        image_path=args.image,
+        checkpoint=args.checkpoint,
+        img_size=args.img_size,
+        use_segmentation=not args.no_seg,
+        calibrate_ocr=not args.no_ocr,
+        conf_thresh=args.conf
+    )
