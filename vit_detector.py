@@ -339,11 +339,21 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, device):
+def evaluate(model, dataloader, criterion, device, iou_thresh=0.5, conf_thresh=0.25):
     model.eval()
     criterion.eval()
     total_loss = 0.0
     num_batches = 0
+
+    total_tp = 0
+    total_fp = 0
+    total_fn = 0
+    total_class_correct = 0
+    total_matched = 0
+    sum_iou = 0.0
+    sum_giou = 0.0
+    total_pred_rooms = 0
+    total_gt_rooms = 0
 
     for images, targets in tqdm(dataloader, desc="Evaluating"):
         images = images.to(device)
@@ -352,22 +362,137 @@ def evaluate(model, dataloader, criterion, device):
         total_loss += loss_dict["loss"].item()
         num_batches += 1
 
-    return total_loss / max(1, num_batches)
+        probs = pred_logits.softmax(-1)
+        bs = images.size(0)
+
+        for b in range(bs):
+            tgt_boxes = targets[b]["boxes"].to(device)
+            tgt_labels = targets[b]["labels"].to(device)
+            num_gt = len(tgt_labels)
+            total_gt_rooms += num_gt
+
+            # Extract predicted candidate rooms (non-background, conf >= conf_thresh)
+            scores, pred_labels = probs[b, :, :NUM_ROOM_CLASSES].max(dim=-1)
+            keep = scores >= conf_thresh
+            p_boxes = pred_boxes[b, keep]
+            p_labels = pred_labels[keep]
+            p_scores = scores[keep]
+            num_preds = len(p_labels)
+            total_pred_rooms += num_preds
+
+            if num_gt == 0:
+                total_fp += num_preds
+                continue
+            if num_preds == 0:
+                total_fn += num_gt
+                continue
+
+            # Compute IoU matrix [num_preds, num_gt]
+            p_xyxy = box_cxcywh_to_xyxy(p_boxes)
+            t_xyxy = box_cxcywh_to_xyxy(tgt_boxes)
+            ious, _ = box_iou(p_xyxy, t_xyxy)
+            gious = generalized_box_iou(p_xyxy, t_xyxy)
+
+            # Greedy match by highest IoU
+            matched_gt = set()
+            for p_idx in range(num_preds):
+                best_iou, best_gt = ious[p_idx].max(dim=-1)
+                best_iou_val = best_iou.item()
+                best_gt_idx = best_gt.item()
+                best_giou_val = gious[p_idx, best_gt_idx].item()
+
+                sum_iou += max(0.0, best_iou_val)
+                sum_giou += best_giou_val
+                total_matched += 1
+
+                if best_iou_val >= iou_thresh and best_gt_idx not in matched_gt:
+                    matched_gt.add(best_gt_idx)
+                    if p_labels[p_idx] == tgt_labels[best_gt_idx]:
+                        total_tp += 1
+                        total_class_correct += 1
+                    else:
+                        total_fp += 1
+                else:
+                    total_fp += 1
+
+            total_fn += (num_gt - len(matched_gt))
+
+    precision = total_tp / max(1, total_tp + total_fp)
+    recall = total_tp / max(1, total_tp + total_fn)
+    f1 = 2 * precision * recall / max(1e-6, precision + recall)
+    mean_iou = sum_iou / max(1, total_matched)
+    mean_giou = sum_giou / max(1, total_matched)
+    class_acc = total_class_correct / max(1, total_tp + (total_matched - total_tp))
+
+    total_samples = max(1, len(dataloader.dataset))
+    avg_pred_rooms = total_pred_rooms / total_samples
+    avg_gt_rooms = total_gt_rooms / total_samples
+
+    metrics = {
+        "loss": total_loss / max(1, num_batches),
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "class_acc": class_acc,
+        "mean_iou": mean_iou,
+        "mean_giou": mean_giou,
+        "avg_detected_rooms": avg_pred_rooms,
+        "avg_gt_rooms": avg_gt_rooms,
+    }
+    return metrics
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train ViT Room Detector for full floor plans")
     parser.add_argument("--data-root", type=str, default="HomeVerse-Dataset")
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--lr", type=float, default=2e-4)
+    parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights")
     parser.add_argument("--max-train-samples", type=int, default=None)
     parser.add_argument("--max-val-samples", type=int, default=None)
     parser.add_argument("--save-dir", type=str, default="checkpoints/detector")
+    parser.add_argument("--eval-only", action="store_true", default=False)
+    parser.add_argument("--split", type=str, default="test", help="Split for eval-only mode")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
+    save_path = Path(args.save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    model = ViTRoomDetector(decoder_layers=2).to(device)
+
+    if args.freeze_backbone:
+        for p in model.encoder.parameters():
+            p.requires_grad = False
+        model.encoder.eval()
+        print("Pretrained ViT encoder backbone frozen. Training Room Query Decoder and Heads.")
+
+    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
+    criterion = SetCriterion(matcher=matcher, num_classes=NUM_ROOM_CLASSES).to(device)
+
+    if args.eval_only:
+        ckpt_file = save_path / "vit_detector_best.pt"
+        if ckpt_file.exists():
+            model.load_state_dict(torch.load(ckpt_file, map_location=device))
+            print(f"Loaded checkpoint from {ckpt_file}")
+        test_ds = FloorplanDataset(args.data_root, split=args.split, max_samples=args.max_val_samples)
+        test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
+        print(f"\n--- Evaluating on {len(test_ds)} unseen {args.split} floorplans ---")
+        metrics = evaluate(model, test_loader, criterion, device)
+        print("\nEvaluation Results:")
+        print(f"  Loss:                 {metrics['loss']:.4f}")
+        print(f"  Classification Acc:   {metrics['class_acc']*100:.2f}%")
+        print(f"  Classification F1:    {metrics['f1']:.4f}")
+        print(f"  Precision:            {metrics['precision']*100:.2f}%")
+        print(f"  Recall:               {metrics['recall']*100:.2f}%")
+        print(f"  Mean BBox IoU:        {metrics['mean_iou']:.4f}")
+        print(f"  Mean GIoU:            {metrics['mean_giou']:.4f}")
+        print(f"  Avg Detected Rooms:   {metrics['avg_detected_rooms']:.1f}")
+        print(f"  Avg Ground Truth:     {metrics['avg_gt_rooms']:.1f}")
+        return
 
     train_ds = FloorplanDataset(args.data_root, split="train", max_samples=args.max_train_samples)
     val_ds = FloorplanDataset(args.data_root, split="validation", max_samples=args.max_val_samples)
@@ -377,29 +502,34 @@ def main():
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
 
-    model = ViTRoomDetector().to(device)
-    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
-    criterion = SetCriterion(matcher=matcher, num_classes=NUM_ROOM_CLASSES).to(device)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=1e-4)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
-    save_path = Path(args.save_dir)
-    save_path.mkdir(parents=True, exist_ok=True)
-
-    best_val_loss = float("inf")
+    best_f1 = -1.0
     for epoch in range(1, args.epochs + 1):
         print(f"\n--- Epoch {epoch}/{args.epochs} ---")
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
-        val_loss = evaluate(model, val_loader, criterion, device)
-        print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}")
+        metrics = evaluate(model, val_loader, criterion, device)
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
+        print(f"Epoch {epoch} Validation Metrics:")
+        print(f"  Loss:               {metrics['loss']:.4f} (Train Loss: {train_loss:.4f})")
+        print(f"  Classification Acc: {metrics['class_acc']*100:.2f}%")
+        print(f"  F1 Score:           {metrics['f1']:.4f}")
+        print(f"  Precision:          {metrics['precision']*100:.2f}%")
+        print(f"  Recall:             {metrics['recall']*100:.2f}%")
+        print(f"  Mean BBox IoU:      {metrics['mean_iou']:.4f}")
+        print(f"  Mean GIoU:          {metrics['mean_giou']:.4f}")
+        print(f"  Avg Rooms Detected: {metrics['avg_detected_rooms']:.1f} (GT: {metrics['avg_gt_rooms']:.1f})")
+
+        if metrics["f1"] > best_f1:
+            best_f1 = metrics["f1"]
             ckpt_file = save_path / "vit_detector_best.pt"
             torch.save(model.state_dict(), ckpt_file)
-            print(f"Saved best model checkpoint to {ckpt_file}")
+            print(f"  --> Saved new best detector checkpoint to {ckpt_file} (F1: {best_f1:.4f})")
 
     print("\nViT Room Detector training completed!")
 
 
 if __name__ == "__main__":
     main()
+

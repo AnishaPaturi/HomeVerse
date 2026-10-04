@@ -84,6 +84,8 @@ def evaluate(model, dataloader, device):
     model.eval()
     total_loss = 0.0
     valid_samples = 0
+    total_abs_err = 0.0
+    total_sq_err = 0.0
     total_abs_rel_err = 0.0
 
     for images, targets in tqdm(dataloader, desc="Evaluating Scale Head"):
@@ -96,17 +98,29 @@ def evaluate(model, dataloader, device):
         masked_loss = raw_loss * has_scale
 
         total_loss += masked_loss.sum().item()
-        valid_samples += int(has_scale.sum().item())
-
-        # Relative error
         mask_bool = has_scale > 0.5
-        if mask_bool.any():
-            rel_err = torch.abs(pred_scales[mask_bool] - gt_scales[mask_bool]) / (gt_scales[mask_bool] + 1e-6)
+        n_valid = int(mask_bool.sum().item())
+        valid_samples += n_valid
+
+        if n_valid > 0:
+            diff = torch.abs(pred_scales[mask_bool] - gt_scales[mask_bool])
+            total_abs_err += diff.sum().item()
+            total_sq_err += (diff ** 2).sum().item()
+            rel_err = diff / (gt_scales[mask_bool] + 1e-6)
             total_abs_rel_err += rel_err.sum().item()
 
-    avg_loss = total_loss / max(1, valid_samples)
-    avg_rel_err = total_abs_rel_err / max(1, valid_samples)
-    return avg_loss, avg_rel_err
+    n = max(1, valid_samples)
+    mae = total_abs_err / n
+    rmse = math.sqrt(total_sq_err / n)
+    mean_rel_err = (total_abs_rel_err / n) * 100.0  # percentage
+
+    return {
+        "loss": total_loss / n,
+        "mae": mae,
+        "rmse": rmse,
+        "rel_err_pct": mean_rel_err,
+        "valid_samples": valid_samples,
+    }
 
 
 def main():
@@ -117,11 +131,40 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--max-train-samples", type=int, default=None)
     parser.add_argument("--max-val-samples", type=int, default=None)
-    parser.add_argument("--save-dir", type=str, default="checkpoints/scale")
+    parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights")
+    parser.add_argument("--eval-only", action="store_true", default=False)
+    parser.add_argument("--split", type=str, default="test")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
+    save_path = Path(args.save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    model = ViTScaleEstimator().to(device)
+
+    if args.freeze_backbone:
+        for p in model.encoder.parameters():
+            p.requires_grad = False
+        model.encoder.eval()
+        print("Pretrained ViT encoder backbone frozen. Training Scale Head.")
+
+    if args.eval_only:
+        ckpt_file = save_path / "scale_estimator_best.pt"
+        if ckpt_file.exists():
+            model.load_state_dict(torch.load(ckpt_file, map_location=device))
+            print(f"Loaded checkpoint from {ckpt_file}")
+        test_ds = FloorplanDataset(args.data_root, split=args.split, max_samples=args.max_val_samples)
+        test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
+        print(f"\n--- Evaluating Scale Estimator on {len(test_ds)} unseen {args.split} plans ---")
+        metrics = evaluate(model, test_loader, device)
+        print("\nScale Evaluation Results:")
+        print(f"  Valid Scale Samples:     {metrics['valid_samples']}")
+        print(f"  Scale MAE:               {metrics['mae']:.2f} px/m")
+        print(f"  Scale RMSE:              {metrics['rmse']:.2f} px/m")
+        print(f"  Relative Scale Error:    {metrics['rel_err_pct']:.2f}%")
+        return
 
     train_ds = FloorplanDataset(args.data_root, split="train", max_samples=args.max_train_samples)
     val_ds = FloorplanDataset(args.data_root, split="validation", max_samples=args.max_val_samples)
@@ -129,23 +172,25 @@ def main():
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
 
-    model = ViTScaleEstimator().to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
-    save_path = Path(args.save_dir)
-    save_path.mkdir(parents=True, exist_ok=True)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=1e-4)
 
-    best_val_loss = float("inf")
+    best_rel_err = float("inf")
     for epoch in range(1, args.epochs + 1):
         print(f"\n--- Epoch {epoch}/{args.epochs} ---")
         train_loss = train_epoch(model, train_loader, optimizer, device)
-        val_loss, rel_err = evaluate(model, val_loader, device)
-        print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Rel Error = {rel_err*100:.2f}%")
+        metrics = evaluate(model, val_loader, device)
+        print(f"Epoch {epoch} Validation Metrics:")
+        print(f"  Loss:                 {metrics['loss']:.4f} (Train Loss: {train_loss:.4f})")
+        print(f"  Scale MAE:            {metrics['mae']:.2f} px/m")
+        print(f"  Scale RMSE:           {metrics['rmse']:.2f} px/m")
+        print(f"  Relative Scale Error: {metrics['rel_err_pct']:.2f}%")
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
+        if metrics["rel_err_pct"] < best_rel_err:
+            best_rel_err = metrics["rel_err_pct"]
             ckpt_file = save_path / "scale_estimator_best.pt"
             torch.save(model.state_dict(), ckpt_file)
-            print(f"Saved best model checkpoint to {ckpt_file}")
+            print(f"  --> Saved new best scale model checkpoint to {ckpt_file} (Rel Err: {best_rel_err:.2f}%)")
 
     print("\nScale Estimator training completed!")
 
