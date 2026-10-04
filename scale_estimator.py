@@ -131,6 +131,7 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--max-train-samples", type=int, default=None)
     parser.add_argument("--max-val-samples", type=int, default=None)
+    parser.add_argument("--save-dir", type=str, default="checkpoints/scale")
     parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights")
     parser.add_argument("--eval-only", action="store_true", default=False)
     parser.add_argument("--split", type=str, default="test")

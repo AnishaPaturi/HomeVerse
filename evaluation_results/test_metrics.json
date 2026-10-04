@@ -1,0 +1,543 @@
+{
+  "precision": 0.05583756345177665,
+  "recall": 0.037162162162162164,
+  "f1": 0.04462474645030425,
+  "class_acc": 0.05583756345177665,
+  "mean_iou": 0.3807024571496218,
+  "mean_giou": 0.2757797523727877,
+  "avg_detected_rooms": 3.94,
+  "avg_gt_rooms": 6.48,
+  "total_test_samples": 50,
+  "sample_predictions": [
+    {
+      "image_id": "homeverse_000010",
+      "layout_id": "layout_000004",
+      "gt_count": 8,
+      "pred_count": 8,
+      "tp": 1,
+      "fp": 7,
+      "fn": 7,
+      "mean_iou": 0.4076,
+      "predictions": [
+        {
+          "type": "Bedroom",
+          "confidence": 0.2832,
+          "bbox": [
+            0.7458,
+            0.3628,
+            0.1641,
+            0.3311
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.297,
+          "bbox": [
+            0.123,
+            0.0861,
+            0.3863,
+            0.1819
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2592,
+          "bbox": [
+            0.4278,
+            0.107,
+            0.3551,
+            0.1513
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2787,
+          "bbox": [
+            0.2564,
+            0.1307,
+            0.2085,
+            0.2238
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2653,
+          "bbox": [
+            0.546,
+            0.4927,
+            0.2778,
+            0.1935
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2606,
+          "bbox": [
+            0.3601,
+            0.4254,
+            0.1923,
+            0.2776
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2779,
+          "bbox": [
+            0.0636,
+            0.1309,
+            0.1936,
+            0.2572
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2601,
+          "bbox": [
+            0.6507,
+            0.5124,
+            0.2525,
+            0.2246
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000011",
+      "layout_id": "layout_000004",
+      "gt_count": 8,
+      "pred_count": 3,
+      "tp": 0,
+      "fp": 3,
+      "fn": 8,
+      "mean_iou": 0.3835,
+      "predictions": [
+        {
+          "type": "Bedroom",
+          "confidence": 0.2721,
+          "bbox": [
+            0.7329,
+            0.3189,
+            0.1653,
+            0.3334
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2664,
+          "bbox": [
+            0.153,
+            0.0917,
+            0.3843,
+            0.1893
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2658,
+          "bbox": [
+            0.0759,
+            0.1237,
+            0.1926,
+            0.2754
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000012",
+      "layout_id": "layout_000004",
+      "gt_count": 8,
+      "pred_count": 8,
+      "tp": 1,
+      "fp": 7,
+      "fn": 7,
+      "mean_iou": 0.4117,
+      "predictions": [
+        {
+          "type": "Bedroom",
+          "confidence": 0.2862,
+          "bbox": [
+            0.7469,
+            0.3666,
+            0.1646,
+            0.3313
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3005,
+          "bbox": [
+            0.1202,
+            0.0875,
+            0.3922,
+            0.1808
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2639,
+          "bbox": [
+            0.4314,
+            0.1102,
+            0.3599,
+            0.15
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2831,
+          "bbox": [
+            0.2586,
+            0.1329,
+            0.209,
+            0.2228
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2658,
+          "bbox": [
+            0.5485,
+            0.502,
+            0.2805,
+            0.1926
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2649,
+          "bbox": [
+            0.366,
+            0.436,
+            0.1938,
+            0.2794
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.28,
+          "bbox": [
+            0.0623,
+            0.1329,
+            0.194,
+            0.2567
+          ]
+        },
+        {
+          "type": "Bedroom",
+          "confidence": 0.2622,
+          "bbox": [
+            0.651,
+            0.5185,
+            0.2546,
+            0.2244
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000040",
+      "layout_id": "layout_000014",
+      "gt_count": 7,
+      "pred_count": 2,
+      "tp": 0,
+      "fp": 2,
+      "fn": 7,
+      "mean_iou": 0.2009,
+      "predictions": [
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3074,
+          "bbox": [
+            0.1085,
+            0.0905,
+            0.4198,
+            0.1866
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2836,
+          "bbox": [
+            0.0596,
+            0.1354,
+            0.1995,
+            0.2655
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000041",
+      "layout_id": "layout_000014",
+      "gt_count": 7,
+      "pred_count": 2,
+      "tp": 0,
+      "fp": 2,
+      "fn": 7,
+      "mean_iou": 0.2469,
+      "predictions": [
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2922,
+          "bbox": [
+            0.1213,
+            0.0989,
+            0.4149,
+            0.203
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2666,
+          "bbox": [
+            0.0664,
+            0.1384,
+            0.1979,
+            0.2952
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000042",
+      "layout_id": "layout_000014",
+      "gt_count": 7,
+      "pred_count": 3,
+      "tp": 0,
+      "fp": 3,
+      "fn": 7,
+      "mean_iou": 0.2239,
+      "predictions": [
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3116,
+          "bbox": [
+            0.096,
+            0.0983,
+            0.4614,
+            0.1923
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2886,
+          "bbox": [
+            0.0531,
+            0.1404,
+            0.2083,
+            0.2792
+          ]
+        },
+        {
+          "type": "Living Room",
+          "confidence": 0.2559,
+          "bbox": [
+            0.5152,
+            0.6725,
+            0.3306,
+            0.2622
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000073",
+      "layout_id": "layout_000025",
+      "gt_count": 7,
+      "pred_count": 6,
+      "tp": 0,
+      "fp": 6,
+      "fn": 6,
+      "mean_iou": 0.3602,
+      "predictions": [
+        {
+          "type": "Living Room",
+          "confidence": 0.2737,
+          "bbox": [
+            0.3177,
+            0.6556,
+            0.4531,
+            0.2373
+          ]
+        },
+        {
+          "type": "Living Room",
+          "confidence": 0.2576,
+          "bbox": [
+            0.5635,
+            0.2189,
+            0.3804,
+            0.343
+          ]
+        },
+        {
+          "type": "Bathroom",
+          "confidence": 0.2537,
+          "bbox": [
+            0.6602,
+            0.1805,
+            0.3018,
+            0.2319
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3239,
+          "bbox": [
+            0.0519,
+            0.1297,
+            0.5461,
+            0.2114
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.309,
+          "bbox": [
+            0.0282,
+            0.1464,
+            0.2366,
+            0.3252
+          ]
+        },
+        {
+          "type": "Living Room",
+          "confidence": 0.2824,
+          "bbox": [
+            0.4977,
+            0.6333,
+            0.3654,
+            0.2975
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000074",
+      "layout_id": "layout_000025",
+      "gt_count": 7,
+      "pred_count": 2,
+      "tp": 0,
+      "fp": 2,
+      "fn": 7,
+      "mean_iou": 0.3463,
+      "predictions": [
+        {
+          "type": "Living Room",
+          "confidence": 0.255,
+          "bbox": [
+            0.3985,
+            0.6374,
+            0.4124,
+            0.2518
+          ]
+        },
+        {
+          "type": "Living Room",
+          "confidence": 0.2759,
+          "bbox": [
+            0.5265,
+            0.6297,
+            0.341,
+            0.2967
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000075",
+      "layout_id": "layout_000025",
+      "gt_count": 7,
+      "pred_count": 4,
+      "tp": 0,
+      "fp": 4,
+      "fn": 7,
+      "mean_iou": 0.2708,
+      "predictions": [
+        {
+          "type": "Living Room",
+          "confidence": 0.2529,
+          "bbox": [
+            0.341,
+            0.6708,
+            0.4172,
+            0.2112
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3039,
+          "bbox": [
+            0.0688,
+            0.1176,
+            0.5175,
+            0.2002
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.2958,
+          "bbox": [
+            0.0423,
+            0.1386,
+            0.2254,
+            0.297
+          ]
+        },
+        {
+          "type": "Living Room",
+          "confidence": 0.2728,
+          "bbox": [
+            0.5066,
+            0.656,
+            0.3505,
+            0.2734
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000094",
+      "layout_id": "layout_000032",
+      "gt_count": 8,
+      "pred_count": 3,
+      "tp": 0,
+      "fp": 3,
+      "fn": 7,
+      "mean_iou": 0.3223,
+      "predictions": [
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.3196,
+          "bbox": [
+            0.0839,
+            0.0923,
+            0.4551,
+            0.1982
+          ]
+        },
+        {
+          "type": "Corridor",
+          "confidence": 0.2559,
+          "bbox": [
+            0.0724,
+            0.4488,
+            0.706,
+            0.151
+          ]
+        },
+        {
+          "type": "Master Bedroom",
+          "confidence": 0.288,
+          "bbox": [
+            0.0474,
+            0.13,
+            0.2038,
+            0.2908
+          ]
+        }
+      ]
+    }
+  ]
+}
