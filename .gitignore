@@ -45,17 +45,6 @@ frontend-web/.vercel/
 frontend-web/*.tsbuildinfo
 frontend-web/next-env.d.ts
 
-# Flutter / Mobile build & dependencies
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/.packages
-mobile/build/
-mobile/android/.gradle/
-mobile/android/local.properties
-mobile/ios/Flutter/Generated.xcconfig
-mobile/ios/Flutter/flutter_export_environment.sh
-
 
 # OS & Editor configurations
 .DS_Store

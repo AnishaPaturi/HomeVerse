@@ -1,14 +1,13 @@
-.PHONY: help install dev dev-backend dev-web dev-mobile build test lint docker-up docker-down migrate seed clean
+.PHONY: help install dev dev-backend dev-web build test lint docker-up docker-down migrate seed clean
 
 help:
 	@echo "Available commands:"
-	@echo "  make install        Install web, mobile & backend dependencies"
+	@echo "  make install        Install web & backend dependencies"
 	@echo "  make dev            Run web and backend concurrently"
 	@echo "  make dev-backend    Run backend development server"
 	@echo "  make dev-web        Run frontend-web Next.js development server"
-	@echo "  make dev-mobile     Run Flutter mobile application"
 	@echo "  make build          Build production artifacts for frontend-web and backend"
-	@echo "  make test           Run backend, web and mobile tests"
+	@echo "  make test           Run backend and web tests"
 	@echo "  make lint           Run linters across codebase"
 	@echo "  make docker-up      Start all services via docker-compose"
 	@echo "  make docker-down    Stop all docker-compose services"
@@ -19,16 +18,12 @@ help:
 install:
 	cd backend && pip install -r requirements.txt
 	cd frontend-web && npm install
-	cd mobile && flutter pub get || true
 
 dev-backend:
 	cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
 dev-web:
 	cd frontend-web && npm run dev
-
-dev-mobile:
-	cd mobile && flutter run
 
 dev:
 	@echo "Starting backend and web..."
