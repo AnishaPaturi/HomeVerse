@@ -2,6 +2,7 @@ import argparse
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -14,21 +15,31 @@ from transformers import ViTModel, ViTConfig
 from floorplan_dataset import (
     FloorplanDataset,
     collate_fn,
+    get_image_transform,
     DEFAULT_IMAGE_TRANSFORM,
     ROOM_CLASSES,
     NUM_ROOM_CLASSES,
     NO_ROOM_ID,
     ID2LABEL,
+    LABEL2ID,
 )
 from vit_detector import (
     HungarianMatcher,
     box_cxcywh_to_xyxy,
     generalized_box_iou,
 )
+from segmentation_head import (
+    SegmentationHead,
+    compute_mask_loss,
+    extract_room_geometry_from_mask,
+)
+from scale_calibration import (
+    ScaleCalibrator,
+)
 
 
 # =====================================================================
-# Multi-Task Vision Transformer
+# Multi-Task Vision Transformer with Segmentation & Scale Calibration
 # =====================================================================
 
 class MultiTaskViT(nn.Module):
@@ -36,32 +47,41 @@ class MultiTaskViT(nn.Module):
     Unified Multi-Task Vision Transformer for Floor Plans.
     
     Architecture:
-                         IMAGE
-                           ↓
-                     ViT Encoder
-                           ↓
-            ┌──────────────┼──────────────┐
-            ↓              ↓              ↓
-       Room Class       BBox Head      Scale Head
-            ↓              ↓              ↓
-          type          x,y,w,h        pixels/m
-                           │              │
-                           └──────┬───────┘
-                                  ↓
-                          Dimensions in meters
+                         FLOOR PLAN
+                              │
+                              ▼
+                         ViT Encoder
+                              │
+               ┌──────────────┼──────────────┬──────────────┐
+               ▼              ▼              ▼              ▼
+           Room Class      BBox Head   Segmentation     Scale Head
+              Head            Head          Head         (Global)
+               │              │              │              │
+             type          x,y,w,h      Room polygon     pixels/m
+               │              │              │              │
+               └──────────────┴──────────────┴──────┬───────┘
+                                                    ▼
+                                           Scale Calibration
+                                         (OCR + ViT fallback)
+                                                    ▼
+                                            Metric Geometry
+                                         (Width, Length, Area)
     """
     def __init__(self, pretrained_model_name="google/vit-base-patch16-224",
-                 num_queries=25, num_classes=NUM_ROOM_CLASSES, decoder_layers=2):
+                 img_size=224, num_queries=25, num_classes=NUM_ROOM_CLASSES, decoder_layers=2):
         super().__init__()
+        self.img_size = img_size
         self.num_queries = num_queries
         self.num_classes = num_classes
         self.decoder_layers = decoder_layers
+        self.patch_size = 16
+        self.grid_size = (img_size // self.patch_size, img_size // self.patch_size)
 
         # ViT Encoder
         try:
             self.encoder = ViTModel.from_pretrained(pretrained_model_name)
         except Exception:
-            config = ViTConfig(image_size=224, patch_size=16, hidden_size=768)
+            config = ViTConfig(image_size=img_size, patch_size=16, hidden_size=768)
             self.encoder = ViTModel(config)
 
         hidden_dim = self.encoder.config.hidden_size  # 768
@@ -102,54 +122,71 @@ class MultiTaskViT(nn.Module):
             nn.Sigmoid(),  # [cx, cy, w, h] normalized in [0, 1]
         )
 
+        # 5. Segmentation Head (Room polygon instance & semantic masks)
+        self.seg_head = SegmentationHead(
+            in_dim=hidden_dim,
+            num_queries=num_queries,
+            num_classes=num_classes,
+            mask_dim=64,
+        )
+
     def forward(self, images):
         bs = images.size(0)
+        h, w = images.shape[2], images.shape[3]
+        gh, gw = h // self.patch_size, w // self.patch_size
 
         # ViT Encoder
         outputs = self.encoder(pixel_values=images)
-        cls_token = outputs.last_hidden_state[:, 0, :]   # [B, 768]
-        patch_tokens = outputs.last_hidden_state          # [B, 197, 768]
+        cls_token = outputs.last_hidden_state[:, 0, :]    # [B, 768]
+        patch_tokens = outputs.last_hidden_state[:, 1:, :] # [B, gh*gw, 768]
 
         # 1. Global Scale Prediction
         pred_scale = self.scale_head(cls_token).squeeze(-1)  # [B] in pixels/meter
 
         # 2. Room Query Decoding
         queries = self.query_embed.weight.unsqueeze(0).expand(bs, -1, -1)
-        hs = self.decoder(tgt=queries, memory=patch_tokens)  # [B, num_queries, 768]
+        # Use full hidden state (including CLS) as decoder memory for maximum context
+        hs = self.decoder(tgt=queries, memory=outputs.last_hidden_state)  # [B, num_queries, 768]
 
         # 3. Heads
         pred_logits = self.class_head(hs)  # [B, num_queries, 23]
         pred_boxes = self.bbox_head(hs)    # [B, num_queries, 4]
 
+        # 4. Segmentation Head
+        seg_outputs = self.seg_head(patch_tokens, hs, grid_size=(gh, gw))
+
         return {
             "pred_logits": pred_logits,
             "pred_boxes": pred_boxes,
+            "pred_masks": seg_outputs["pred_masks"],         # [B, num_queries, H_mask, W_mask]
+            "pred_semantic": seg_outputs["pred_semantic"],   # [B, 23, H_mask, W_mask]
             "pred_scale": pred_scale,
         }
 
     @torch.no_grad()
-    def predict_unseen_plan(self, image_path, conf_threshold=0.20, nms_threshold=0.30, device="cpu"):
+    def predict_unseen_plan(self, image_path, conf_threshold=0.20, nms_threshold=0.35,
+                            use_segmentation=True, calibrate_ocr=True, device="cpu"):
         """
         End-to-End Inference:
-        Input: Any unseen floor-plan image -> Output: rooms + dimensions in meters
+        Input: Any unseen floor-plan image -> Output: rooms + polygons + metric dimensions.
         """
         self.eval()
         orig_img = Image.open(image_path).convert("RGB")
         orig_w, orig_h = orig_img.size
 
         # Preprocess
-        input_tensor = DEFAULT_IMAGE_TRANSFORM(orig_img).unsqueeze(0).to(device)
+        transform = get_image_transform(self.img_size)
+        input_tensor = transform(orig_img).unsqueeze(0).to(device)
 
         # Forward Pass
         outputs = self(input_tensor)
         pred_logits = outputs["pred_logits"][0]
         pred_boxes = outputs["pred_boxes"][0]
-        pred_scale_ppm = outputs["pred_scale"][0].item()  # pixels / meter (at original or normalized resolution)
+        pred_masks = outputs["pred_masks"][0]  # [num_queries, H_mask, W_mask]
+        pred_scale_ppm = outputs["pred_scale"][0].item()
 
-        # Scale resolution: dataset images were rendered at canonical 1024x1024 resolution.
-        # pred_scale_ppm represents estimated pixels per meter on a 1024-pixel dimension.
-        # On the original image of size (orig_w, orig_h), the scale is proportional to max(orig_w, orig_h):
-        orig_scale = pred_scale_ppm * (max(orig_w, orig_h) / 1024.0)
+        # Scale resolution mapping
+        raw_scale = pred_scale_ppm * (max(orig_w, orig_h) / 1024.0)
 
         probs = pred_logits.softmax(-1)
         scores, labels = probs[:, :self.num_classes].max(dim=-1)
@@ -159,7 +196,8 @@ class MultiTaskViT(nn.Module):
             return {
                 "image_path": str(image_path),
                 "image_size": [orig_w, orig_h],
-                "estimated_scale_px_per_m": round(orig_scale, 2),
+                "estimated_scale_px_per_m": round(raw_scale, 2),
+                "scale_source": "vit_fallback",
                 "room_count": 0,
                 "rooms": [],
             }
@@ -167,6 +205,7 @@ class MultiTaskViT(nn.Module):
         boxes_filt = pred_boxes[keep]
         scores_filt = scores[keep]
         labels_filt = labels[keep]
+        masks_filt = pred_masks[keep]
 
         if nms_threshold is not None and len(boxes_filt) > 1:
             import torchvision.ops as ops
@@ -180,64 +219,127 @@ class MultiTaskViT(nn.Module):
             boxes_filt = boxes_filt[nms_idx]
             scores_filt = scores_filt[nms_idx]
             labels_filt = labels_filt[nms_idx]
+            masks_filt = masks_filt[nms_idx]
 
-        detected_rooms = []
-        for score, label_id, box in zip(scores_filt, labels_filt, boxes_filt):
+        # Stage 1: Geometry Extraction per Room
+        preliminary_rooms = []
+        for i in range(len(scores_filt)):
+            score = scores_filt[i].item()
+            label_id = labels_filt[i].item()
+            box = boxes_filt[i]
+            mask_logits = masks_filt[i]
+            mask_prob = mask_logits.sigmoid().cpu().numpy()
+
             cx, cy, bw, bh = box.tolist()
             x0 = max(0.0, cx - bw / 2.0)
             y0 = max(0.0, cy - bh / 2.0)
+            bbox_px_w = bw * orig_w
+            bbox_px_h = bh * orig_h
+            bbox_px_x0 = int(round(x0 * orig_w))
+            bbox_px_y0 = int(round(y0 * orig_h))
 
-            # Pixel dimensions
-            px_w = bw * orig_w
-            px_h = bh * orig_h
-            px_x0 = int(round(x0 * orig_w))
-            px_y0 = int(round(y0 * orig_h))
-            px_w_int = int(round(px_w))
-            px_h_int = int(round(px_h))
-
-            # Metric Dimensions in meters
-            width_m = round(px_w / max(1e-3, orig_scale), 2)
-            length_m = round(px_h / max(1e-3, orig_scale), 2)
-            bbox_area_m2 = round(width_m * length_m, 2)
-
-            detected_rooms.append({
-                "type": ID2LABEL.get(label_id.item(), "Unknown Room"),
-                "confidence": round(score.item(), 4),
+            # Default geometry from bounding box
+            geom = {
+                "polygon": [
+                    [round(x0, 4), round(y0, 4)],
+                    [round(x0 + bw, 4), round(y0, 4)],
+                    [round(x0 + bw, 4), round(y0 + bh, 4)],
+                    [round(x0, 4), round(y0 + bh, 4)],
+                ],
+                "num_vertices": 4,
+                "is_rectangular": True,
+                "pixel_width": round(min(bbox_px_w, bbox_px_h), 1),
+                "pixel_length": round(max(bbox_px_w, bbox_px_h), 1),
+                "pixel_area": round(bbox_px_w * bbox_px_h, 1),
+                "bbox_pixels": [bbox_px_x0, bbox_px_y0, int(round(bbox_px_w)), int(round(bbox_px_h))],
                 "bbox_normalized": [round(x0, 4), round(y0, 4), round(bw, 4), round(bh, 4)],
-                "bbox_pixels": [px_x0, px_y0, px_w_int, px_h_int],
-                "width_m": width_m,
-                "length_m": length_m,
-                "area_m2": bbox_area_m2,
-                "bbox_area_m2": bbox_area_m2,
-                "is_rectangular_estimate": True,
+                "geometry_source": "bbox_fallback",
+            }
+
+            # Refine geometry with segmentation mask if enabled
+            if use_segmentation:
+                mask_geom = extract_room_geometry_from_mask(
+                    mask_prob, threshold=0.45, orig_size=(orig_w, orig_h), min_area_px=100
+                )
+                if mask_geom is not None:
+                    # Valid contour found
+                    geom = mask_geom
+                    geom["geometry_source"] = "segmentation_mask"
+
+            preliminary_rooms.append({
+                "type": ID2LABEL.get(label_id, "Unknown Room"),
+                "confidence": round(score, 4),
+                **geom
             })
 
-        # Sort rooms by area descending
-        detected_rooms.sort(key=lambda r: r["area_m2"], reverse=True)
+        # Stage 2: Scale Calibration (OCR with ViT fallback)
+        calibrated_scale = raw_scale
+        scale_source = "vit_predicted"
+        calib_details = {}
+        if calibrate_ocr:
+            calibrator = ScaleCalibrator()
+            calib_res = calibrator.calibrate_scale(image_path, preliminary_rooms, raw_scale)
+            calibrated_scale = calib_res["calibrated_scale_px_per_m"]
+            scale_source = calib_res["scale_source"]
+            calib_details = calib_res
+
+        # Stage 3: Metric Dimension Computation
+        detected_rooms = []
+        for r in preliminary_rooms:
+            px_w = r["pixel_width"]
+            px_l = r["pixel_length"]
+            px_area = r["pixel_area"]
+
+            width_m = round(px_w / max(1e-3, calibrated_scale), 2)
+            length_m = round(px_l / max(1e-3, calibrated_scale), 2)
+            area_m2 = round(px_area / max(1e-3, calibrated_scale ** 2), 2)
+
+            detected_rooms.append({
+                "type": r["type"],
+                "confidence": r["confidence"],
+                "geometry_source": r["geometry_source"],
+                "is_rectangular": r["is_rectangular"],
+                "num_vertices": r["num_vertices"],
+                "polygon": r["polygon"],
+                "bbox_normalized": r["bbox_normalized"],
+                "bbox_pixels": r["bbox_pixels"],
+                "pixel_width": px_w,
+                "pixel_length": px_l,
+                "pixel_area": px_area,
+                "width_m": width_m,
+                "length_m": length_m,
+                "area_m2": area_m2,
+            })
+
+        detected_rooms.sort(key=lambda x: x["area_m2"], reverse=True)
 
         return {
             "image_path": str(image_path),
             "image_size": [orig_w, orig_h],
-            "estimated_scale_px_per_m": round(orig_scale, 2),
+            "estimated_scale_px_per_m": round(calibrated_scale, 2),
+            "scale_source": scale_source,
+            "vit_raw_scale_px_per_m": round(raw_scale, 2),
+            "calibration_details": calib_details,
             "room_count": len(detected_rooms),
             "rooms": detected_rooms,
         }
 
 
 # =====================================================================
-# Multi-Task Loss Criterion
+# Multi-Task Loss Criterion with Segmentation Loss
 # =====================================================================
 
 class MultiTaskCriterion(nn.Module):
     def __init__(self, matcher, num_classes=NUM_ROOM_CLASSES,
                  weight_class=1.0, weight_bbox=5.0, weight_giou=2.0,
-                 weight_scale=1.0, eos_coef=0.1):
+                 weight_mask=2.0, weight_scale=1.0, eos_coef=0.1):
         super().__init__()
         self.matcher = matcher
         self.num_classes = num_classes
         self.weight_class = weight_class
         self.weight_bbox = weight_bbox
         self.weight_giou = weight_giou
+        self.weight_mask = weight_mask
         self.weight_scale = weight_scale
 
         empty_weight = torch.ones(num_classes + 1)
@@ -247,6 +349,7 @@ class MultiTaskCriterion(nn.Module):
     def forward(self, outputs, targets):
         pred_logits = outputs["pred_logits"]
         pred_boxes = outputs["pred_boxes"]
+        pred_masks = outputs["pred_masks"]
         pred_scale = outputs["pred_scale"]
 
         indices = self.matcher(pred_logits, pred_boxes, targets)
@@ -273,10 +376,20 @@ class MultiTaskCriterion(nn.Module):
 
         src_boxes_list = []
         target_boxes_list = []
+        src_masks_list = []
+        target_masks_list = []
+
         for b, (src_idx, tgt_idx) in enumerate(indices):
             if len(src_idx) > 0:
                 src_boxes_list.append(pred_boxes[b, src_idx])
                 target_boxes_list.append(targets[b]["boxes"][tgt_idx].to(pred_boxes.device))
+
+                # Matched masks
+                if "masks" in targets[b] and targets[b]["masks"].numel() > 0:
+                    matched_gt_masks = targets[b]["masks"][tgt_idx].to(pred_masks.device)
+                    matched_pred_masks = pred_masks[b, src_idx]
+                    src_masks_list.append(matched_pred_masks)
+                    target_masks_list.append(matched_gt_masks)
 
         if src_boxes_list:
             src_boxes = torch.cat(src_boxes_list, dim=0)
@@ -291,7 +404,25 @@ class MultiTaskCriterion(nn.Module):
             loss_bbox = torch.tensor(0.0, device=pred_logits.device)
             loss_giou = torch.tensor(0.0, device=pred_logits.device)
 
-        # 3. Masked Scale Estimation Loss (Masked out for 12% no-scale)
+        # 3. Mask Loss: BCE + Dice
+        if src_masks_list and target_masks_list:
+            all_src_masks = torch.cat(src_masks_list, dim=0)
+            all_target_masks = torch.cat(target_masks_list, dim=0)
+            # If target mask spatial resolution differs from pred mask, interpolate
+            if all_src_masks.shape[-2:] != all_target_masks.shape[-2:]:
+                all_target_masks = F.interpolate(
+                    all_target_masks.unsqueeze(1),
+                    size=all_src_masks.shape[-2:],
+                    mode="nearest"
+                ).squeeze(1)
+
+            loss_mask, loss_mask_bce, loss_mask_dice = compute_mask_loss(all_src_masks, all_target_masks)
+        else:
+            loss_mask = torch.tensor(0.0, device=pred_logits.device)
+            loss_mask_bce = torch.tensor(0.0, device=pred_logits.device)
+            loss_mask_dice = torch.tensor(0.0, device=pred_logits.device)
+
+        # 4. Masked Scale Estimation Loss
         gt_scales = torch.stack([t["scale_px_per_m"] for t in targets]).to(pred_logits.device)
         has_scale = torch.stack([t["has_scale"] for t in targets]).to(pred_logits.device)
 
@@ -302,6 +433,7 @@ class MultiTaskCriterion(nn.Module):
         total_loss = (self.weight_class * loss_ce +
                       self.weight_bbox * loss_bbox +
                       self.weight_giou * loss_giou +
+                      self.weight_mask * loss_mask +
                       self.weight_scale * loss_scale)
 
         return {
@@ -309,6 +441,7 @@ class MultiTaskCriterion(nn.Module):
             "loss_ce": loss_ce,
             "loss_bbox": loss_bbox,
             "loss_giou": loss_giou,
+            "loss_mask": loss_mask,
             "loss_scale": loss_scale,
         }
 
@@ -318,31 +451,50 @@ class MultiTaskCriterion(nn.Module):
 # =====================================================================
 
 def visualize_prediction(image_path, prediction_result, out_path):
-    img = Image.open(image_path).convert("RGB")
-    draw = ImageDraw.Draw(img)
+    img = Image.open(image_path).convert("RGBA")
+    overlay = Image.new("RGBA", img.size, (255, 255, 255, 0))
+    draw_overlay = ImageDraw.Draw(overlay)
+    draw_img = ImageDraw.Draw(img)
 
     colors = [
+        (220, 50, 47, 100), (38, 139, 210, 100), (133, 153, 0, 100), (211, 54, 130, 100),
+        (108, 113, 196, 100), (42, 161, 152, 100), (203, 75, 22, 100), (181, 137, 0, 100)
+    ]
+    solid_colors = [
         (220, 50, 47), (38, 139, 210), (133, 153, 0), (211, 54, 130),
         (108, 113, 196), (42, 161, 152), (203, 75, 22), (181, 137, 0)
     ]
 
+    orig_w, orig_h = img.size
+
     for i, room in enumerate(prediction_result["rooms"]):
-        color = colors[i % len(colors)]
+        color_fill = colors[i % len(colors)]
+        color_solid = solid_colors[i % len(solid_colors)]
+
+        # Draw Polygon if available
+        poly = room.get("polygon")
+        if poly and len(poly) >= 3:
+            pts = [(int(p[0] * orig_w), int(p[1] * orig_h)) for p in poly]
+            draw_overlay.polygon(pts, fill=color_fill, outline=color_solid)
+            draw_img.line(pts + [pts[0]], fill=color_solid, width=3)
+        else:
+            x, y, w, h = room["bbox_pixels"]
+            draw_img.rectangle([x, y, x + w, y + h], outline=color_solid, width=3)
+
         x, y, w, h = room["bbox_pixels"]
-        draw.rectangle([x, y, x + w, y + h], outline=color, width=3)
-
         label = f"{room['type']} ({room['confidence']:.2f}): {room['width_m']:.2f}x{room['length_m']:.2f}m ({room['area_m2']:.1f}m²)"
-        draw.rectangle([x, max(0, y - 20), x + len(label)*7, max(0, y)], fill=color)
-        draw.text((x + 2, max(0, y - 18)), label, fill=(255, 255, 255))
+        draw_img.rectangle([x, max(0, y - 20), x + len(label) * 7, max(0, y)], fill=color_solid)
+        draw_img.text((x + 2, max(0, y - 18)), label, fill=(255, 255, 255))
 
+    combined = Image.alpha_composite(img, overlay).convert("RGB")
     out_p = Path(out_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_p)
+    combined.save(out_p)
     return out_p
 
 
 # =====================================================================
-# Training & CLI
+# Training & Evaluation
 # =====================================================================
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
@@ -370,6 +522,7 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
             "loss": f"{loss.item():.3f}",
             "ce": f"{loss_dict['loss_ce'].item():.2f}",
             "box": f"{loss_dict['loss_bbox'].item():.2f}",
+            "mask": f"{loss_dict['loss_mask'].item():.2f}",
             "scale": f"{loss_dict['loss_scale'].item():.2f}",
         })
 
@@ -396,6 +549,7 @@ def evaluate(model, dataloader, criterion, device):
 def main():
     parser = argparse.ArgumentParser(description="Multi-Task ViT: Room Detection + Scale + Dimensions")
     parser.add_argument("--data-root", type=str, default="HomeVerse-Dataset")
+    parser.add_argument("--img-size", type=int, default=224, choices=[224, 384])
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -404,48 +558,42 @@ def main():
     parser.add_argument("--save-dir", type=str, default="checkpoints/multitask")
     parser.add_argument("--predict-image", type=str, default=None, help="Path to unseen image to predict")
     parser.add_argument("--conf-threshold", type=float, default=0.25, help="Confidence threshold for prediction")
-    parser.add_argument("--init-detector", type=str, default="checkpoints/detector/vit_detector_best.pt", help="Path to pretrained detector checkpoint")
-    parser.add_argument("--init-scale", type=str, default="checkpoints/scale/scale_estimator_best.pt", help="Path to pretrained scale checkpoint")
-    parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights for fast CPU training")
+    parser.add_argument("--init-checkpoint", type=str, default=None, help="Path to pretrained checkpoint")
+    parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    print(f"Using device: {device} | Image size: {args.img_size}x{args.img_size}")
 
     save_path = Path(args.save_dir)
     save_path.mkdir(parents=True, exist_ok=True)
 
+    model_name = "google/vit-base-patch16-384" if args.img_size == 384 else "google/vit-base-patch16-224"
+    model = MultiTaskViT(pretrained_model_name=model_name, img_size=args.img_size).to(device)
+
     if args.predict_image:
-        model = MultiTaskViT().to(device)
-        ckpt = save_path / "multitask_vit_best.pt"
+        ckpt = save_path / f"multitask_vit_{args.img_size}_best.pt"
+        if not ckpt.exists():
+            ckpt = save_path / "multitask_vit_best.pt"
         if ckpt.exists():
-            model.load_state_dict(torch.load(ckpt, map_location=device))
+            model.load_state_dict(torch.load(ckpt, map_location=device), strict=False)
             print(f"Loaded checkpoint from {ckpt}")
         result = model.predict_unseen_plan(args.predict_image, conf_threshold=args.conf_threshold, device=device)
         import json
         print(json.dumps(result, indent=2))
         return
 
-    train_ds = FloorplanDataset(args.data_root, split="train", max_samples=args.max_train_samples)
-    val_ds = FloorplanDataset(args.data_root, split="validation", max_samples=args.max_val_samples)
+    train_ds = FloorplanDataset(args.data_root, split="train", img_size=args.img_size, max_samples=args.max_train_samples)
+    val_ds = FloorplanDataset(args.data_root, split="validation", img_size=args.img_size, max_samples=args.max_val_samples)
     print(f"Loaded {len(train_ds)} train floorplans, {len(val_ds)} val floorplans.")
 
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
 
-    model = MultiTaskViT().to(device)
-
-    # Initialize from pretrained detector and scale checkpoints if available
-    if args.init_detector and Path(args.init_detector).exists():
-        print(f"Loading pretrained detector weights from {args.init_detector}...")
-        det_ckpt = torch.load(args.init_detector, map_location=device)
-        model.load_state_dict(det_ckpt, strict=False)
-
-    if args.init_scale and Path(args.init_scale).exists():
-        print(f"Loading pretrained scale head weights from {args.init_scale}...")
-        scale_ckpt = torch.load(args.init_scale, map_location=device)
-        scale_dict = {k.replace('scale_head.', ''): v for k, v in scale_ckpt.items() if 'scale_head' in k}
-        model.scale_head.load_state_dict(scale_dict)
+    if args.init_checkpoint and Path(args.init_checkpoint).exists():
+        print(f"Loading weights from {args.init_checkpoint}...")
+        ckpt = torch.load(args.init_checkpoint, map_location=device)
+        model.load_state_dict(ckpt, strict=False)
 
     if args.freeze_backbone:
         for p in model.encoder.parameters():
@@ -468,7 +616,7 @@ def main():
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            ckpt_file = save_path / "multitask_vit_best.pt"
+            ckpt_file = save_path / f"multitask_vit_{args.img_size}_best.pt"
             torch.save(model.state_dict(), ckpt_file)
             print(f"Saved best multi-task checkpoint to {ckpt_file}")
 
