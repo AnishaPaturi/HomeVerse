@@ -155,7 +155,7 @@ class _RoomPlaygroundScreenState extends State<RoomPlaygroundScreen> {
                           child: FloatingActionButton.extended(
                             onPressed: _openAICopilot,
                             backgroundColor: AppTheme.primaryIndigo,
-                            icon: const Icon(Icons.sparkles, color: Colors.white, size: 18),
+                            icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
                             label: const Text("Ask AI Copilot", style: TextStyle(color: Colors.white, fontSize: 12)),
                           ),
                         ),

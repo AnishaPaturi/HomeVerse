@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class SceneObject {
   final String id;
   final String model;

@@ -101,7 +101,7 @@ class _HomeCreationWizardScreenState extends State<HomeCreationWizardScreen> {
                 border: Border(top: BorderSide(color: AppTheme.borderDark)),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (_currentStep > 0)
                     OutlinedButton(

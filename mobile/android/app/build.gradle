@@ -42,7 +42,7 @@ android {
 
     defaultConfig {
         applicationId "com.homeverse.app"
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

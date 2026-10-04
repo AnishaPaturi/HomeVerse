@@ -135,7 +135,7 @@ class _BudgetOverviewScreenState extends State<BudgetOverviewScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         "Turnkey Budget Overview",

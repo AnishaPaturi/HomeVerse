@@ -66,7 +66,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     border: Border.all(color: AppTheme.borderDark),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

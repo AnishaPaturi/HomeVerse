@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../dashboard/models/project_model.dart';
 
 class RoomDetailScreen extends StatelessWidget {
   final String projectId;
