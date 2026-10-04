@@ -120,40 +120,50 @@ def test_real_floorplan(image_path="6th floor layout.jpeg",
     print("-" * 75)
     print(f"{'Room Name':<18} | {'Printed (ft)':<14} | {'Printed (m)':<14} | {'Model Pred (m)':<14}")
     print("-" * 75)
+    used_pred_indices = set()
     for gt in GROUND_TRUTH_PRINTED_ROOMS:
-        # Match by room type keyword
         match = None
-        for pred in results["rooms"]:
+        match_idx = None
+        for i, pred in enumerate(results["rooms"]):
+            if i in used_pred_indices:
+                continue
             pt = pred["type"].lower()
             gt_n = gt["name"].lower()
             if any(k in pt for k in ["living", "drawing"]) and "drawing" in gt_n:
-                match = pred
+                match, match_idx = pred, i
                 break
             elif "dining" in pt and "dining" in gt_n:
-                match = pred
+                match, match_idx = pred, i
                 break
             elif "kitchen" in pt and "kitchen" in gt_n:
-                match = pred
+                match, match_idx = pred, i
                 break
-            elif ("bedroom" in pt or "master" in pt) and "bedroom" in gt_n:
-                match = pred
+            elif "master" in gt_n and ("master" in pt or "bedroom" in pt):
+                match, match_idx = pred, i
                 break
-            elif ("bathroom" in pt or "toilet" in pt) and "toilet" in gt_n:
-                match = pred
+            elif "bedroom" in gt_n and "bedroom" in pt:
+                match, match_idx = pred, i
+                break
+            elif "toilet" in gt_n and ("bathroom" in pt or "toilet" in pt):
+                match, match_idx = pred, i
                 break
             elif "balcony" in pt and "balcony" in gt_n:
-                match = pred
+                match, match_idx = pred, i
                 break
 
         gt_m_str = f"{gt['printed_width_m']:.2f} x {gt['printed_length_m']:.2f}"
         if match:
-            pred_m_str = f"{match['width_m']:.2f} x {match['length_m']:.2f}"
-            w_err = abs(match['width_m'] - gt['printed_width_m']) / gt['printed_width_m'] * 100
-            l_err = abs(match['length_m'] - gt['printed_length_m']) / gt['printed_length_m'] * 100
-            mean_err = (w_err + l_err) / 2
+            used_pred_indices.add(match_idx)
+            pred_w, pred_l = match['width_m'], match['length_m']
+            gt_w, gt_l = gt['printed_width_m'], gt['printed_length_m']
+            # Direct vs Transposed orientation comparison
+            err_direct = (abs(pred_w - gt_w)/gt_w + abs(pred_l - gt_l)/gt_l) / 2 * 100
+            err_transposed = (abs(pred_l - gt_w)/gt_w + abs(pred_w - gt_l)/gt_l) / 2 * 100
+            mean_err = min(err_direct, err_transposed)
+            pred_m_str = f"{pred_w:.2f} x {pred_l:.2f}"
             print(f"{gt['name']:<18} | {gt['printed_ft']:<14} | {gt_m_str:<14} | {pred_m_str:<14} (Err: {mean_err:.1f}%)")
         else:
-            print(f"{gt['name']:<18} | {gt['printed_ft']:<14} | {gt_m_str:<14} | {'N/A':<14}")
+            print(f"{gt['name']:<18} | {gt['printed_ft']:<14} | {gt_m_str:<14} | {'Not Detected':<14}")
     print("-" * 75)
 
     return results

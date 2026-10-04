@@ -51,10 +51,11 @@ class MultiTaskViT(nn.Module):
                           Dimensions in meters
     """
     def __init__(self, pretrained_model_name="google/vit-base-patch16-224",
-                 num_queries=25, num_classes=NUM_ROOM_CLASSES, decoder_layers=3):
+                 num_queries=25, num_classes=NUM_ROOM_CLASSES, decoder_layers=2):
         super().__init__()
         self.num_queries = num_queries
         self.num_classes = num_classes
+        self.decoder_layers = decoder_layers
 
         # ViT Encoder
         try:
@@ -145,12 +146,10 @@ class MultiTaskViT(nn.Module):
         pred_boxes = outputs["pred_boxes"][0]
         pred_scale_ppm = outputs["pred_scale"][0].item()  # pixels / meter (at original or normalized resolution)
 
-        # Rescaling factor: ViT operates on 224x224
-        # Since box coordinates are normalized [0, 1], room dimensions in pixels on original image are:
-        # room_px_w = norm_w * orig_w
-        # room_px_h = norm_h * orig_h
-        # Scale in orig pixels per meter:
-        orig_scale = pred_scale_ppm * (max(orig_w, orig_h) / 224.0)
+        # Scale resolution: dataset images were rendered at canonical 1024x1024 resolution.
+        # pred_scale_ppm represents estimated pixels per meter on a 1024-pixel dimension.
+        # On the original image of size (orig_w, orig_h), the scale is proportional to max(orig_w, orig_h):
+        orig_scale = pred_scale_ppm * (max(orig_w, orig_h) / 1024.0)
 
         probs = pred_logits.softmax(-1)
         scores, labels = probs[:, :self.num_classes].max(dim=-1)
@@ -174,7 +173,7 @@ class MultiTaskViT(nn.Module):
             # Metric Dimensions in meters
             width_m = round(px_w / max(1e-3, orig_scale), 2)
             length_m = round(px_h / max(1e-3, orig_scale), 2)
-            area_m2 = round(width_m * length_m, 2)
+            bbox_area_m2 = round(width_m * length_m, 2)
 
             detected_rooms.append({
                 "type": ID2LABEL.get(label_id.item(), "Unknown Room"),
@@ -183,7 +182,9 @@ class MultiTaskViT(nn.Module):
                 "bbox_pixels": [px_x0, px_y0, px_w_int, px_h_int],
                 "width_m": width_m,
                 "length_m": length_m,
-                "area_m2": area_m2,
+                "area_m2": bbox_area_m2,
+                "bbox_area_m2": bbox_area_m2,
+                "is_rectangular_estimate": True,
             })
 
         # Sort rooms by area descending
@@ -377,18 +378,25 @@ def main():
     parser.add_argument("--max-val-samples", type=int, default=None)
     parser.add_argument("--save-dir", type=str, default="checkpoints/multitask")
     parser.add_argument("--predict-image", type=str, default=None, help="Path to unseen image to predict")
+    parser.add_argument("--conf-threshold", type=float, default=0.25, help="Confidence threshold for prediction")
+    parser.add_argument("--init-detector", type=str, default="checkpoints/detector/vit_detector_best.pt", help="Path to pretrained detector checkpoint")
+    parser.add_argument("--init-scale", type=str, default="checkpoints/scale/scale_estimator_best.pt", help="Path to pretrained scale checkpoint")
+    parser.add_argument("--freeze-backbone", action="store_true", default=True, help="Freeze ViT encoder weights for fast CPU training")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
+    save_path = Path(args.save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+
     if args.predict_image:
         model = MultiTaskViT().to(device)
-        ckpt = Path(args.save_dir) / "multitask_vit_best.pt"
+        ckpt = save_path / "multitask_vit_best.pt"
         if ckpt.exists():
             model.load_state_dict(torch.load(ckpt, map_location=device))
             print(f"Loaded checkpoint from {ckpt}")
-        result = model.predict_unseen_plan(args.predict_image, device=device)
+        result = model.predict_unseen_plan(args.predict_image, conf_threshold=args.conf_threshold, device=device)
         import json
         print(json.dumps(result, indent=2))
         return
@@ -401,12 +409,30 @@ def main():
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
 
     model = MultiTaskViT().to(device)
+
+    # Initialize from pretrained detector and scale checkpoints if available
+    if args.init_detector and Path(args.init_detector).exists():
+        print(f"Loading pretrained detector weights from {args.init_detector}...")
+        det_ckpt = torch.load(args.init_detector, map_location=device)
+        model.load_state_dict(det_ckpt, strict=False)
+
+    if args.init_scale and Path(args.init_scale).exists():
+        print(f"Loading pretrained scale head weights from {args.init_scale}...")
+        scale_ckpt = torch.load(args.init_scale, map_location=device)
+        scale_dict = {k.replace('scale_head.', ''): v for k, v in scale_ckpt.items() if 'scale_head' in k}
+        model.scale_head.load_state_dict(scale_dict)
+
+    if args.freeze_backbone:
+        for p in model.encoder.parameters():
+            p.requires_grad = False
+        model.encoder.eval()
+        print("Pretrained ViT encoder backbone frozen. Training heads & decoder.")
+
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
     criterion = MultiTaskCriterion(matcher=matcher, num_classes=NUM_ROOM_CLASSES).to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
-    save_path = Path(args.save_dir)
-    save_path.mkdir(parents=True, exist_ok=True)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=1e-4)
 
     best_val_loss = float("inf")
     for epoch in range(1, args.epochs + 1):
