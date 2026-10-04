@@ -147,16 +147,6 @@ HomeVerse/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── mobile/                               # Flutter Cross-Platform Mobile Client
-│   ├── android/                          # Native Android configuration (API 34)
-│   ├── ios/                              # Native iOS Runner configuration
-│   ├── lib/
-│   │   ├── main.dart                     # App entry point
-│   │   ├── core/                         # ApiClient, SecureStorage, CurrencyFormatter
-│   │   ├── features/                     # Auth, Dashboard, Home Setup, 3D Playground
-│   │   └── shared/                       # Canonical SceneModel & widgets
-│   └── pubspec.yaml
-│
 ├── backend/                              # Unified FastAPI Python Backend
 │   ├── app/
 │   │   ├── main.py                       # Application initialization & routes
@@ -180,7 +170,6 @@ HomeVerse/
 ### Prerequisites
 - **Python**: `>= 3.10`
 - **Node.js**: `>= 20.0`
-- **Flutter SDK**: `>= 3.2.0` (for mobile)
 - **Docker & Docker Compose** (optional)
 
 ---
@@ -220,18 +209,7 @@ npx tsc --noEmit
 
 ---
 
-### 3. Start the Mobile Client (Flutter)
-
-```bash
-cd mobile
-flutter pub get
-flutter run
-```
-*Targets iOS simulator, Android emulator, physical device, or Chrome.*
-
----
-
-### 4. Running with Docker Compose
+### 3. Running with Docker Compose
 
 Launch PostgreSQL, Redis, Celery, FastAPI, and Next.js concurrently:
 
