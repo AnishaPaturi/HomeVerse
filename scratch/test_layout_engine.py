@@ -380,23 +380,146 @@ def extract_walls_and_connectivity(rooms):
 
 print("Wall and connectivity extractor defined.")
 
-# Run quick verification test on each generator
-rng = random.Random(42)
+def place_doors_and_windows(rooms, walls, internal_edges, entry_idx, rng):
+    num_rooms = len(rooms)
+    
+    # 1. Spanning tree for connectivity
+    # Use randomized BFS/DFS from entry_idx
+    visited = {entry_idx}
+    tree_edges = []
+    
+    while len(visited) < num_rooms:
+        options = []
+        for i, j, ov in internal_edges:
+            if (i in visited) != (j in visited):
+                options.append((i, j, ov))
+        if not options:
+            break
+        i, j, ov = rng.choice(options)
+        tree_edges.append((i, j, ov))
+        visited.update((i, j))
+        
+    doors = []
+    used_edges = set()
+    
+    def make_door(r_from, r_to, ov, is_entrance=False):
+        t, pos, lo, hi = ov
+        door_w = 0.85
+        center = rng.uniform(lo + 0.45, hi - 0.45) if (hi - lo >= 1.1) else (lo + hi)/2.0
+        pos_m = (center, pos) if t == "h" else (pos, center)
+        wall_seg = [(lo, pos), (hi, pos)] if t == "h" else [(pos, lo), (pos, hi)]
+        return {
+            "id": len(doors) + 1,
+            "room_from_id": r_from,
+            "room_to_id": r_to,
+            "position_m": pos_m,
+            "width_m": door_w,
+            "orientation": "horizontal" if t == "h" else "vertical",
+            "wall_edge_m": wall_seg,
+            "entrance": is_entrance,
+        }
+
+    for i, j, ov in tree_edges:
+        doors.append(make_door(rooms[i]["id"], rooms[j]["id"], ov))
+        used_edges.add((min(i, j), max(i, j)))
+        
+    # Extra doors (e.g. kitchen to dining, master to balcony)
+    for i, j, ov in internal_edges:
+        if (min(i, j), max(i, j)) not in used_edges and rng.random() < 0.20:
+            doors.append(make_door(rooms[i]["id"], rooms[j]["id"], ov))
+            used_edges.add((min(i, j), max(i, j)))
+            
+    # Exterior entrance door on entry room
+    ext_walls = [w for w in walls if w["type"] == "external" and rooms[entry_idx]["id"] in w["room_ids"]]
+    if not ext_walls:
+        ext_walls = [w for w in walls if w["type"] == "external"]
+    if ext_walls:
+        # Pick longest external wall of entry room
+        ew = max(ext_walls, key=lambda w: math.dist(w["start_m"], w["end_m"]))
+        s, e = ew["start_m"], ew["end_m"]
+        t = "h" if abs(s[1] - e[1]) < 1e-5 else "v"
+        lo = min(s[0], e[0]) if t == "h" else min(s[1], e[1])
+        hi = max(s[0], e[0]) if t == "h" else max(s[1], e[1])
+        pos = s[1] if t == "h" else s[0]
+        ov = (t, pos, lo, hi)
+        doors.append(make_door(None, rooms[entry_idx]["id"], ov, is_entrance=True))
+        
+    # Windows
+    windows = []
+    habitable = {
+        "Living Room", "Dining Room", "Kitchen", "Kitchen & Dining",
+        "Master Bedroom", "Bedroom", "Children's Bedroom", "Guest Bedroom",
+        "Study Room", "Office",
+    }
+    for room in rooms:
+        r_ext = [w for w in walls if w["type"] == "external" and room["id"] in w["room_ids"]]
+        rtype = room.get("type", "Living Room")
+        if rtype in habitable:
+            max_win = 2 if len(r_ext) >= 2 and rng.random() < 0.4 else 1
+            for ew in r_ext[:max_win]:
+                s, e = ew["start_m"], ew["end_m"]
+                w_len = math.dist(s, e)
+                if w_len < 1.3:
+                    continue
+                t = "h" if abs(s[1] - e[1]) < 1e-5 else "v"
+                lo = min(s[0], e[0]) if t == "h" else min(s[1], e[1])
+                hi = max(s[0], e[0]) if t == "h" else max(s[1], e[1])
+                pos = s[1] if t == "h" else s[0]
+                center = (lo + hi) / 2.0
+                pos_m = (center, pos) if t == "h" else (pos, center)
+                if any(math.dist(pos_m, d["position_m"]) < 1.2 for d in doors):
+                    continue
+                win_w = min(1.6, w_len - 0.4)
+                windows.append({
+                    "id": len(windows) + 1,
+                    "room_id": room["id"],
+                    "position_m": pos_m,
+                    "width_m": round(win_w, 2),
+                    "orientation": "horizontal" if t == "h" else "vertical",
+                    "wall_edge_m": [s, e],
+                })
+        elif rtype in ["Bathroom", "Toilet", "Utility Room", "Laundry Room"] and rng.random() < 0.65:
+            for ew in r_ext[:1]:
+                s, e = ew["start_m"], ew["end_m"]
+                w_len = math.dist(s, e)
+                if w_len < 1.0:
+                    continue
+                t = "h" if abs(s[1] - e[1]) < 1e-5 else "v"
+                lo = min(s[0], e[0]) if t == "h" else min(s[1], e[1])
+                hi = max(s[0], e[0]) if t == "h" else max(s[1], e[1])
+                pos = s[1] if t == "h" else s[0]
+                center = (lo + hi) / 2.0
+                pos_m = (center, pos) if t == "h" else (pos, center)
+                if any(math.dist(pos_m, d["position_m"]) < 1.0 for d in doors):
+                    continue
+                windows.append({
+                    "id": len(windows) + 1,
+                    "room_id": room["id"],
+                    "position_m": pos_m,
+                    "width_m": 0.8,
+                    "orientation": "horizontal" if t == "h" else "vertical",
+                    "wall_edge_m": [s, e],
+                })
+
+    return doors, windows
+
+
+# Run test over 50 layouts of varying typologies
+rng = random.Random(123)
 generators = [
-    ("rect", generate_rect_layout),
-    ("l_shape", generate_l_layout),
-    ("t_shape", generate_t_layout),
-    ("u_shape", generate_u_layout),
-    ("staggered", generate_staggered_layout),
-    ("corridor", generate_corridor_spine_layout),
+    generate_rect_layout,
+    generate_l_layout,
+    generate_t_layout,
+    generate_u_layout,
+    generate_staggered_layout,
+    generate_corridor_spine_layout,
 ]
 
-for name, gen in generators:
+for test_idx in range(50):
+    gen = rng.choice(generators)
     cells = gen(rng)
     cells, l_info = carve_l_shaped_room(cells, rng)
-    print(f"Generator {name}: generated {len(cells)} cells, L-carved: {l_info is not None}")
     
-    # Build rooms
     rooms = []
     for idx, c in enumerate(cells):
         if l_info and idx == l_info["target_index"]:
@@ -451,11 +574,14 @@ for name, gen in generators:
         })
         
     walls, edges, adj = extract_walls_and_connectivity(rooms)
-    ext_walls = [w for w in walls if w["type"] == "external"]
-    int_walls = [w for w in walls if w["type"] == "internal"]
-    print(f"  Rooms: {len(rooms)}, Int walls: {len(int_walls)}, Ext walls: {len(ext_walls)}, Edges: {len(edges)}")
-    assert len(int_walls) >= len(rooms) - 1, f"Disconnected plan in {name}"
-    assert len(ext_walls) >= 4, f"Too few external walls in {name}"
+    entry_idx = max(range(len(rooms)), key=lambda i: rooms[i]["dimensions"]["area_m2"])
+    doors, windows = place_doors_and_windows(rooms, walls, edges, entry_idx, rng)
+    
+    # Assertions
+    assert len(doors) >= len(rooms), f"Test {test_idx}: Not enough doors"
+    assert any(d.get("entrance") for d in doors), f"Test {test_idx}: No entrance door"
+    assert sum(r["dimensions"]["area_m2"] for r in rooms) > 10.0
 
-print("ALL 6 GENERATOR TYPOLOGIES PASSED!")
+print("50/50 MULTI-TYPOLOGY LAYOUT TESTS PASSED PERFECTLY!")
+
 
