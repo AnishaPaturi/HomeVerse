@@ -25,8 +25,8 @@ export const FAQSection: React.FC = () => {
       a: "Yes. Unlike generic AI renderers that hallucinate unbuildable concepts, HomeVerse connects directly to vetted Indian material rates and commercial catalogues (CenturyPly, Greenlam, Kajaria, Asian Paints, Jaquar, Pepperfry, Urban Ladder, and custom carpentry rate cards). The bill of materials includes exact per-sq-ft rates for acrylic, laminate, veneer, PU polish, and hardware.",
     },
     {
-      q: "How does cross-platform sync work between Web and the Flutter Mobile app?",
-      a: "HomeVerse uses a canonical scene graph stored in PostgreSQL / SQLite. Every room has a platform-agnostic JSON structure containing room dimensions, furniture coordinates, rotation matrices, and applied material IDs. Any edit made in your desktop browser updates the cloud instantly; open the Flutter app on your iOS or Android phone at your job site, and you'll see the exact same 3D room and budget status.",
+      q: "How does real-time scene synchronization work across devices?",
+      a: "HomeVerse uses a canonical scene graph stored in PostgreSQL / SQLite. Every room has a platform-agnostic JSON structure containing room dimensions, furniture coordinates, rotation matrices, and applied material IDs. Any edit made in your desktop browser updates the cloud instantly; open the link on any phone, tablet, or laptop at your job site, and you'll see the exact same 3D room and budget status.",
     },
     {
       q: "Can I share my project with my family, contractor, or personal interior designer?",
