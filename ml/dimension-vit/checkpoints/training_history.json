@@ -1,0 +1,33 @@
+[
+  {
+    "epoch": 1,
+    "train_loss": 2.8732876044053297,
+    "train_accuracy": 0.11,
+    "val_loss": 2.9007814611707414,
+    "val_accuracy": 0.12,
+    "per_class_accuracy": {
+      "Living Room": 0.5714285714285714,
+      "Kitchen": 0.0,
+      "Dining Room": 0.0,
+      "Kitchen & Dining": null,
+      "Master Bedroom": 0.0,
+      "Bedroom": 0.25,
+      "Children's Bedroom": 0.0,
+      "Guest Bedroom": 0.0,
+      "Bathroom": 0.14285714285714285,
+      "Toilet": null,
+      "Study Room": 0.0,
+      "Office": null,
+      "Utility Room": 0.0,
+      "Laundry Room": 0.0,
+      "Balcony": null,
+      "Terrace": null,
+      "Corridor": null,
+      "Entrance/Foyer": null,
+      "Storage Room": 0.0,
+      "Walk-in Closet": null,
+      "Garage": null,
+      "Staircase": null
+    }
+  }
+]

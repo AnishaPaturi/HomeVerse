@@ -1,0 +1,147 @@
+{
+  "Living Room": {
+    "precision": 0.5846153846153846,
+    "recall": 0.8444444444444444,
+    "f1-score": 0.6909090909090909,
+    "support": 45.0
+  },
+  "Kitchen": {
+    "precision": 0.3,
+    "recall": 0.5,
+    "f1-score": 0.375,
+    "support": 42.0
+  },
+  "Dining Room": {
+    "precision": 0.2777777777777778,
+    "recall": 0.23809523809523808,
+    "f1-score": 0.2564102564102564,
+    "support": 21.0
+  },
+  "Kitchen & Dining": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Master Bedroom": {
+    "precision": 0.125,
+    "recall": 0.041666666666666664,
+    "f1-score": 0.0625,
+    "support": 24.0
+  },
+  "Bedroom": {
+    "precision": 0.21212121212121213,
+    "recall": 0.25925925925925924,
+    "f1-score": 0.23333333333333334,
+    "support": 27.0
+  },
+  "Children's Bedroom": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 18.0
+  },
+  "Guest Bedroom": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 18.0
+  },
+  "Bathroom": {
+    "precision": 0.2727272727272727,
+    "recall": 0.7857142857142857,
+    "f1-score": 0.4049079754601227,
+    "support": 42.0
+  },
+  "Toilet": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Study Room": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 15.0
+  },
+  "Office": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 15.0
+  },
+  "Utility Room": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 15.0
+  },
+  "Laundry Room": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 27.0
+  },
+  "Balcony": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Terrace": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Corridor": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Entrance/Foyer": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Storage Room": {
+    "precision": 0.2,
+    "recall": 0.05555555555555555,
+    "f1-score": 0.08695652173913043,
+    "support": 18.0
+  },
+  "Walk-in Closet": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Garage": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "Staircase": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "accuracy": 0.3241590214067278,
+  "macro avg": {
+    "precision": 0.08964734760189307,
+    "recall": 0.12385161135161135,
+    "f1-score": 0.09590987172054244,
+    "support": 327.0
+  },
+  "weighted avg": {
+    "precision": 0.2095499811096141,
+    "recall": 0.3241590214067278,
+    "f1-score": 0.24035742151729042,
+    "support": 327.0
+  }
+}

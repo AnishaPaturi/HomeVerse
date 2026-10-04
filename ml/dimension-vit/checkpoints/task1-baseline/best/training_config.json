@@ -1,0 +1,8 @@
+{
+  "model": "google/vit-base-patch16-224",
+  "task": "room_classification",
+  "num_classes": 22,
+  "best_val_accuracy": 0.3241590214067278,
+  "best_val_macro_f1": 0.09590987172054244,
+  "seed": 2026
+}
