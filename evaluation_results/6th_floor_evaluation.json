@@ -1,0 +1,68 @@
+{
+  "image_path": "6th floor layout.jpeg",
+  "image_size": [
+    1527,
+    1030
+  ],
+  "estimated_scale_px_per_m": 4.85,
+  "room_count": 3,
+  "rooms": [
+    {
+      "type": "Office",
+      "confidence": 0.1652,
+      "bbox_normalized": [
+        0.2278,
+        0.2305,
+        0.5394,
+        0.4878
+      ],
+      "bbox_pixels": [
+        348,
+        237,
+        824,
+        502
+      ],
+      "width_m": 169.73,
+      "length_m": 103.54,
+      "area_m2": 17573.84
+    },
+    {
+      "type": "Utility Room",
+      "confidence": 0.1719,
+      "bbox_normalized": [
+        0.2247,
+        0.2279,
+        0.4838,
+        0.4843
+      ],
+      "bbox_pixels": [
+        343,
+        235,
+        739,
+        499
+      ],
+      "width_m": 152.24,
+      "length_m": 102.79,
+      "area_m2": 15648.75
+    },
+    {
+      "type": "Terrace",
+      "confidence": 0.1826,
+      "bbox_normalized": [
+        0.2166,
+        0.2361,
+        0.5086,
+        0.4598
+      ],
+      "bbox_pixels": [
+        331,
+        243,
+        777,
+        474
+      ],
+      "width_m": 160.05,
+      "length_m": 97.59,
+      "area_m2": 15619.28
+    }
+  ]
+}
