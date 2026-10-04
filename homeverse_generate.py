@@ -661,7 +661,25 @@ def generate_layout(rng):
             height = round(max(all_ys) - min(all_ys), 3)
             return width, height, rooms, walls, doors, windows
 
-    raise RuntimeError("Failed to generate valid connected layout.")
+    # Ultimate guaranteed fallback
+    cells = generate_rect_layout(rng)
+    rooms = []
+    for idx, c in enumerate(cells):
+        w, h = round(c[2] - c[0], 3), round(c[3] - c[1], 3)
+        rooms.append({
+            "id": idx + 1, "rect": c, "polygon_m": box_polygon(c),
+            "edges": get_rect_edges(c), "shape": "rectangle",
+            "dimensions": {"width_m": w, "length_m": h, "area_m2": round(w * h, 4)}
+        })
+    walls, internal_edges, adj = extract_walls_and_connectivity(rooms)
+    entry_idx = max(range(len(rooms)), key=lambda i: rooms[i]["dimensions"]["area_m2"])
+    assign_room_types(rooms, entry_idx, None, rng)
+    doors, windows = place_doors_and_windows(rooms, walls, internal_edges, entry_idx, rng)
+    all_xs = [p[0] for r in rooms for p in r["polygon_m"]]
+    all_ys = [p[1] for r in rooms for p in r["polygon_m"]]
+    width = round(max(all_xs) - min(all_xs), 3)
+    height = round(max(all_ys) - min(all_ys), 3)
+    return width, height, rooms, walls, doors, windows
 
 
 # =====================================================================
@@ -974,11 +992,7 @@ def generate_layout_chunk(args_tuple):
         split = assignments[layout_id]
         layout_name = f"layout_{layout_id:06d}"
 
-        try:
-            width, height, rooms, walls, doors, windows = generate_layout(rng)
-        except Exception:
-            width, height, rooms, walls, doors, windows = generate_rect_layout(rng), None, None, None, None, None
-            continue
+        width, height, rooms, walls, doors, windows = generate_layout(rng)
 
         for variant in range(variants_per_layout):
             number = (layout_id - 1) * variants_per_layout + variant + 1
