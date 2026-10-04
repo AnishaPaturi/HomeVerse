@@ -30,7 +30,7 @@ export const PricingSection: React.FC = () => {
         "Multi-Floor Duplex / Villa Navigation",
         "Strict Budget Guardrails & Delta Simulator",
         "Exportable Contractor Bill of Materials (BOM)",
-        "Mobile App Real-time Scene Sync",
+        "Mobile Browser Real-time Scene Sync",
       ],
     },
     {
@@ -50,7 +50,7 @@ export const PricingSection: React.FC = () => {
         "Real-Time 'What-If?' Delta Cost Simulator",
         "First-Person 3D Walkthrough Mode",
         "Itemized Indian Contractor Bill of Materials (CSV/PDF)",
-        "Instant Web to Flutter Mobile Scene Synchronization",
+        "Instant Real-Time Cloud Scene Synchronization",
         "Dedicated AI Architectural Copilot Swarm",
       ],
       missingFeatures: [],

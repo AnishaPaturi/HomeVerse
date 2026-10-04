@@ -93,10 +93,10 @@ export const UniqueValue: React.FC = () => {
                 03
               </div>
               <h3 className="text-xl font-bold text-white">
-                Canonical Scene Sync (Web + Mobile)
+                Canonical Scene Sync (Cloud Native)
               </h3>
               <p className="text-sm text-slate-400 font-light leading-relaxed">
-                Design a room on your laptop via Next.js 16 WebGL, step out to your construction site, open your phone, and see the exact same 3D spatial layout and budget in the Flutter mobile client.
+                Design a room on your laptop via Next.js 16 WebGL, step out to your construction site, open your phone browser, and see the exact same 3D spatial layout and budget in real time.
               </p>
             </div>
             <ul className="space-y-2.5 pt-4 border-t border-white/[0.08] text-xs font-mono text-slate-300">
