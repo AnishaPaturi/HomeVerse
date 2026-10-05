@@ -287,12 +287,12 @@ def generate_corridor_spine_layout(rng):
 
 
 LAYOUT_GENERATORS = [
-    (generate_rect_layout, 35),
-    (generate_l_layout, 20),
-    (generate_t_layout, 15),
-    (generate_u_layout, 10),
-    (generate_staggered_layout, 10),
-    (generate_corridor_spine_layout, 10),
+    (generate_rect_layout, 35, "rectilinear"),
+    (generate_l_layout, 20, "l_shaped"),
+    (generate_t_layout, 15, "t_shaped"),
+    (generate_u_layout, 10, "u_shaped"),
+    (generate_staggered_layout, 10, "z_shaped"),
+    (generate_corridor_spine_layout, 10, "corridor_spine"),
 ]
 
 
