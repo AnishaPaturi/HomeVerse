@@ -78,3 +78,11 @@ monitoring/grafana_data/
 # Uploads
 backend/static/uploads/
 static/uploads/
+
+# Machine Learning Checkpoints & Large Model Files
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.onnx
+

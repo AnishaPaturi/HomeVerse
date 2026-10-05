@@ -501,6 +501,28 @@ def visualize_v2(model, dataset, device, out_path, sample_idx=0, conf_thresh=0.2
 # Main Training Loop for Experiment D
 # =====================================================================
 
+def safe_torch_save(obj, path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(f".tmp_{os.getpid()}_{int(time.time()*1000)}")
+    for attempt in range(5):
+        try:
+            torch.save(obj, tmp_path)
+            if path.exists():
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+            os.replace(tmp_path, path)
+            return
+        except OSError:
+            time.sleep(0.5)
+    try:
+        torch.save(obj, path)
+    except Exception as e:
+        print(f"Warning: could not save checkpoint ({e}), continuing...", flush=True)
+
+
 def run_experiment_d(epochs=150, batch_size=5, img_size=224):
     num_threads = min(12, os.cpu_count() or 4)
     torch.set_num_threads(num_threads)
@@ -527,11 +549,20 @@ def run_experiment_d(epochs=150, batch_size=5, img_size=224):
 
     model = OverfitMultiTaskViT(pretrained_model_name="google/vit-base-patch16-224", img_size=img_size).to(device)
 
-    # Transfer detector head weights if available
-    ckpt_path = Path("checkpoints/multitask/multitask_vit_best.pt")
-    if ckpt_path.exists():
-        print(f"Transferring starting detector head weights from {ckpt_path}...", flush=True)
-        ckpt = torch.load(ckpt_path, map_location=device)
+    # Transfer starting weights: prefer existing overfit_30_v2 checkpoint if valid, else multitask_vit_best.pt
+    ckpt_v2 = Path("checkpoints/multitask/overfit_30_v2_best.pt")
+    ckpt_base = Path("checkpoints/multitask/multitask_vit_best.pt")
+    if ckpt_v2.exists():
+        print(f"Transferring weights from previous overfit checkpoint: {ckpt_v2}...", flush=True)
+        try:
+            ckpt = torch.load(ckpt_v2, map_location=device)
+            missing, unexpected = model.load_state_dict(ckpt, strict=False)
+            print(f"Loaded overfit weights (missing={len(missing)}, unexpected={len(unexpected)}).", flush=True)
+        except Exception as e:
+            print(f"Could not load {ckpt_v2}: {e}, falling back to base checkpoint.", flush=True)
+    elif ckpt_base.exists():
+        print(f"Transferring starting detector head weights from {ckpt_base}...", flush=True)
+        ckpt = torch.load(ckpt_base, map_location=device)
         head_weights = {k: v for k, v in ckpt.items() if not k.startswith("scale_head") and not k.startswith("encoder")}
         missing, unexpected = model.load_state_dict(head_weights, strict=False)
         print(f"Transferred {len(head_weights)} weight tensors. (Missing: {len(missing)})", flush=True)
@@ -651,7 +682,7 @@ def run_experiment_d(epochs=150, batch_size=5, img_size=224):
             })
             if eval_metrics["f1"] > best_f1:
                 best_f1 = eval_metrics["f1"]
-                torch.save(model.state_dict(), "checkpoints/multitask/overfit_30_v2_best.pt")
+                safe_torch_save(model.state_dict(), "checkpoints/multitask/overfit_30_v2_best.pt")
 
     t_total = time.time() - t_start
     print(f"\nTraining completed in {t_total:.1f}s ({t_total/epochs:.2f}s per epoch).", flush=True)
