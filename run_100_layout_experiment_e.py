@@ -304,7 +304,7 @@ def classify_topology(layout_item):
 # Evaluation with Background Filtering & Fine-Grained Breakdowns
 # =====================================================================
 
-def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50):
+def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False):
     model.eval()
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
 
@@ -321,15 +321,16 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
     scale_errors_abs = []
     scale_errors_pct = []
 
-    # Fine-grained accumulators
-    class_stats = {cls_name: {"tp": 0, "fp": 0, "fn": 0, "ious": [], "dices": []} for cls_name in ROOM_CLASSES}
-    size_stats = {
-        "Small (<6m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
-        "Medium (6-18m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
-        "Large (>18m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
-        "Irregular (Non-rect)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
-    }
-    topo_stats = {}
+    # Fine-grained accumulators (only populated when detailed=True)
+    if detailed:
+        class_stats = {cls_name: {"tp": 0, "fp": 0, "fn": 0, "ious": [], "dices": []} for cls_name in ROOM_CLASSES}
+        size_stats = {
+            "Small (<6m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
+            "Medium (6-18m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
+            "Large (>18m²)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
+            "Irregular (Non-rect)": {"tp": 0, "fp": 0, "fn": 0, "ious": []},
+        }
+        topo_stats = {}
 
     for images, targets in dataloader:
         images = images.to(device)
@@ -385,7 +386,7 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
         for b in range(bs):
             meta = targets[b].get("sample_meta", {})
             topology = meta.get("topology", "Unknown")
-            if topology not in topo_stats:
+            if detailed and topology not in topo_stats:
                 topo_stats[topology] = {"tp": 0, "fp": 0, "fn": 0, "ious": []}
 
             tgt_labels = targets[b]["labels"].to(device)
@@ -403,33 +404,34 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
 
             if num_gt == 0:
                 total_fp += num_pred
-                topo_stats[topology]["fp"] += num_pred
-                for p_l in p_labels.cpu().tolist():
-                    cname = ID2LABEL.get(p_l, "Unknown")
-                    if cname in class_stats:
-                        class_stats[cname]["fp"] += 1
+                if detailed:
+                    topo_stats[topology]["fp"] += num_pred
+                    for p_l in p_labels.cpu().tolist():
+                        cname = ID2LABEL.get(p_l, "Unknown")
+                        if cname in class_stats:
+                            class_stats[cname]["fp"] += 1
                 continue
 
             if num_pred == 0:
                 total_fn += num_gt
-                topo_stats[topology]["fn"] += num_gt
-                for g_idx, t_l in enumerate(tgt_labels.cpu().tolist()):
-                    cname = ID2LABEL.get(t_l, "Unknown")
-                    if cname in class_stats:
-                        class_stats[cname]["fn"] += 1
-                    # Size fn
-                    if g_idx < len(gt_rooms):
-                        r = gt_rooms[g_idx]
-                        area = r.get("dimensions", {}).get("area_m2", 10.0)
-                        shape = r.get("shape", "rectangle")
-                        if shape != "rectangle":
-                            size_stats["Irregular (Non-rect)"]["fn"] += 1
-                        elif area < 6.0:
-                            size_stats["Small (<6m²)"]["fn"] += 1
-                        elif area <= 18.0:
-                            size_stats["Medium (6-18m²)"]["fn"] += 1
-                        else:
-                            size_stats["Large (>18m²)"]["fn"] += 1
+                if detailed:
+                    topo_stats[topology]["fn"] += num_gt
+                    for g_idx, t_l in enumerate(tgt_labels.cpu().tolist()):
+                        cname = ID2LABEL.get(t_l, "Unknown")
+                        if cname in class_stats:
+                            class_stats[cname]["fn"] += 1
+                        if g_idx < len(gt_rooms):
+                            r = gt_rooms[g_idx]
+                            area = r.get("dimensions", {}).get("area_m2", 10.0)
+                            shape = r.get("shape", "rectangle")
+                            if shape != "rectangle":
+                                size_stats["Irregular (Non-rect)"]["fn"] += 1
+                            elif area < 6.0:
+                                size_stats["Small (<6m²)"]["fn"] += 1
+                            elif area <= 18.0:
+                                size_stats["Medium (6-18m²)"]["fn"] += 1
+                            else:
+                                size_stats["Large (>18m²)"]["fn"] += 1
                 continue
 
             p_xyxy = box_cxcywh_to_xyxy(p_boxes)
@@ -453,60 +455,61 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
                         total_tp += 1
                         sum_iou += biou
                         num_matched_ious += 1
-                        topo_stats[topology]["tp"] += 1
-                        topo_stats[topology]["ious"].append(biou)
-
-                        if p_cname in class_stats:
-                            class_stats[p_cname]["tp"] += 1
-                            class_stats[p_cname]["ious"].append(biou)
-
-                        # Size category
-                        if bgt < len(gt_rooms):
-                            r = gt_rooms[bgt]
-                            area = r.get("dimensions", {}).get("area_m2", 10.0)
-                            shape = r.get("shape", "rectangle")
-                            if shape != "rectangle":
-                                size_stats["Irregular (Non-rect)"]["tp"] += 1
-                                size_stats["Irregular (Non-rect)"]["ious"].append(biou)
-                            elif area < 6.0:
-                                size_stats["Small (<6m²)"]["tp"] += 1
-                                size_stats["Small (<6m²)"]["ious"].append(biou)
-                            elif area <= 18.0:
-                                size_stats["Medium (6-18m²)"]["tp"] += 1
-                                size_stats["Medium (6-18m²)"]["ious"].append(biou)
-                            else:
-                                size_stats["Large (>18m²)"]["tp"] += 1
-                                size_stats["Large (>18m²)"]["ious"].append(biou)
+                        if detailed:
+                            topo_stats[topology]["tp"] += 1
+                            topo_stats[topology]["ious"].append(biou)
+                            if p_cname in class_stats:
+                                class_stats[p_cname]["tp"] += 1
+                                class_stats[p_cname]["ious"].append(biou)
+                            if bgt < len(gt_rooms):
+                                r = gt_rooms[bgt]
+                                area = r.get("dimensions", {}).get("area_m2", 10.0)
+                                shape = r.get("shape", "rectangle")
+                                if shape != "rectangle":
+                                    size_stats["Irregular (Non-rect)"]["tp"] += 1
+                                    size_stats["Irregular (Non-rect)"]["ious"].append(biou)
+                                elif area < 6.0:
+                                    size_stats["Small (<6m²)"]["tp"] += 1
+                                    size_stats["Small (<6m²)"]["ious"].append(biou)
+                                elif area <= 18.0:
+                                    size_stats["Medium (6-18m²)"]["tp"] += 1
+                                    size_stats["Medium (6-18m²)"]["ious"].append(biou)
+                                else:
+                                    size_stats["Large (>18m²)"]["tp"] += 1
+                                    size_stats["Large (>18m²)"]["ious"].append(biou)
                     else:
                         total_fp += 1
+                        if detailed:
+                            topo_stats[topology]["fp"] += 1
+                            if p_cname in class_stats:
+                                class_stats[p_cname]["fp"] += 1
+                else:
+                    total_fp += 1
+                    if detailed:
                         topo_stats[topology]["fp"] += 1
                         if p_cname in class_stats:
                             class_stats[p_cname]["fp"] += 1
-                else:
-                    total_fp += 1
-                    topo_stats[topology]["fp"] += 1
-                    if p_cname in class_stats:
-                        class_stats[p_cname]["fp"] += 1
 
             unmatched_gts = [i for i in range(num_gt) if i not in matched_gt]
             total_fn += len(unmatched_gts)
-            topo_stats[topology]["fn"] += len(unmatched_gts)
-            for g_idx in unmatched_gts:
-                t_cname = ID2LABEL.get(tgt_labels[g_idx].item(), "Unknown")
-                if t_cname in class_stats:
-                    class_stats[t_cname]["fn"] += 1
-                if g_idx < len(gt_rooms):
-                    r = gt_rooms[g_idx]
-                    area = r.get("dimensions", {}).get("area_m2", 10.0)
-                    shape = r.get("shape", "rectangle")
-                    if shape != "rectangle":
-                        size_stats["Irregular (Non-rect)"]["fn"] += 1
-                    elif area < 6.0:
-                        size_stats["Small (<6m²)"]["fn"] += 1
-                    elif area <= 18.0:
-                        size_stats["Medium (6-18m²)"]["fn"] += 1
-                    else:
-                        size_stats["Large (>18m²)"]["fn"] += 1
+            if detailed:
+                topo_stats[topology]["fn"] += len(unmatched_gts)
+                for g_idx in unmatched_gts:
+                    t_cname = ID2LABEL.get(tgt_labels[g_idx].item(), "Unknown")
+                    if t_cname in class_stats:
+                        class_stats[t_cname]["fn"] += 1
+                    if g_idx < len(gt_rooms):
+                        r = gt_rooms[g_idx]
+                        area = r.get("dimensions", {}).get("area_m2", 10.0)
+                        shape = r.get("shape", "rectangle")
+                        if shape != "rectangle":
+                            size_stats["Irregular (Non-rect)"]["fn"] += 1
+                        elif area < 6.0:
+                            size_stats["Small (<6m²)"]["fn"] += 1
+                        elif area <= 18.0:
+                            size_stats["Medium (6-18m²)"]["fn"] += 1
+                        else:
+                            size_stats["Large (>18m²)"]["fn"] += 1
 
     prec = total_tp / max(1, total_tp + total_fp)
     rec = total_tp / max(1, total_tp + total_fn)
@@ -519,53 +522,7 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
     scale_mae = float(np.mean(scale_errors_abs)) if scale_errors_abs else 0.0
     scale_err_pct = float(np.mean(scale_errors_pct)) if scale_errors_pct else 0.0
 
-    # Compute per-class F1
-    per_class_summary = {}
-    for cname, st in class_stats.items():
-        c_tp, c_fp, c_fn = st["tp"], st["fp"], st["fn"]
-        c_p = c_tp / max(1, c_tp + c_fp)
-        c_r = c_tp / max(1, c_tp + c_fn)
-        c_f1 = 2 * c_p * c_r / max(1e-6, c_p + c_r)
-        c_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
-        if (c_tp + c_fn) > 0:
-            per_class_summary[cname] = {
-                "tp": c_tp, "fp": c_fp, "fn": c_fn,
-                "precision": round(c_p, 4), "recall": round(c_r, 4), "f1": round(c_f1, 4),
-                "bbox_iou": round(c_iou, 4),
-                "support": c_tp + c_fn,
-            }
-
-    # Compute per-size F1
-    per_size_summary = {}
-    for sname, st in size_stats.items():
-        s_tp, s_fp, s_fn = st["tp"], st["fp"], st["fn"]
-        s_p = s_tp / max(1, s_tp + s_fp)
-        s_r = s_tp / max(1, s_tp + s_fn)
-        s_f1 = 2 * s_p * s_r / max(1e-6, s_p + s_r)
-        s_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
-        per_size_summary[sname] = {
-            "tp": s_tp, "fp": s_fp, "fn": s_fn,
-            "precision": round(s_p, 4), "recall": round(s_r, 4), "f1": round(s_f1, 4),
-            "bbox_iou": round(s_iou, 4),
-            "support": s_tp + s_fn,
-        }
-
-    # Compute per-topology F1
-    per_topo_summary = {}
-    for tname, st in topo_stats.items():
-        t_tp, t_fp, t_fn = st["tp"], st["fp"], st["fn"]
-        t_p = t_tp / max(1, t_tp + t_fp)
-        t_r = t_tp / max(1, t_tp + t_fn)
-        t_f1 = 2 * t_p * t_r / max(1e-6, t_p + t_r)
-        t_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
-        per_topo_summary[tname] = {
-            "tp": t_tp, "fp": t_fp, "fn": t_fn,
-            "precision": round(t_p, 4), "recall": round(t_r, 4), "f1": round(t_f1, 4),
-            "bbox_iou": round(t_iou, 4),
-            "support": t_tp + t_fn,
-        }
-
-    return {
+    ret_dict = {
         "precision": round(prec, 4),
         "recall": round(rec, 4),
         "f1": round(f1, 4),
@@ -578,10 +535,60 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50)
         "total_tp": total_tp,
         "total_fp": total_fp,
         "total_fn": total_fn,
-        "per_class": per_class_summary,
-        "per_size": per_size_summary,
-        "per_topology": per_topo_summary,
     }
+
+    if detailed:
+        # Compute per-class F1
+        per_class_summary = {}
+        for cname, st in class_stats.items():
+            c_tp, c_fp, c_fn = st["tp"], st["fp"], st["fn"]
+            c_p = c_tp / max(1, c_tp + c_fp)
+            c_r = c_tp / max(1, c_tp + c_fn)
+            c_f1 = 2 * c_p * c_r / max(1e-6, c_p + c_r)
+            c_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
+            if (c_tp + c_fn) > 0:
+                per_class_summary[cname] = {
+                    "tp": c_tp, "fp": c_fp, "fn": c_fn,
+                    "precision": round(c_p, 4), "recall": round(c_r, 4), "f1": round(c_f1, 4),
+                    "bbox_iou": round(c_iou, 4),
+                    "support": c_tp + c_fn,
+                }
+
+        # Compute per-size F1
+        per_size_summary = {}
+        for sname, st in size_stats.items():
+            s_tp, s_fp, s_fn = st["tp"], st["fp"], st["fn"]
+            s_p = s_tp / max(1, s_tp + s_fp)
+            s_r = s_tp / max(1, s_tp + s_fn)
+            s_f1 = 2 * s_p * s_r / max(1e-6, s_p + s_r)
+            s_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
+            per_size_summary[sname] = {
+                "tp": s_tp, "fp": s_fp, "fn": s_fn,
+                "precision": round(s_p, 4), "recall": round(s_r, 4), "f1": round(s_f1, 4),
+                "bbox_iou": round(s_iou, 4),
+                "support": s_tp + s_fn,
+            }
+
+        # Compute per-topology F1
+        per_topo_summary = {}
+        for tname, st in topo_stats.items():
+            t_tp, t_fp, t_fn = st["tp"], st["fp"], st["fn"]
+            t_p = t_tp / max(1, t_tp + t_fp)
+            t_r = t_tp / max(1, t_tp + t_fn)
+            t_f1 = 2 * t_p * t_r / max(1e-6, t_p + t_r)
+            t_iou = float(np.mean(st["ious"])) if st["ious"] else 0.0
+            per_topo_summary[tname] = {
+                "tp": t_tp, "fp": t_fp, "fn": t_fn,
+                "precision": round(t_p, 4), "recall": round(t_r, 4), "f1": round(t_f1, 4),
+                "bbox_iou": round(t_iou, 4),
+                "support": t_tp + t_fn,
+            }
+
+        ret_dict["per_class"] = per_class_summary
+        ret_dict["per_size"] = per_size_summary
+        ret_dict["per_topology"] = per_topo_summary
+
+    return ret_dict
 
 
 # =====================================================================
@@ -786,8 +793,8 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
     print(f"Pre-caching complete in {time.time() - t_c0:.1f}s. Zero disk I/O overhead during training.", flush=True)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    val_loader = DataLoader(val_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
+    test_loader = DataLoader(test_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
 
     # 3. Model Architecture Setup
     model = MultiTaskViT384(pretrained_model_name="google/vit-base-patch16-384", img_size=img_size).to(device)
@@ -892,6 +899,9 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
             running_scale += loss_dict["loss_scale"].item()
             num_batches += 1
 
+            if num_batches % 5 == 0 or num_batches == len(train_loader):
+                print(f"  [Epoch {epoch:03d} | Batch {num_batches:02d}/{len(train_loader)}] Current Batch Loss: {loss.item():.4f}", flush=True)
+
         scheduler.step()
         ep_duration = time.time() - t_ep0
 
@@ -903,7 +913,7 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
         avg_scale = running_scale / num_batches
 
         # Evaluate on Validation Set
-        val_m = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50)
+        val_m = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
 
         print(
             f"Epoch {epoch:03d}/{epochs} ({ep_duration:.1f}s) | "
@@ -943,20 +953,27 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
 
     # 1. Train Evaluation
     print("Evaluating Train Set (210 images / 70 layouts)...", flush=True)
-    train_eval_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    train_metrics = evaluate_split(model, train_eval_loader, device, conf_thresh=0.25, iou_thresh=0.50)
+    train_eval_loader = DataLoader(train_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
+    train_metrics = evaluate_split(model, train_eval_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
 
     # 2. Validation Evaluation
     print("Evaluating Validation Set (45 images / 15 layouts)...", flush=True)
-    val_metrics = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50)
+    val_metrics = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
 
     # 3. Test Evaluation (Completely unseen layouts)
     print("Evaluating Test Set (45 images / 15 completely unseen layouts)...", flush=True)
-    test_metrics = evaluate_split(model, test_loader, device, conf_thresh=0.25, iou_thresh=0.50)
+    test_metrics = evaluate_split(model, test_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=True)
 
     # 4. Save visualization artifact
     vis_path = "evaluation_results/experiment_e_test_vis.png"
     visualize_test_sample(model, test_ds, device, vis_path, sample_idx=0, conf_thresh=0.25)
+    brain_vis = Path(r"C:\Users\anish\.gemini\antigravity-cli\brain\693badfe-ba5c-404d-835e-6d2b0610b1b1\experiment_e_test_vis.png")
+    try:
+        import shutil
+        shutil.copy(vis_path, brain_vis)
+        print(f"Copied visual artifact to brain: {brain_vis}", flush=True)
+    except Exception as e:
+        print(f"Could not copy artifact to brain: {e}", flush=True)
 
     # 5. Save results to JSON
     full_results = {
