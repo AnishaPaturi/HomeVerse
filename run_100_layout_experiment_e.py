@@ -50,6 +50,28 @@ class InMemoryDataset(Dataset):
         return self.items[idx]
 
 
+def collate_fn_with_meta(batch):
+    images = torch.stack([item["image"] for item in batch], dim=0)
+    targets = []
+    for item in batch:
+        targets.append({
+            "boxes": item["boxes"],
+            "labels": item["labels"],
+            "masks": item["masks"],
+            "semantic_mask": item["semantic_mask"],
+            "widths_m": item["widths_m"],
+            "lengths_m": item["lengths_m"],
+            "areas_m2": item["areas_m2"],
+            "scale_px_per_m": item["scale_px_per_m"],
+            "has_scale": item["has_scale"],
+            "scale_mode": item["scale_mode"],
+            "image_id": item["image_id"],
+            "layout_id": item["layout_id"],
+            "sample_meta": item.get("sample_meta", {}),
+        })
+    return images, targets
+
+
 # =====================================================================
 # Model Architecture (ViT-384 with Log-Scale Regression)
 # =====================================================================
@@ -422,9 +444,9 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50,
                             class_stats[cname]["fn"] += 1
                         if g_idx < len(gt_rooms):
                             r = gt_rooms[g_idx]
-                            area = r.get("dimensions", {}).get("area_m2", 10.0)
+                            area = r.get("area_m2", r.get("dimensions", {}).get("area_m2", 10.0))
                             shape = r.get("shape", "rectangle")
-                            if shape != "rectangle":
+                            if shape != "rectangle" or (r.get("polygon") and len(r.get("polygon")) > 4):
                                 size_stats["Irregular (Non-rect)"]["fn"] += 1
                             elif area < 6.0:
                                 size_stats["Small (<6m²)"]["fn"] += 1
@@ -463,9 +485,9 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50,
                                 class_stats[p_cname]["ious"].append(biou)
                             if bgt < len(gt_rooms):
                                 r = gt_rooms[bgt]
-                                area = r.get("dimensions", {}).get("area_m2", 10.0)
+                                area = r.get("area_m2", r.get("dimensions", {}).get("area_m2", 10.0))
                                 shape = r.get("shape", "rectangle")
-                                if shape != "rectangle":
+                                if shape != "rectangle" or (r.get("polygon") and len(r.get("polygon")) > 4):
                                     size_stats["Irregular (Non-rect)"]["tp"] += 1
                                     size_stats["Irregular (Non-rect)"]["ious"].append(biou)
                                 elif area < 6.0:
@@ -500,9 +522,9 @@ def evaluate_split(model, dataloader, device, conf_thresh=0.25, iou_thresh=0.50,
                         class_stats[t_cname]["fn"] += 1
                     if g_idx < len(gt_rooms):
                         r = gt_rooms[g_idx]
-                        area = r.get("dimensions", {}).get("area_m2", 10.0)
+                        area = r.get("area_m2", r.get("dimensions", {}).get("area_m2", 10.0))
                         shape = r.get("shape", "rectangle")
-                        if shape != "rectangle":
+                        if shape != "rectangle" or (r.get("polygon") and len(r.get("polygon")) > 4):
                             size_stats["Irregular (Non-rect)"]["fn"] += 1
                         elif area < 6.0:
                             size_stats["Small (<6m²)"]["fn"] += 1
@@ -721,8 +743,12 @@ def safe_torch_save(obj, path):
 # Main Training & Evaluation Loop for Experiment E
 # =====================================================================
 
-def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
-    num_threads = min(16, os.cpu_count() or 4)
+def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15, eval_only=False):
+    os.environ["OMP_NUM_THREADS"] = "8"
+    os.environ["MKL_NUM_THREADS"] = "8"
+    os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
+    os.environ["KMP_BLOCKTIME"] = "0"
+    num_threads = 8
     torch.set_num_threads(num_threads)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 80, flush=True)
@@ -792,16 +818,25 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
     test_ds = cache_dataset(test_samples)
     print(f"Pre-caching complete in {time.time() - t_c0:.1f}s. Zero disk I/O overhead during training.", flush=True)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
-    test_loader = DataLoader(test_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_with_meta)
+    val_loader = DataLoader(val_ds, batch_size=15, shuffle=False, collate_fn=collate_fn_with_meta)
+    test_loader = DataLoader(test_ds, batch_size=15, shuffle=False, collate_fn=collate_fn_with_meta)
 
     # 3. Model Architecture Setup
     model = MultiTaskViT384(pretrained_model_name="google/vit-base-patch16-384", img_size=img_size).to(device)
 
-    # Transfer detector heads from overfit_30_v2 checkpoint
+    # Check for existing experiment_e_best or overfit_30_v2 checkpoint
+    ckpt_e = Path("checkpoints/multitask/experiment_e_best.pt")
     ckpt_v2 = Path("checkpoints/multitask/overfit_30_v2_best.pt")
-    if ckpt_v2.exists():
+    if ckpt_e.exists():
+        print(f"Loading weights from previous Experiment E checkpoint: {ckpt_e}...", flush=True)
+        try:
+            ckpt = torch.load(ckpt_e, map_location=device)
+            missing, unexpected = model.load_state_dict(ckpt, strict=False)
+            print(f"Loaded weights from {ckpt_e} (missing: {len(missing)}, unexpected: {len(unexpected)}).", flush=True)
+        except Exception as e:
+            print(f"Could not load {ckpt_e}: {e}", flush=True)
+    elif ckpt_v2.exists():
         print(f"Transferring detector head weights from {ckpt_v2}...", flush=True)
         try:
             ckpt = torch.load(ckpt_v2, map_location=device)
@@ -864,80 +899,89 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
     patience_counter = 0
     best_ckpt_path = Path("checkpoints/multitask/experiment_e_best.pt")
 
-    print("\nStarting Training...", flush=True)
-    t_train_start = time.time()
+    if not eval_only and epochs > 0:
+        print("\nEvaluating baseline validation performance before starting training...", flush=True)
+        base_val_m = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
+        best_val_f1 = base_val_m["f1"]
+        print(f"Loaded checkpoint baseline Val F1: {best_val_f1:.4f} (IoU: {base_val_m['bbox_iou']:.4f}, Dice: {base_val_m['hungarian_mask_dice']:.4f})", flush=True)
 
-    for epoch in range(1, epochs + 1):
-        t_ep0 = time.time()
-        model.train()
+        print("\nStarting Training...", flush=True)
+        t_train_start = time.time()
 
-        running_loss = 0.0
-        running_ce = 0.0
-        running_bbox = 0.0
-        running_giou = 0.0
-        running_mask = 0.0
-        running_scale = 0.0
-        num_batches = 0
+        for epoch in range(1, epochs + 1):
+            t_ep0 = time.time()
+            model.train()
 
-        for images, targets in train_loader:
-            images = images.to(device)
-            optimizer.zero_grad()
+            running_loss = 0.0
+            running_ce = 0.0
+            running_bbox = 0.0
+            running_giou = 0.0
+            running_mask = 0.0
+            running_scale = 0.0
+            num_batches = 0
 
-            outputs = model(images)
-            loss_dict = criterion(outputs, targets)
-            loss = loss_dict["loss"]
+            for images, targets in train_loader:
+                images = images.to(device)
+                optimizer.zero_grad()
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)
-            optimizer.step()
+                outputs = model(images)
+                loss_dict = criterion(outputs, targets)
+                loss = loss_dict["loss"]
 
-            running_loss += loss.item()
-            running_ce += loss_dict["loss_ce"].item()
-            running_bbox += loss_dict["loss_bbox"].item()
-            running_giou += loss_dict["loss_giou"].item()
-            running_mask += loss_dict["loss_mask"].item()
-            running_scale += loss_dict["loss_scale"].item()
-            num_batches += 1
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(vit_trainable + head_trainable, max_norm=1.0)
+                optimizer.step()
 
-            if num_batches % 5 == 0 or num_batches == len(train_loader):
-                print(f"  [Epoch {epoch:03d} | Batch {num_batches:02d}/{len(train_loader)}] Current Batch Loss: {loss.item():.4f}", flush=True)
+                running_loss += loss.item()
+                running_ce += loss_dict["loss_ce"].item()
+                running_bbox += loss_dict["loss_bbox"].item()
+                running_giou += loss_dict["loss_giou"].item()
+                running_mask += loss_dict["loss_mask"].item()
+                running_scale += loss_dict["loss_scale"].item()
+                num_batches += 1
 
-        scheduler.step()
-        ep_duration = time.time() - t_ep0
+                if num_batches % 5 == 0 or num_batches == len(train_loader):
+                    print(f"  [Epoch {epoch:03d} | Batch {num_batches:02d}/{len(train_loader)}] Current Batch Loss: {loss.item():.4f}", flush=True)
 
-        avg_loss = running_loss / num_batches
-        avg_ce = running_ce / num_batches
-        avg_bbox = running_bbox / num_batches
-        avg_giou = running_giou / num_batches
-        avg_mask = running_mask / num_batches
-        avg_scale = running_scale / num_batches
+            scheduler.step()
+            ep_duration = time.time() - t_ep0
 
-        # Evaluate on Validation Set
-        val_m = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
+            avg_loss = running_loss / num_batches
+            avg_ce = running_ce / num_batches
+            avg_bbox = running_bbox / num_batches
+            avg_giou = running_giou / num_batches
+            avg_mask = running_mask / num_batches
+            avg_scale = running_scale / num_batches
 
-        print(
-            f"Epoch {epoch:03d}/{epochs} ({ep_duration:.1f}s) | "
-            f"Loss: {avg_loss:.4f} [CE: {avg_ce:.3f}, BBox: {avg_bbox:.3f}, GIoU: {avg_giou:.3f}, Mask: {avg_mask:.3f}, Sc: {avg_scale:.3f}] | "
-            f"Val F1: {val_m['f1']:.4f} (P: {val_m['precision']:.3f}, R: {val_m['recall']:.3f}) | "
-            f"Val IoU: {val_m['bbox_iou']:.4f} | Val Dice: {val_m['hungarian_mask_dice']:.4f} | "
-            f"Val Sc Err: {val_m['scale_error_pct']:.1f}%",
-            flush=True,
-        )
+            # Evaluate on Validation Set
+            val_m = evaluate_split(model, val_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
 
-        # Checkpointing and Early Stopping
-        if val_m["f1"] > best_val_f1:
-            best_val_f1 = val_m["f1"]
-            best_epoch = epoch
-            patience_counter = 0
-            safe_torch_save(model.state_dict(), best_ckpt_path)
-            print(f"  --> Saved new best model (Val F1: {best_val_f1:.4f}) to {best_ckpt_path}", flush=True)
-        else:
-            patience_counter += 1
-            if patience_counter >= patience:
-                print(f"\n[Early Stopping triggered at epoch {epoch}] No validation improvement for {patience} epochs.", flush=True)
-                break
+            print(
+                f"Epoch {epoch:03d}/{epochs} ({ep_duration:.1f}s) | "
+                f"Loss: {avg_loss:.4f} [CE: {avg_ce:.3f}, BBox: {avg_bbox:.3f}, GIoU: {avg_giou:.3f}, Mask: {avg_mask:.3f}, Sc: {avg_scale:.3f}] | "
+                f"Val F1: {val_m['f1']:.4f} (P: {val_m['precision']:.3f}, R: {val_m['recall']:.3f}) | "
+                f"Val IoU: {val_m['bbox_iou']:.4f} | Val Dice: {val_m['hungarian_mask_dice']:.4f} | "
+                f"Val Sc Err: {val_m['scale_error_pct']:.1f}%",
+                flush=True,
+            )
 
-    print(f"\nTraining completed in {(time.time() - t_train_start)/60:.1f} minutes. Best epoch: {best_epoch} with Val F1: {best_val_f1:.4f}", flush=True)
+            # Checkpointing and Early Stopping
+            if val_m["f1"] > best_val_f1:
+                best_val_f1 = val_m["f1"]
+                best_epoch = epoch
+                patience_counter = 0
+                safe_torch_save(model.state_dict(), best_ckpt_path)
+                print(f"  --> Saved new best model (Val F1: {best_val_f1:.4f}) to {best_ckpt_path}", flush=True)
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print(f"\n[Early Stopping triggered at epoch {epoch}] No validation improvement for {patience} epochs.", flush=True)
+                    break
+
+        print(f"\nTraining completed in {(time.time() - t_train_start)/60:.1f} minutes. Best epoch: {best_epoch} with Val F1: {best_val_f1:.4f}", flush=True)
+    else:
+        epoch = 0
+        best_epoch = "checkpoint"
 
     # =====================================================================
     # Comprehensive Final Evaluation Across Train, Validation, and Test
@@ -949,11 +993,11 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
     # Load best checkpoint
     if best_ckpt_path.exists():
         model.load_state_dict(torch.load(best_ckpt_path, map_location=device))
-        print(f"Loaded best checkpoint from epoch {best_epoch}.", flush=True)
+        print(f"Loaded best checkpoint from {best_ckpt_path}.", flush=True)
 
     # 1. Train Evaluation
     print("Evaluating Train Set (210 images / 70 layouts)...", flush=True)
-    train_eval_loader = DataLoader(train_ds, batch_size=15, shuffle=False, collate_fn=collate_fn)
+    train_eval_loader = DataLoader(train_ds, batch_size=15, shuffle=False, collate_fn=collate_fn_with_meta)
     train_metrics = evaluate_split(model, train_eval_loader, device, conf_thresh=0.25, iou_thresh=0.50, detailed=False)
 
     # 2. Validation Evaluation
@@ -1054,6 +1098,95 @@ def run_experiment_e(epochs=150, batch_size=7, img_size=384, patience=15):
     print(f"{'Test':<12} | {'Scale Error':<20} | {test_metrics['scale_error_pct']:<11.1f}% | {'< 10.0%':<12} | {'PASS' if test_metrics['scale_error_pct'] <= 10.0 else 'CHECK'}")
     print("=" * 80, flush=True)
 
+    # 6. Generate Markdown Report in Brain Directory
+    brain_dir = Path(r"C:\Users\anish\.gemini\antigravity-cli\brain\693badfe-ba5c-404d-835e-6d2b0610b1b1")
+    report_path = brain_dir / "experiment_e_100_layout_results.md"
+    generate_markdown_report(full_results, report_path)
+    print(f"Generated markdown report at: {report_path}", flush=True)
+
+
+def generate_markdown_report(res, out_path):
+    train = res["train"]
+    val = res["validation"]
+    test = res["test"]
+    cfg = res["config"]
+    gates = res["gates"]
+
+    def status_badge(achieved, target, higher_is_better=True):
+        passed = (achieved >= target) if higher_is_better else (achieved <= target)
+        if passed:
+            return '<span style="color:green;font-weight:bold;">PASS</span>'
+        else:
+            return '<span style="color:orange;font-weight:bold;">CHECK</span>'
+
+    md = []
+    md.append("# Experiment E: 100-Layout Generalization Benchmark Report\n")
+    md.append("## Executive Summary\n")
+    md.append("Following the success of Experiment D (30-image overfit test), **Experiment E** evaluated whether the validated multi-task Vision Transformer architecture and loss formulation survive and generalize across **100 unique layouts (300 images total)**.\n")
+    md.append(f"- **Dataset**: 100 unique architectural layouts × 3 visual styles (CAD, Blueprint, Scanned drawing) = 300 images total.")
+    md.append(f"- **Partitioning**: 70 train layouts (210 images), 15 validation layouts (45 images), 15 test layouts (45 images). **Layout IDs are 100% disjoint with zero data leakage**.")
+    md.append(f"- **Architecture**: ViT-384 (`google/vit-base-patch16-384`), Blocks 1–8 frozen, Blocks 9–12 trainable, differential LR (ViT: {cfg['vit_lr']}, Heads: {cfg['head_lr']}).")
+    md.append(f"- **Multi-Task Objective**: $\\mathcal{{L}} = 1.0\\mathcal{{L}}_{{ce}} + 5.0\\mathcal{{L}}_{{bbox}} + 2.0\\mathcal{{L}}_{{giou}} + 2.5\\mathcal{{L}}_{{mask}} + 0.1\\mathcal{{L}}_{{scale}}$ with $\\log(\\text{{px/m}})$ scale regression.\n")
+
+    md.append("### Target Gates vs. Benchmark Results\n")
+    md.append("| Split | Metric | Gate | Achieved | Status |")
+    md.append("|:---|:---|:---:|:---:|:---:|")
+    md.append(f"| **Train** (70 layouts / 210 images) | Room F1 | > {gates['train']['target_f1']:.2f} | **{train['room_f1']:.4f}** | {status_badge(train['room_f1'], gates['train']['target_f1'])} |")
+    md.append(f"| | Hungarian Class Acc | — | **{train['hungarian_class_acc']:.4f}** | — |")
+    md.append(f"| | BBox IoU | > {gates['train']['target_iou']:.2f} | **{train['bbox_iou']:.4f}** | {status_badge(train['bbox_iou'], gates['train']['target_iou'])} |")
+    md.append(f"| | Mask Dice | > {gates['train']['target_dice']:.2f} | **{train['mask_dice']:.4f}** | {status_badge(train['mask_dice'], gates['train']['target_dice'])} |")
+    md.append(f"| | Scale Error | — | **{train['scale_error_pct']:.1f}%** ({train['scale_mae']:.2f} px/m) | — |")
+    md.append(f"| **Validation** (15 layouts / 45 images) | Room F1 | > {gates['validation']['target_f1']:.2f} | **{val['room_f1']:.4f}** | {status_badge(val['room_f1'], gates['validation']['target_f1'])} |")
+    md.append(f"| | Hungarian Class Acc | — | **{val['hungarian_class_acc']:.4f}** | — |")
+    md.append(f"| | BBox IoU | > {gates['validation']['target_iou']:.2f} | **{val['bbox_iou']:.4f}** | {status_badge(val['bbox_iou'], gates['validation']['target_iou'])} |")
+    md.append(f"| | Mask Dice | > {gates['validation']['target_dice']:.2f} | **{val['mask_dice']:.4f}** | {status_badge(val['mask_dice'], gates['validation']['target_dice'])} |")
+    md.append(f"| | Scale Error | < {gates['validation']['target_scale_err_pct']:.1f}% | **{val['scale_error_pct']:.1f}%** ({val['scale_mae']:.2f} px/m) | {status_badge(val['scale_error_pct'], gates['validation']['target_scale_err_pct'], False)} |")
+    md.append(f"| **Unseen Test** (15 layouts / 45 images) | Room F1 | > {gates['test']['target_f1']:.2f} | **{test['room_f1']:.4f}** | {status_badge(test['room_f1'], gates['test']['target_f1'])} |")
+    md.append(f"| | Hungarian Class Acc | — | **{test['hungarian_class_acc']:.4f}** | — |")
+    md.append(f"| | BBox IoU | > {gates['test']['target_iou']:.2f} | **{test['bbox_iou']:.4f}** | {status_badge(test['bbox_iou'], gates['test']['target_iou'])} |")
+    md.append(f"| | Mask Dice | > {gates['test']['target_dice']:.2f} | **{test['mask_dice']:.4f}** | {status_badge(test['mask_dice'], gates['test']['target_dice'])} |")
+    md.append(f"| | Scale Error | < {gates['test']['target_scale_err_pct']:.1f}% | **{test['scale_error_pct']:.1f}%** ({test['scale_mae']:.2f} px/m) | {status_badge(test['scale_error_pct'], gates['test']['target_scale_err_pct'], False)} |\n")
+
+    md.append("---")
+    md.append("## Visual Validation on Unseen Test Layout\n")
+    md.append("Below is the side-by-side visualization comparing Ground Truth layout geometry and room labels (left) against Raw Model Predictions (right) on a completely unseen test layout:\n")
+    md.append("![Experiment E Test Visual Overlay](experiment_e_test_vis.png)\n")
+
+    md.append("---")
+    md.append("## Granular Test Set Breakdowns (Completely Unseen Layouts)\n")
+    md.append("### 1. Breakdown by Room Type\n")
+    md.append("| Room Class | Precision | Recall | Room F1 | Mean BBox IoU | Ground Truth Support |")
+    md.append("|:---|:---:|:---:|:---:|:---:|:---:|")
+    per_class = test.get("per_class", {})
+    for cname, st in sorted(per_class.items(), key=lambda item: item[1]["support"], reverse=True):
+        md.append(f"| **{cname}** | {st['precision']:.4f} | {st['recall']:.4f} | **{st['f1']:.4f}** | {st['bbox_iou']:.4f} | {st['support']} |")
+
+    md.append("\n### 2. Breakdown by Room Size\n")
+    md.append("| Room Category | Definition | Precision | Recall | F1 Score | Mean BBox IoU | Support |")
+    md.append("|:---|:---|:---:|:---:|:---:|:---:|:---:|")
+    per_size = test.get("per_size", {})
+    defs = {
+        "Small (<6m²)": "Area < 6.0 m² (Toilets, powder rooms, closets)",
+        "Medium (6-18m²)": "Area 6.0–18.0 m² (Bedrooms, kitchens, dining)",
+        "Large (>18m²)": "Area > 18.0 m² (Living halls, master suites)",
+        "Irregular (Non-rect)": "Non-rectangular polygons (> 4 vertices / L-shaped)"
+    }
+    for sname, st in per_size.items():
+        d = defs.get(sname, "")
+        md.append(f"| **{sname}** | {d} | {st['precision']:.4f} | {st['recall']:.4f} | **{st['f1']:.4f}** | {st['bbox_iou']:.4f} | {st['support']} |")
+
+    md.append("\n### 3. Breakdown by Architectural Topology\n")
+    md.append("| Topology Family | Description | Precision | Recall | F1 Score | Mean BBox IoU | Support |")
+    md.append("|:---|:---|:---:|:---:|:---:|:---:|:---:|")
+    per_topo = test.get("per_topology", {})
+    for tname, st in sorted(per_topo.items(), key=lambda item: item[1]["support"], reverse=True):
+        md.append(f"| **{tname}** | Layout envelope & room layout | {st['precision']:.4f} | {st['recall']:.4f} | **{st['f1']:.4f}** | {st['bbox_iou']:.4f} | {st['support']} |")
+
+    out_p = Path(out_path)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_p, "w", encoding="utf-8") as f:
+        f.write("\n".join(md) + "\n")
+
 
 if __name__ == "__main__":
     import argparse
@@ -1062,6 +1195,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=7)
     parser.add_argument("--img-size", type=int, default=384)
     parser.add_argument("--patience", type=int, default=15)
+    parser.add_argument("--eval-only", action="store_true")
     args = parser.parse_args()
 
-    run_experiment_e(epochs=args.epochs, batch_size=args.batch_size, img_size=args.img_size, patience=args.patience)
+    run_experiment_e(epochs=args.epochs, batch_size=args.batch_size, img_size=args.img_size, patience=args.patience, eval_only=args.eval_only)

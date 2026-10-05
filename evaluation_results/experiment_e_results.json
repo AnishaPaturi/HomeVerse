@@ -3,8 +3,8 @@
   "config": {
     "image_size": 384,
     "vit_model": "google/vit-base-patch16-384",
-    "epochs_run": 1,
-    "best_epoch": 1,
+    "epochs_run": 15,
+    "best_epoch": 14,
     "batch_size": 7,
     "head_lr": 0.00015,
     "vit_lr": 1.5e-05,
@@ -36,58 +36,88 @@
     }
   },
   "train": {
-    "room_f1": 0.0459,
-    "precision": 0.0382,
-    "recall": 0.0573,
-    "hungarian_class_acc": 0.1736,
-    "bbox_iou": 0.6076,
-    "mask_dice": 0.3765,
-    "scale_mae": 12.68,
-    "scale_error_pct": 19.05
+    "room_f1": 0.4727,
+    "precision": 0.3307,
+    "recall": 0.8284,
+    "hungarian_class_acc": 0.8023,
+    "bbox_iou": 0.7729,
+    "mask_dice": 0.8269,
+    "scale_mae": 5.79,
+    "scale_error_pct": 8.42
   },
   "validation": {
-    "room_f1": 0.0092,
-    "precision": 0.0078,
-    "recall": 0.0113,
-    "hungarian_class_acc": 0.0654,
-    "bbox_iou": 0.6137,
-    "mask_dice": 0.3729,
-    "scale_mae": 15.25,
-    "scale_error_pct": 24.9
+    "room_f1": 0.0618,
+    "precision": 0.042,
+    "recall": 0.1171,
+    "hungarian_class_acc": 0.1176,
+    "bbox_iou": 0.6442,
+    "mask_dice": 0.6326,
+    "scale_mae": 10.92,
+    "scale_error_pct": 17.36
   },
   "test": {
-    "room_f1": 0.0156,
-    "precision": 0.0131,
-    "recall": 0.0192,
-    "hungarian_class_acc": 0.0943,
-    "bbox_iou": 0.6493,
-    "mask_dice": 0.3668,
-    "scale_mae": 15.02,
-    "scale_error_pct": 25.58,
+    "room_f1": 0.0599,
+    "precision": 0.0399,
+    "recall": 0.1194,
+    "hungarian_class_acc": 0.1481,
+    "bbox_iou": 0.6174,
+    "mask_dice": 0.6498,
+    "scale_mae": 11.2,
+    "scale_error_pct": 18.58,
     "per_class": {
       "Living Room": {
-        "tp": 1,
-        "fp": 20,
-        "fn": 33,
-        "precision": 0.0476,
-        "recall": 0.0294,
-        "f1": 0.0364,
-        "bbox_iou": 0.5895,
-        "support": 34
+        "tp": 8,
+        "fp": 122,
+        "fn": 27,
+        "precision": 0.0615,
+        "recall": 0.2286,
+        "f1": 0.097,
+        "bbox_iou": 0.5914,
+        "support": 35
       },
       "Kitchen": {
         "tp": 0,
-        "fp": 0,
-        "fn": 23,
+        "fp": 39,
+        "fn": 15,
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
         "bbox_iou": 0.0,
-        "support": 23
+        "support": 15
       },
       "Kitchen & Dining": {
         "tp": 0,
-        "fp": 14,
+        "fp": 34,
+        "fn": 15,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 15
+      },
+      "Master Bedroom": {
+        "tp": 2,
+        "fp": 97,
+        "fn": 20,
+        "precision": 0.0202,
+        "recall": 0.0909,
+        "f1": 0.0331,
+        "bbox_iou": 0.6966,
+        "support": 22
+      },
+      "Bedroom": {
+        "tp": 1,
+        "fp": 40,
+        "fn": 26,
+        "precision": 0.0244,
+        "recall": 0.037,
+        "f1": 0.0294,
+        "bbox_iou": 0.529,
+        "support": 27
+      },
+      "Children's Bedroom": {
+        "tp": 0,
+        "fp": 15,
         "fn": 13,
         "precision": 0.0,
         "recall": 0.0,
@@ -95,59 +125,29 @@
         "bbox_iou": 0.0,
         "support": 13
       },
-      "Master Bedroom": {
-        "tp": 0,
-        "fp": 21,
-        "fn": 40,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 40
-      },
-      "Bedroom": {
-        "tp": 2,
-        "fp": 120,
-        "fn": 36,
-        "precision": 0.0164,
-        "recall": 0.0526,
-        "f1": 0.025,
-        "bbox_iou": 0.573,
-        "support": 38
-      },
-      "Children's Bedroom": {
-        "tp": 0,
-        "fp": 0,
-        "fn": 21,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 21
-      },
       "Guest Bedroom": {
-        "tp": 2,
-        "fp": 52,
-        "fn": 14,
-        "precision": 0.037,
-        "recall": 0.125,
-        "f1": 0.0571,
-        "bbox_iou": 0.7556,
-        "support": 16
+        "tp": 3,
+        "fp": 46,
+        "fn": 9,
+        "precision": 0.0612,
+        "recall": 0.25,
+        "f1": 0.0984,
+        "bbox_iou": 0.5323,
+        "support": 12
       },
       "Bathroom": {
-        "tp": 0,
-        "fp": 116,
-        "fn": 44,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 44
+        "tp": 5,
+        "fp": 126,
+        "fn": 27,
+        "precision": 0.0382,
+        "recall": 0.1562,
+        "f1": 0.0613,
+        "bbox_iou": 0.5783,
+        "support": 32
       },
       "Corridor": {
         "tp": 0,
-        "fp": 23,
+        "fp": 17,
         "fn": 3,
         "precision": 0.0,
         "recall": 0.0,
@@ -156,18 +156,18 @@
         "support": 3
       },
       "Entrance/Foyer": {
-        "tp": 0,
-        "fp": 10,
-        "fn": 20,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 20
+        "tp": 5,
+        "fp": 35,
+        "fn": 13,
+        "precision": 0.125,
+        "recall": 0.2778,
+        "f1": 0.1724,
+        "bbox_iou": 0.7351,
+        "support": 18
       },
       "Storage Room": {
         "tp": 0,
-        "fp": 0,
+        "fp": 4,
         "fn": 3,
         "precision": 0.0,
         "recall": 0.0,
@@ -190,54 +190,94 @@
       "Small (<6m\u00b2)": {
         "tp": 0,
         "fp": 0,
-        "fn": 0,
+        "fn": 13,
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
         "bbox_iou": 0.0,
-        "support": 0
+        "support": 13
       },
       "Medium (6-18m\u00b2)": {
-        "tp": 0,
+        "tp": 10,
         "fp": 0,
-        "fn": 0,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 0
+        "fn": 69,
+        "precision": 1.0,
+        "recall": 0.1266,
+        "f1": 0.2247,
+        "bbox_iou": 0.5782,
+        "support": 79
       },
       "Large (>18m\u00b2)": {
-        "tp": 0,
+        "tp": 12,
         "fp": 0,
-        "fn": 0,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 0
+        "fn": 83,
+        "precision": 1.0,
+        "recall": 0.1263,
+        "f1": 0.2243,
+        "bbox_iou": 0.6457,
+        "support": 95
       },
       "Irregular (Non-rect)": {
-        "tp": 0,
+        "tp": 2,
         "fp": 0,
-        "fn": 0,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "bbox_iou": 0.0,
-        "support": 0
+        "fn": 12,
+        "precision": 1.0,
+        "recall": 0.1429,
+        "f1": 0.25,
+        "bbox_iou": 0.6433,
+        "support": 14
       }
     },
     "per_topology": {
-      "Unknown": {
-        "tp": 5,
-        "fp": 376,
-        "fn": 256,
-        "precision": 0.0131,
-        "recall": 0.0192,
-        "f1": 0.0156,
-        "bbox_iou": 0.6493,
-        "support": 261
+      "U-shaped": {
+        "tp": 3,
+        "fp": 87,
+        "fn": 36,
+        "precision": 0.0333,
+        "recall": 0.0769,
+        "f1": 0.0465,
+        "bbox_iou": 0.6838,
+        "support": 39
+      },
+      "Rectilinear": {
+        "tp": 17,
+        "fp": 349,
+        "fn": 105,
+        "precision": 0.0464,
+        "recall": 0.1393,
+        "f1": 0.0697,
+        "bbox_iou": 0.6184,
+        "support": 122
+      },
+      "T-shaped": {
+        "tp": 1,
+        "fp": 49,
+        "fn": 16,
+        "precision": 0.02,
+        "recall": 0.0588,
+        "f1": 0.0299,
+        "bbox_iou": 0.529,
+        "support": 17
+      },
+      "L-shaped": {
+        "tp": 2,
+        "fp": 47,
+        "fn": 8,
+        "precision": 0.0408,
+        "recall": 0.2,
+        "f1": 0.0678,
+        "bbox_iou": 0.5165,
+        "support": 10
+      },
+      "Corridor spine": {
+        "tp": 1,
+        "fp": 45,
+        "fn": 12,
+        "precision": 0.0217,
+        "recall": 0.0769,
+        "f1": 0.0339,
+        "bbox_iou": 0.6912,
+        "support": 13
       }
     }
   }
