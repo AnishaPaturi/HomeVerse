@@ -189,9 +189,10 @@ class MultiTaskViT(nn.Module):
         raw_scale = pred_scale_ppm * (max(orig_w, orig_h) / 1024.0)
 
         probs = pred_logits.softmax(-1)
-        scores, labels = probs[:, :self.num_classes].max(dim=-1)
+        scores, labels = probs.max(dim=-1)
 
-        keep = scores >= conf_threshold
+        # Winning class must NOT be background (no-room) AND score >= conf_threshold
+        keep = (labels != self.num_classes) & (scores >= conf_threshold)
         if keep.sum() == 0:
             return {
                 "image_path": str(image_path),

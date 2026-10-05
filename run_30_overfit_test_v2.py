@@ -81,6 +81,8 @@ class OverfitMultiTaskViT(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 1),
         )
+        # Initialize bias to 4.0 (~55 px/m) to avoid large initial scale loss
+        nn.init.constant_(self.scale_head[-1].bias, 4.0)
 
         # 2. Query Embeddings & Transformer Decoder
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
@@ -336,7 +338,7 @@ def compute_eval_metrics_v2(model, dataloader, device, conf_thresh=0.25, iou_thr
             tgt_boxes = targets[b]["boxes"].to(device)
             num_gt = len(tgt_labels)
 
-            # Max over ALL 23 classes
+            # Max over ALL 23 classes (22 room classes + 1 background)
             top_scores, top_classes = probs[b].max(dim=-1)
 
             # Query is kept ONLY IF winning class is NOT background (22) AND score >= conf_thresh
@@ -403,13 +405,9 @@ def compute_eval_metrics_v2(model, dataloader, device, conf_thresh=0.25, iou_thr
 
 def visualize_v2(model, dataset, device, out_path, sample_idx=0, conf_thresh=0.25):
     model.eval()
-    sample = dataset.items[sample_idx] if hasattr(dataset, "items") else dataset.samples[sample_idx]
-    orig_img_path = Path("HomeVerse-Dataset") / sample["image_id"].replace("homeverse_", "images/train/homeverse_")
-    if not orig_img_path.with_suffix(".png").exists():
-        # Fallback to direct path in sample
-        orig_img_path = Path("HomeVerse-Dataset") / sample.get("image_path", "")
-    else:
-        orig_img_path = orig_img_path.with_suffix(".png")
+    sample_entry = dataset.items[sample_idx] if hasattr(dataset, "items") else dataset.samples[sample_idx]
+    sample = sample_entry.get("sample_meta", sample_entry)
+    orig_img_path = Path("HomeVerse-Dataset") / sample["image_path"]
 
     orig_img = Image.open(orig_img_path).convert("RGB")
     orig_w, orig_h = orig_img.size
@@ -503,11 +501,11 @@ def visualize_v2(model, dataset, device, out_path, sample_idx=0, conf_thresh=0.2
 # Main Training Loop for Experiment D
 # =====================================================================
 
-def run_experiment_d(epochs=150, batch_size=6, img_size=224):
+def run_experiment_d(epochs=150, batch_size=5, img_size=224):
     num_threads = min(12, os.cpu_count() or 4)
     torch.set_num_threads(num_threads)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device} | Threads: {num_threads} | Image resolution: {img_size}x{img_size}", flush=True)
+    print(f"Device: {device} | Threads: {num_threads} | Image resolution: {img_size}x{img_size} | Epochs: {epochs} | Batch size: {batch_size}", flush=True)
 
     # 1. Load and Pre-cache all 30 samples in RAM for 0.0ms loading overhead
     base_ds = FloorplanDataset("HomeVerse-Dataset", split="train", img_size=img_size, max_samples=30)
@@ -529,18 +527,32 @@ def run_experiment_d(epochs=150, batch_size=6, img_size=224):
 
     model = OverfitMultiTaskViT(pretrained_model_name="google/vit-base-patch16-224", img_size=img_size).to(device)
 
+    # Transfer detector head weights if available
+    ckpt_path = Path("checkpoints/multitask/multitask_vit_best.pt")
+    if ckpt_path.exists():
+        print(f"Transferring starting detector head weights from {ckpt_path}...", flush=True)
+        ckpt = torch.load(ckpt_path, map_location=device)
+        head_weights = {k: v for k, v in ckpt.items() if not k.startswith("scale_head") and not k.startswith("encoder")}
+        missing, unexpected = model.load_state_dict(head_weights, strict=False)
+        print(f"Transferred {len(head_weights)} weight tensors. (Missing: {len(missing)})", flush=True)
+
     # 4. Partial ViT Unfreezing:
-    # Freeze embeddings and layers 0..8. Unfreeze layers 9..11 (top 3 blocks) + layernorm.
+    # Freeze embeddings and layers 0..7. Unfreeze layers 8..11 (top 4 blocks) + layernorm.
     for p in model.encoder.embeddings.parameters():
         p.requires_grad = False
-    for layer in model.encoder.layers[:9]:
+
+    vit_layers = model.encoder.layers if hasattr(model.encoder, "layers") else model.encoder.encoder.layer
+    for layer in vit_layers[:8]:
         for p in layer.parameters():
             p.requires_grad = False
-    for layer in model.encoder.layers[9:]:
+    for layer in vit_layers[8:]:
         for p in layer.parameters():
             p.requires_grad = True
     for p in model.encoder.layernorm.parameters():
         p.requires_grad = True
+    if hasattr(model.encoder, "pooler") and model.encoder.pooler is not None:
+        for p in model.encoder.pooler.parameters():
+            p.requires_grad = False
 
     vit_trainable = [p for p in model.encoder.parameters() if p.requires_grad]
     head_trainable = (
@@ -551,7 +563,7 @@ def run_experiment_d(epochs=150, batch_size=6, img_size=224):
         list(model.seg_head.parameters()) +
         list(model.scale_head.parameters())
     )
-    print(f"Trainable params: ViT top-3 blocks: {len(vit_trainable)}, Decoder & Heads: {len(head_trainable)}", flush=True)
+    print(f"Trainable params: ViT top-4 blocks: {len(vit_trainable)}, Decoder & Heads: {len(head_trainable)}", flush=True)
 
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
     criterion = OverfitCriterion(
@@ -564,12 +576,12 @@ def run_experiment_d(epochs=150, batch_size=6, img_size=224):
         eos_coef=0.1
     ).to(device)
 
-    # Differential Learning Rates: 2.5e-5 for ViT top layers, 5e-4 for Decoder & Heads
+    # Differential Learning Rates: 1.5e-5 for ViT top layers, 1.5e-4 for Decoder & Heads
     optimizer = torch.optim.AdamW([
-        {"params": vit_trainable, "lr": 2.5e-5, "weight_decay": 1e-4},
-        {"params": head_trainable, "lr": 5e-4, "weight_decay": 1e-5},
+        {"params": vit_trainable, "lr": 1.5e-5, "weight_decay": 1e-4},
+        {"params": head_trainable, "lr": 1.5e-4, "weight_decay": 1e-5},
     ])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     print("\n" + "=" * 75, flush=True)
     print(f"STARTING EXPERIMENT D: 30-IMAGE OVERFIT TEST v2 ({epochs} EPOCHS)", flush=True)
@@ -615,8 +627,8 @@ def run_experiment_d(epochs=150, batch_size=6, img_size=224):
         avg_mask = tot_mask / batches
         avg_scale = tot_scale / batches
 
-        # Periodic evaluation every 15 epochs, first epoch, and last epoch
-        if epoch % 15 == 0 or epoch == 1 or epoch == epochs:
+        # Periodic evaluation every 10 epochs, first epoch, and last epoch
+        if epoch % 10 == 0 or epoch == 1 or epoch == epochs:
             eval_metrics = compute_eval_metrics_v2(model, eval_loader, device, conf_thresh=0.25)
             print(
                 f"Epoch {epoch:03d}/{epochs} | "
@@ -685,7 +697,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=150)
-    parser.add_argument("--batch-size", type=int, default=6)
+    parser.add_argument("--batch-size", type=int, default=5)
     parser.add_argument("--img-size", type=int, default=224)
     args = parser.parse_args()
 
