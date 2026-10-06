@@ -1,0 +1,301 @@
+{
+  "experiment": "Experiment F1 \u2014 Multi-Scale ViT-FPN (100 Layouts)",
+  "config": {
+    "image_size": 384,
+    "vit_model": "google/vit-base-patch16-384",
+    "epochs_run": 12,
+    "best_epoch": 9,
+    "batch_size": 7,
+    "head_lr": 0.00015,
+    "vit_lr": 1.5e-05,
+    "loss_weights": {
+      "ce": 1.0,
+      "bbox": 5.0,
+      "giou": 2.0,
+      "mask": 2.5,
+      "scale": 0.1
+    }
+  },
+  "train": {
+    "detection_precision": 0.5168,
+    "detection_recall": 0.9643,
+    "detection_f1": 0.6729,
+    "semantic_precision": 0.5113,
+    "semantic_recall": 0.954,
+    "semantic_f1": 0.6658,
+    "bbox_iou": 0.7884,
+    "hungarian_class_acc": 0.9898,
+    "hungarian_bbox_iou": 0.7862,
+    "hungarian_mask_dice": 0.9111,
+    "scale_mae": 4.4,
+    "scale_error_pct": 6.16,
+    "dim_mae_meters_pred_scale": 1.587,
+    "dim_mae_meters_gt_scale": 1.61,
+    "det_tp": 1322,
+    "det_fp": 1236,
+    "det_fn": 49,
+    "sem_tp": 1308,
+    "sem_fp": 1250,
+    "sem_fn": 63
+  },
+  "validation": {
+    "detection_precision": 0.2092,
+    "detection_recall": 0.3431,
+    "detection_f1": 0.2599,
+    "semantic_precision": 0.0279,
+    "semantic_recall": 0.0458,
+    "semantic_f1": 0.0347,
+    "bbox_iou": 0.6193,
+    "hungarian_class_acc": 0.085,
+    "hungarian_bbox_iou": 0.4976,
+    "hungarian_mask_dice": 0.7522,
+    "scale_mae": 9.58,
+    "scale_error_pct": 14.8,
+    "dim_mae_meters_pred_scale": 1.929,
+    "dim_mae_meters_gt_scale": 2.123,
+    "det_tp": 105,
+    "det_fp": 397,
+    "det_fn": 201,
+    "sem_tp": 14,
+    "sem_fp": 488,
+    "sem_fn": 292
+  },
+  "test": {
+    "detection_precision": 0.1892,
+    "detection_recall": 0.3199,
+    "detection_f1": 0.2378,
+    "semantic_precision": 0.0498,
+    "semantic_recall": 0.0842,
+    "semantic_f1": 0.0626,
+    "bbox_iou": 0.6166,
+    "hungarian_class_acc": 0.1448,
+    "hungarian_bbox_iou": 0.5184,
+    "hungarian_mask_dice": 0.7608,
+    "scale_mae": 10.73,
+    "scale_error_pct": 16.57,
+    "dim_mae_meters_pred_scale": 1.999,
+    "dim_mae_meters_gt_scale": 2.371,
+    "det_tp": 95,
+    "det_fp": 407,
+    "det_fn": 202,
+    "sem_tp": 25,
+    "sem_fp": 477,
+    "sem_fn": 272,
+    "per_class": {
+      "Living Room": {
+        "tp": 10,
+        "fp": 93,
+        "fn": 35,
+        "precision": 0.0971,
+        "recall": 0.2222,
+        "f1": 0.1351,
+        "bbox_iou": 0.6305,
+        "support": 45
+      },
+      "Kitchen": {
+        "tp": 1,
+        "fp": 35,
+        "fn": 29,
+        "precision": 0.0278,
+        "recall": 0.0333,
+        "f1": 0.0303,
+        "bbox_iou": 0.5205,
+        "support": 30
+      },
+      "Kitchen & Dining": {
+        "tp": 0,
+        "fp": 39,
+        "fn": 15,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 15
+      },
+      "Master Bedroom": {
+        "tp": 3,
+        "fp": 81,
+        "fn": 39,
+        "precision": 0.0357,
+        "recall": 0.0714,
+        "f1": 0.0476,
+        "bbox_iou": 0.5459,
+        "support": 42
+      },
+      "Bedroom": {
+        "tp": 1,
+        "fp": 33,
+        "fn": 41,
+        "precision": 0.0294,
+        "recall": 0.0238,
+        "f1": 0.0263,
+        "bbox_iou": 0.5778,
+        "support": 42
+      },
+      "Children's Bedroom": {
+        "tp": 0,
+        "fp": 15,
+        "fn": 27,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 27
+      },
+      "Guest Bedroom": {
+        "tp": 2,
+        "fp": 43,
+        "fn": 16,
+        "precision": 0.0444,
+        "recall": 0.1111,
+        "f1": 0.0635,
+        "bbox_iou": 0.555,
+        "support": 18
+      },
+      "Bathroom": {
+        "tp": 4,
+        "fp": 88,
+        "fn": 41,
+        "precision": 0.0435,
+        "recall": 0.0889,
+        "f1": 0.0584,
+        "bbox_iou": 0.6129,
+        "support": 45
+      },
+      "Corridor": {
+        "tp": 0,
+        "fp": 10,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 3
+      },
+      "Entrance/Foyer": {
+        "tp": 4,
+        "fp": 24,
+        "fn": 17,
+        "precision": 0.1429,
+        "recall": 0.1905,
+        "f1": 0.1633,
+        "bbox_iou": 0.7141,
+        "support": 21
+      },
+      "Storage Room": {
+        "tp": 0,
+        "fp": 9,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 3
+      },
+      "Walk-in Closet": {
+        "tp": 0,
+        "fp": 6,
+        "fn": 6,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 6
+      }
+    },
+    "per_size": {
+      "Small (<6m\u00b2)": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 15,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "bbox_iou": 0.0,
+        "support": 15
+      },
+      "Medium (6-18m\u00b2)": {
+        "tp": 9,
+        "fp": 0,
+        "fn": 123,
+        "precision": 1.0,
+        "recall": 0.0682,
+        "f1": 0.1277,
+        "bbox_iou": 0.5738,
+        "support": 132
+      },
+      "Large (>18m\u00b2)": {
+        "tp": 15,
+        "fp": 0,
+        "fn": 120,
+        "precision": 1.0,
+        "recall": 0.1111,
+        "f1": 0.2,
+        "bbox_iou": 0.6424,
+        "support": 135
+      },
+      "Irregular (Non-rect)": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 14,
+        "precision": 1.0,
+        "recall": 0.0667,
+        "f1": 0.125,
+        "bbox_iou": 0.6584,
+        "support": 15
+      }
+    },
+    "per_topology": {
+      "U-shaped": {
+        "tp": 1,
+        "fp": 70,
+        "fn": 56,
+        "precision": 0.0141,
+        "recall": 0.0175,
+        "f1": 0.0156,
+        "bbox_iou": 0.6584,
+        "support": 57
+      },
+      "Rectilinear": {
+        "tp": 21,
+        "fp": 300,
+        "fn": 153,
+        "precision": 0.0654,
+        "recall": 0.1207,
+        "f1": 0.0848,
+        "bbox_iou": 0.6269,
+        "support": 174
+      },
+      "T-shaped": {
+        "tp": 1,
+        "fp": 46,
+        "fn": 20,
+        "precision": 0.0213,
+        "recall": 0.0476,
+        "f1": 0.0294,
+        "bbox_iou": 0.5778,
+        "support": 21
+      },
+      "L-shaped": {
+        "tp": 1,
+        "fp": 34,
+        "fn": 23,
+        "precision": 0.0286,
+        "recall": 0.0417,
+        "f1": 0.0339,
+        "bbox_iou": 0.5533,
+        "support": 24
+      },
+      "Corridor spine": {
+        "tp": 1,
+        "fp": 27,
+        "fn": 20,
+        "precision": 0.0357,
+        "recall": 0.0476,
+        "f1": 0.0408,
+        "bbox_iou": 0.504,
+        "support": 21
+      }
+    }
+  }
+}
