@@ -936,7 +936,7 @@ def run_experiment_f2(mode="f2a", epochs=10, batch_size=7, img_size=384, patienc
         model = MultiTaskViT384FPN(pretrained_model_name="google/vit-base-patch16-384", img_size=img_size).to(device)
         best_ckpt_path = Path("checkpoints/multitask/experiment_f2a_best.pt")
 
-    # Transfer pretrained weights from Experiment F1
+    ckpt_f2a = Path("checkpoints/multitask/experiment_f2a_best.pt")
     ckpt_f1 = Path("checkpoints/multitask/experiment_f1_fpn_best.pt")
     if best_ckpt_path.exists():
         print(f"Resuming weights from existing checkpoint: {best_ckpt_path}...", flush=True)
@@ -946,6 +946,14 @@ def run_experiment_f2(mode="f2a", epochs=10, batch_size=7, img_size=384, patienc
             print(f"Loaded weights from {best_ckpt_path}.", flush=True)
         except Exception as e:
             print(f"Could not load {best_ckpt_path}: {e}", flush=True)
+    elif ckpt_f2a.exists():
+        print(f"Transferring trained 500-layout ViT-FPN weights from Experiment F2-A: {ckpt_f2a}...", flush=True)
+        try:
+            ckpt = torch.load(ckpt_f2a, map_location=device)
+            missing, unexpected = model.load_state_dict(ckpt, strict=False)
+            print(f"Transferred {len(ckpt) - len(missing)} weight tensors from Exp F2-A (unmatched: {len(missing)}).", flush=True)
+        except Exception as e:
+            print(f"Could not load {ckpt_f2a}: {e}", flush=True)
     elif ckpt_f1.exists():
         print(f"Transferring validated ViT-FPN weights from Experiment F1: {ckpt_f1}...", flush=True)
         try:
