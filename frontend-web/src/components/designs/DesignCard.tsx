@@ -12,11 +12,20 @@ export const DesignCard: React.FC<DesignCardProps> = ({ design, onWhatIf }) => {
   return (
     <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm flex flex-col justify-between hover:shadow-md transition">
       <div>
-        <div className="h-44 bg-gray-100 dark:bg-zinc-800 flex items-center justify-center relative">
+        <div className="h-52 bg-gray-100 dark:bg-zinc-800 flex items-center justify-center relative overflow-hidden group">
           {design.image_url ? (
-            <img src={design.image_url} alt={design.name} className="w-full h-full object-cover" />
+            <>
+              <img
+                src={design.image_url}
+                alt={design.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-mono font-bold text-emerald-400">
+                AI 3D RENDER
+              </div>
+            </>
           ) : (
-            <span className="text-gray-400 text-xs">Preview Pending</span>
+            <span className="text-gray-400 text-xs font-mono">Preview Pending</span>
           )}
         </div>
         <div className="p-4">

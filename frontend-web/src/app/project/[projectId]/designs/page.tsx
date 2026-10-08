@@ -7,60 +7,55 @@ import { Navbar } from "@/components/layout/Navbar";
 import { DesignCard } from "@/components/designs/DesignCard";
 import { WhatIfModal } from "@/components/designs/WhatIfModal";
 import { Design } from "@/types";
-import { getStoredProject, getStoredProjectRooms } from "@/lib/projectStorage";
-import { Sparkles, Plus, ArrowLeft } from "lucide-react";
-
-const INITIAL_DESIGNS: Design[] = [
-  {
-    id: "d1",
-    name: "Modern Minimalist Living Room",
-    style: "Minimalist",
-    estimated_cost: 105000,
-    image_url: "",
-    status: "generated",
-  },
-  {
-    id: "d2",
-    name: "Warm Contemporary Master Bedroom",
-    style: "Warm Contemporary",
-    estimated_cost: 145000,
-    image_url: "",
-    status: "generated",
-  },
-  {
-    id: "d3",
-    name: "Modular Scandinavian Kitchen",
-    style: "Scandinavian",
-    estimated_cost: 165000,
-    image_url: "",
-    status: "generated",
-  },
-];
+import {
+  getStoredProject,
+  getStoredProjectRooms,
+  getStoredProjectDesigns,
+} from "@/lib/projectStorage";
+import { Sparkles, Plus, ArrowLeft, Camera, Layers, Wand2 } from "lucide-react";
 
 export default function ProjectDesignsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
+  const [proj, setProj] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      return getStoredProject(projectId);
+    }
+    return null;
+  });
+
   const [designs, setDesigns] = useState<Design[]>(() => {
     if (typeof window !== "undefined") {
-      const proj = getStoredProject(projectId);
-      const rooms = getStoredProjectRooms(projectId);
-      const styleName = proj?.design_style || "Japandi";
-      if (rooms && rooms.length > 0) {
-        return rooms.slice(0, 6).map((r, idx) => ({
-          id: `d-${r.id || idx + 1}`,
-          name: `${styleName} ${r.name}`,
-          style: styleName,
-          estimated_cost:
-            Math.round(
-              ((proj?.total_budget || 1500000) * ((r.area_sqm || 15) / 100)) / 1000
-            ) * 1000 || 100000 + idx * 25000,
-          image_url: "",
-          status: "generated",
-        }));
-      }
+      const storedDesigns = getStoredProjectDesigns(projectId);
+      if (storedDesigns.length > 0) return storedDesigns;
     }
-    return INITIAL_DESIGNS;
+    return [
+      {
+        id: "d1",
+        name: "Japandi Master Bedroom (Perspective 1)",
+        style: "Japandi",
+        estimated_cost: 145000,
+        image_url: "/rooms/master-bed-room-1.png",
+        status: "generated",
+      },
+      {
+        id: "d2",
+        name: "Japandi Master Bedroom (Perspective 2)",
+        style: "Japandi",
+        estimated_cost: 165000,
+        image_url: "/rooms/master-bed-room-2.png",
+        status: "generated",
+      },
+      {
+        id: "d3",
+        name: "Japandi Living Room",
+        style: "Japandi",
+        estimated_cost: 185000,
+        image_url: "/styles/japandi.png",
+        status: "generated",
+      },
+    ];
   });
   const [selectedDesignForWhatIf, setSelectedDesignForWhatIf] = useState<Design | null>(null);
 
@@ -128,6 +123,51 @@ export default function ProjectDesignsPage() {
           >
             Launch on Selected Room &rarr;
           </button>
+        </div>
+
+        {/* User's Original Intake Photos (Before) */}
+        {proj?.room_photos && proj.room_photos.length > 0 && (
+          <div className="mb-8 p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                  Original Intake Photos ({proj.target_room || proj.primary_room || "Room"})
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+                BEFORE STATE · {proj.room_photos.length} Photo(s)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {proj.room_photos.map((p: any, pIdx: number) => (
+                <div key={p.id || pIdx} className="rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950">
+                  <div className="aspect-[4/3] w-full overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                    <img src={p.url} alt={p.name || `Photo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-2 text-center bg-white dark:bg-zinc-900">
+                    <span className="text-[11px] font-mono text-gray-600 dark:text-zinc-400 block truncate">
+                      {p.label || `Angle ${pIdx + 1}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section Header for AI Concepts */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              AI Synthesized 3D Concepts ({proj?.design_style || "Japandi"} Style)
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-gray-500 dark:text-zinc-400">
+            {designs.length} Photorealistic Renders
+          </span>
         </div>
 
         {/* Designs Grid */}

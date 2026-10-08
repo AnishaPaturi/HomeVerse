@@ -234,6 +234,83 @@ export default function RoomDetailPage() {
             </button>
           </div>
         </div>
+
+        {/* Photorealistic AI Renders for this Room */}
+        <div className="p-8 rounded-3xl bg-[#090e15] border border-white/[0.08] space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI SYNTHESIZED RENDERS</span>
+              </div>
+              <h3 className="text-xl font-bold text-white tracking-tight">
+                Photorealistic Perspective Renders
+              </h3>
+              <p className="text-xs text-slate-400 font-light">
+                Generative PBR interior perspectives synthesized from your room intake photos and style DNA.
+              </p>
+            </div>
+
+            <Link
+              href={`/project/${projectId}/designs`}
+              className="text-xs font-mono text-emerald-400 hover:underline"
+            >
+              View All House Designs →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+              <div className="h-64 overflow-hidden relative">
+                <img
+                  src="/rooms/master-bed-room-1.png"
+                  alt={`${room?.name || "Room"} Perspective 1`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-mono font-bold text-emerald-400">
+                  PERSPECTIVE 1 (WIDE)
+                </div>
+              </div>
+              <div className="p-4 flex items-center justify-between bg-slate-950">
+                <div>
+                  <h4 className="text-sm font-bold text-white">{room?.name || "Room"} Daylight Concept</h4>
+                  <p className="text-xs text-slate-400 font-light mt-0.5">Custom Joinery & Ambient Lighting</p>
+                </div>
+                <button
+                  onClick={() => router.push(`/project/${projectId}/rooms/${roomId}/playground`)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 font-mono text-xs font-bold border border-slate-800 transition-all cursor-pointer"
+                >
+                  Edit in 3D
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+              <div className="h-64 overflow-hidden relative">
+                <img
+                  src="/rooms/master-bed-room-2.png"
+                  alt={`${room?.name || "Room"} Perspective 2`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[10px] font-mono font-bold text-emerald-400">
+                  PERSPECTIVE 2 (CORNER)
+                </div>
+              </div>
+              <div className="p-4 flex items-center justify-between bg-slate-950">
+                <div>
+                  <h4 className="text-sm font-bold text-white">{room?.name || "Room"} Perspective Detail</h4>
+                  <p className="text-xs text-slate-400 font-light mt-0.5">Natural Textures & Engineered Finishes</p>
+                </div>
+                <button
+                  onClick={() => router.push(`/project/${projectId}/rooms/${roomId}/playground`)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 font-mono text-xs font-bold border border-slate-800 transition-all cursor-pointer"
+                >
+                  Edit in 3D
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

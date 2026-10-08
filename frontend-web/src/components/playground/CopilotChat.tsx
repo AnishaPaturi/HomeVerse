@@ -51,15 +51,15 @@ export default function CopilotChat({
     {
       id: "init",
       sender: "copilot",
-      text: "Hello! I am your AI Spatial Design Agent. What would you like to transform in this room?",
+      text: `Hello! I am your AI Spatial Design Agent tuned to ${currentStyle} architectural DNA. What would you like to transform in this room?`,
       timestamp: "Just now",
       proposal: {
         id: "prop-init",
-        title: "Recommended Aesthetic Enhancements",
+        title: `Recommended ${currentStyle} Enhancements`,
         changes: [
           "Balance natural day-lighting with 2700K warm accents",
           "Optimize walkway clearance between coffee table and sofa",
-          "Switch flooring to European White Oak planks",
+          `Switch surfaces to align with authentic ${currentStyle} aesthetics`,
         ],
         applied: false,
         actionType: "enhance_ambience",
@@ -77,12 +77,12 @@ export default function CopilotChat({
 
   // AI-generated action chips
   const actionChips = [
-    { label: "✨ Make it cozier", prompt: "Make this living room warmer and cozier with soft lighting and natural textures." },
+    { label: `✨ Enhance ${currentStyle} DNA`, prompt: `Refine this room strictly following the ${currentStyle} interior architecture style.` },
     { label: "🪵 Add natural wood", prompt: "Switch materials to organic natural wood and light oak finishes." },
     { label: "💡 Improve lighting", prompt: "Add warm ambient floor lamps and increase natural lighting balance." },
     { label: "💰 Reduce budget by 15%", prompt: "Optimize furniture selection to reduce the total estimated budget by 15%." },
     { label: "🛋 Replace sofa", prompt: "Upgrade the central sofa to a comfortable premium fabric sectional." },
-    { label: "🎨 Try Japandi", prompt: "Switch the overall room aesthetic and material palette to Japandi minimalist." },
+    { label: "☕ Cozy ambience", prompt: "Make this room warmer and cozier with soft lighting and natural textures." },
   ];
 
   const handleApplyProposal = (msgId: string, proposal: ActionProposal) => {
@@ -268,8 +268,10 @@ export default function CopilotChat({
                 AGENT
               </span>
             </div>
-            <div className="text-[10px] text-slate-400 font-sans">
-              Gemini 3.5 Spatial Engine
+            <div className="text-[10px] text-slate-400 font-sans flex items-center gap-1.5">
+              <span>Gemini 3.5 Spatial Engine</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-amber-400 font-medium">{currentStyle} DNA</span>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@
  * is preserved seamlessly across all project views, walkthroughs, budget engines, and dashboards.
  */
 
-import { Project, Floor, Room, Budget, BudgetAllocation } from "@/types";
+import { Project, Floor, Room, Budget, BudgetAllocation, Design } from "@/types";
 
 export interface StoredRoomData {
   id?: string;
@@ -19,6 +19,15 @@ export interface StoredRoomData {
   detected_imperial?: string;
   ground_truth_imperial?: string;
   status?: string;
+}
+
+export interface StoredRoomPhoto {
+  id: string;
+  url: string;
+  source: string;
+  label: string;
+  name?: string;
+  timestamp?: string;
 }
 
 export interface StoredFloorData {
@@ -41,6 +50,8 @@ export interface StoredProjectPayload {
   design_style: string;
   primary_room?: string;
   target_room?: string;
+  room_photos?: StoredRoomPhoto[];
+  generated_renders?: string[];
   floors?: StoredFloorData[];
   rooms?: StoredRoomData[];
   created_at?: string;
@@ -319,4 +330,58 @@ export function getStoredProjectAllocations(projectId: string): BudgetAllocation
       variance: allocated - spent,
     };
   });
+}
+
+/**
+ * Build dynamic designs including photorealistic synthesized renders (like Master-Bed-Room-1/2).
+ */
+export function getStoredProjectDesigns(projectId: string): Design[] {
+  const proj = getStoredProject(projectId);
+  if (!proj) return [];
+
+  const styleName = proj.design_style || "Japandi";
+  const targetRoom = proj.target_room || proj.primary_room || "Master Bedroom";
+  const budget = proj.total_budget || 1500000;
+
+  const designs: Design[] = [
+    {
+      id: `d-gen-1-${projectId.slice(0, 8)}`,
+      name: `${styleName} ${targetRoom} (Perspective 1)`,
+      style: styleName,
+      estimated_cost: Math.round((budget * 0.22) / 1000) * 1000,
+      image_url: "/rooms/master-bed-room-1.png",
+      status: "generated",
+    },
+    {
+      id: `d-gen-2-${projectId.slice(0, 8)}`,
+      name: `${styleName} ${targetRoom} (Perspective 2)`,
+      style: styleName,
+      estimated_cost: Math.round((budget * 0.24) / 1000) * 1000,
+      image_url: "/rooms/master-bed-room-2.png",
+      status: "generated",
+    },
+  ];
+
+  // Add other rooms from project
+  const rooms = getStoredProjectRooms(projectId);
+  const otherRooms = rooms.filter((r) => r.name !== targetRoom).slice(0, 4);
+  otherRooms.forEach((r, idx) => {
+    designs.push({
+      id: `d-room-${idx + 3}-${projectId.slice(0, 8)}`,
+      name: `${styleName} ${r.name}`,
+      style: styleName,
+      estimated_cost:
+        Math.round((budget * ((r.area_sqm || 15) / 100)) / 1000) * 1000 ||
+        120000 + idx * 30000,
+      image_url:
+        idx === 0
+          ? "/styles/japandi.png"
+          : idx === 1
+          ? "/styles/Modern Luxury.png"
+          : "/styles/industrial.png",
+      status: "generated",
+    });
+  });
+
+  return designs;
 }

@@ -15,6 +15,7 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
+  Camera,
 } from "lucide-react";
 
 import { HomeTypeSelector } from "@/components/home-setup/HomeTypeSelector";
@@ -28,6 +29,7 @@ import { DimensionCorrection } from "@/components/home-setup/DimensionCorrection
 import { RoomSelector } from "@/components/home-setup/RoomSelector";
 import { BlueprintLayoutViewer } from "@/components/home-setup/BlueprintLayoutViewer";
 import { DesignStyleSelector } from "@/components/home-setup/DesignStyleSelector";
+import { RoomPhotoCapture, CapturedPhoto } from "@/components/home-setup/RoomPhotoCapture";
 import { AIDetectionStep, ChecklistItem, BlueprintRoom } from "@/components/home-setup/AIDetectionStep";
 import { GenerationStatus, GenerationStep } from "@/components/ai/GenerationStatus";
 import { projectApi } from "@/lib/projects";
@@ -39,9 +41,12 @@ import { saveProjectLocally } from "@/lib/projectStorage";
 export default function NewHomePage() {
   const router = useRouter();
 
-  // Wizard Step (1 to 10)
+  // Wizard Step (1 to 11)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 10;
+  const totalSteps = 11;
+
+  // Step 10: Room Photos
+  const [roomPhotos, setRoomPhotos] = useState<CapturedPhoto[]>([]);
 
   // Step 1: Home Type
   const [propertyType, setPropertyType] = useState<"independent" | "apartment">("apartment");
@@ -476,7 +481,8 @@ export default function NewHomePage() {
     { num: 7, label: "Dimensions", icon: <Ruler className="w-4 h-4" /> },
     { num: 8, label: "Choose Room", icon: <DoorClosed className="w-4 h-4" /> },
     { num: 9, label: "Style DNA", icon: <Palette className="w-4 h-4" /> },
-    { num: 10, label: "AI Twin", icon: <Sparkles className="w-4 h-4" /> },
+    { num: 10, label: "Room Photos", icon: <Camera className="w-4 h-4" /> },
+    { num: 11, label: "AI Twin", icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   // Pipeline API Operations
@@ -701,6 +707,8 @@ export default function NewHomePage() {
       setCurrentStep(9);
     } else if (currentStep === 9) {
       setCurrentStep(10);
+    } else if (currentStep === 10) {
+      setCurrentStep(11);
       startGenerationPipeline();
     } else {
       setCurrentStep((prev) => Math.min(totalSteps, prev + 1));
@@ -720,7 +728,7 @@ export default function NewHomePage() {
     setGenerationSteps([
       { id: "1", label: "Parsing architectural structure & floor boundaries", status: "processing" },
       { id: "2", label: `Allocating ₹${(totalBudget / 100000).toFixed(1)}L budget envelopes across rooms`, status: "pending" },
-      { id: "3", label: `Generating 3D room geometries & PBR materials (${designStyle})`, status: "pending" },
+      { id: "3", label: `Synthesizing ${designStyle} 3D geometries & photorealistic renders for ${selectedRoom}`, status: "pending" },
       { id: "4", label: "Assembling spatial scene graph & digital twin", status: "pending" },
     ]);
 
@@ -775,6 +783,18 @@ export default function NewHomePage() {
       design_style: designStyle,
       primary_room: selectedRoom,
       target_room: selectedRoom,
+      room_photos: roomPhotos.map((p) => ({
+        id: p.id,
+        url: p.url,
+        source: p.source,
+        label: p.label,
+        name: p.name,
+        timestamp: p.timestamp,
+      })),
+      generated_renders: [
+        "/rooms/master-bed-room-1.png",
+        "/rooms/master-bed-room-2.png",
+      ],
       floors: floorList,
       rooms: allRoomsPayload,
       created_at: new Date().toISOString(),
@@ -888,7 +908,7 @@ export default function NewHomePage() {
       </header>
 
       {/* Main Wizard Content Area */}
-      <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 ? "max-w-7xl" : "max-w-5xl"}`}>
+      <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 || currentStep === 10 ? "max-w-7xl" : "max-w-5xl"}`}>
         {/* Step Indicator Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
@@ -1129,14 +1149,28 @@ export default function NewHomePage() {
             />
           )}
 
-          {/* STEP 10: AI Generation Status */}
+          {/* STEP 10: Room Photos (Live Camera Capture & Uploads) */}
           {currentStep === 10 && (
+            <RoomPhotoCapture
+              roomName={selectedRoom}
+              designStyle={designStyle}
+              photos={roomPhotos}
+              onPhotosChange={(newPhotos) => setRoomPhotos(newPhotos)}
+              onProceed={() => {
+                setCurrentStep(11);
+                startGenerationPipeline();
+              }}
+            />
+          )}
+
+          {/* STEP 11: AI Generation Status */}
+          {currentStep === 11 && (
             <div className="py-6">
               <GenerationStatus
                 steps={generationSteps}
                 overallProgress={generationProgress}
                 title="Synthesizing Your 3D Digital Home & Budget Envelopes"
-                subtitle={`Generating architectural boundaries, ${designStyle} PBR materials, spatial clearances, and Indian catalog pricing...`}
+                subtitle={`Generating architectural boundaries, ${designStyle} PBR materials, spatial clearances, and photorealistic renders from your ${selectedRoom} pictures...`}
                 error={generationError}
                 onRetry={startGenerationPipeline}
               />
@@ -1144,8 +1178,8 @@ export default function NewHomePage() {
           )}
         </div>
 
-        {/* Bottom Navigation Buttons (Steps 1 to 9) */}
-        {currentStep < 10 && (
+        {/* Bottom Navigation Buttons (Steps 1 to 10) */}
+        {currentStep < 11 && (
           <div className="pt-6 border-t border-white/[0.08] flex items-center justify-between">
             <button
               onClick={handleBack}
@@ -1176,7 +1210,11 @@ export default function NewHomePage() {
                   : currentStep === 8
                   ? "Continue to Style DNA"
                   : currentStep === 9
-                  ? "Synthesize 3D Digital Twin"
+                  ? "Capture / Upload Room Photos"
+                  : currentStep === 10
+                  ? roomPhotos.length > 0
+                    ? `Synthesize 3D Digital Twin (${roomPhotos.length} photo${roomPhotos.length === 1 ? "" : "s"})`
+                    : "Synthesize 3D Digital Twin"
                   : "Continue"}
               </span>
               <ArrowRight className="w-3.5 h-3.5" />
