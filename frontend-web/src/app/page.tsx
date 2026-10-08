@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Menu, X, Sparkles, Phone } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import Hero from "@/components/landing/Hero";
 import PlatformDemo from "@/components/landing/PlatformDemo";
 import DesignFeatures from "@/components/landing/DesignFeatures";
@@ -111,6 +112,8 @@ export default function HomePage() {
 
           {/* User Auth Buttons / Primary CTA */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            <ThemeToggle />
+
             {user && (
               <div className="flex items-center gap-3">
                 <button
@@ -189,6 +192,10 @@ export default function HomePage() {
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
               <span>CONTACT & HUBS</span>
             </button>
+            <div className="pt-2 flex items-center justify-between border-t border-white/[0.08]">
+              <span className="text-xs font-mono text-slate-400">Appearance Theme:</span>
+              <ThemeToggle showLabel={true} />
+            </div>
           </div>
         )}
       </header>

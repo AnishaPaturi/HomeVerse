@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "./NotificationBell";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   Sparkles,
   Plus,
@@ -94,6 +95,7 @@ export const Navbar: React.FC = () => {
 
       {/* Right Controls: Notifications, User Account & CTA */}
       <div className="flex items-center gap-3.5">
+        <ThemeToggle />
         <NotificationBell />
 
         {user ? (
