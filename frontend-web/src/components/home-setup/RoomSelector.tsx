@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Check,
   DoorClosed,
@@ -13,6 +13,8 @@ import {
   Layers,
   Maximize2,
   CheckCircle2,
+  Pencil,
+  X,
 } from "lucide-react";
 
 export interface RoomOption {
@@ -30,9 +32,35 @@ interface RoomSelectorProps {
   rooms: RoomOption[];
   selectedRoom: string;
   onSelect: (roomName: string) => void;
+  onRenameRoom?: (index: number, newName: string) => void;
 }
 
-export const RoomSelector: React.FC<RoomSelectorProps> = ({ rooms, selectedRoom, onSelect }) => {
+export const RoomSelector: React.FC<RoomSelectorProps> = ({
+  rooms,
+  selectedRoom,
+  onSelect,
+  onRenameRoom,
+}) => {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const handleStartRename = (idx: number, currentName: string) => {
+    setEditingIdx(idx);
+    setEditValue(currentName);
+  };
+
+  const handleSaveRename = (idx: number) => {
+    if (editValue.trim() && onRenameRoom) {
+      onRenameRoom(idx, editValue.trim());
+    }
+    setEditingIdx(null);
+  };
+
+  const handleCancelRename = () => {
+    setEditingIdx(null);
+    setEditValue("");
+  };
+
   const getRoomIcon = (name: string, roomType: string) => {
     const lowerName = name.toLowerCase();
     const lowerType = roomType.toLowerCase();
@@ -85,7 +113,7 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({ rooms, selectedRoom,
             Choose Room to Style
           </h2>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-            Select a target room for custom interior styling, or generate a unified aesthetic for your entire home.
+            Select a target room for custom interior styling, or generate a unified aesthetic for your entire home. Hover over any room name to rename it.
           </p>
         </div>
 
@@ -143,29 +171,93 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({ rooms, selectedRoom,
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {rooms.map((r) => {
+        {rooms.map((r, idx) => {
           const active = selectedRoom === r.name;
+          const isEditingThis = editingIdx === idx;
+
           return (
-            <button
-              key={r.name}
-              type="button"
-              onClick={() => onSelect(r.name)}
-              className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+            <div
+              key={`${r.name}-${idx}`}
+              onClick={() => {
+                if (!isEditingThis) onSelect(r.name);
+              }}
+              className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer group ${
                 active
                   ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-500/40 shadow-md shadow-emerald-500/10"
                   : "border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0c121d] hover:border-gray-300 dark:hover:border-white/[0.15]"
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-zinc-800/80 border border-gray-200/60 dark:border-white/[0.06] flex items-center justify-center flex-shrink-0">
                   {getRoomIcon(r.name, r.room_type)}
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-sm font-bold truncate ${active ? "text-emerald-700 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}>
-                      {r.name}
-                    </span>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  {isEditingThis ? (
+                    <div
+                      className="flex items-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSaveRename(idx);
+                          }
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            handleCancelRename();
+                          }
+                        }}
+                        autoFocus
+                        placeholder="Room name..."
+                        className="px-2 py-0.5 text-xs font-bold bg-white dark:bg-zinc-800 border-2 border-emerald-500 rounded-lg text-gray-900 dark:text-white focus:outline-none w-32"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveRename(idx);
+                        }}
+                        className="p-1 rounded bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all cursor-pointer"
+                        title="Save name"
+                      >
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelRename();
+                        }}
+                        className="p-1 rounded bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-300 transition-all cursor-pointer"
+                        title="Cancel"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-sm font-bold truncate ${active ? "text-emerald-700 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}>
+                        {r.name}
+                      </span>
+                      {onRenameRoom && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartRename(idx, r.name);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 hover:text-emerald-600 dark:hover:text-emerald-400 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+                          title="Rename room"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                     {r.area_sqm && <span>{r.area_sqm} m²</span>}
@@ -188,7 +280,7 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({ rooms, selectedRoom,
               >
                 {active && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

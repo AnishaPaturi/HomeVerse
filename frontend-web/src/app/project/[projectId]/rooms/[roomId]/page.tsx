@@ -18,6 +18,9 @@ import {
   Layers,
   Sparkles,
   ShoppingBag,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 
 export default function RoomDetailPage() {
@@ -29,6 +32,20 @@ export default function RoomDetailPage() {
   const [room, setRoom] = useState<Room | null>(null);
   const [allocation, setAllocation] = useState<BudgetAllocation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+
+  const handleSaveRename = async () => {
+    if (!editedName.trim() || !room) return;
+    const newName = editedName.trim();
+    try {
+      await roomApi.updateRoom(roomId, { name: newName });
+    } catch (err) {
+      console.warn("Failed to persist room rename:", err);
+    }
+    setRoom((prev) => (prev ? { ...prev, name: newName } : null));
+    setIsEditingName(false);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -100,9 +117,56 @@ export default function RoomDetailPage() {
               <Box className="w-3.5 h-3.5" />
               <span>SPATIAL CAD ROOM TWIN</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              {room?.name || "Room Overview"}
-            </h1>
+
+            {isEditingName ? (
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveRename();
+                    if (e.key === "Escape") setIsEditingName(false);
+                  }}
+                  autoFocus
+                  className="px-3 py-1.5 text-2xl font-bold bg-slate-900 border-2 border-emerald-500 rounded-xl text-white focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveRename}
+                  className="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold cursor-pointer"
+                  title="Save name"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName(false)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 group">
+                <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                  {room?.name || "Room Overview"}
+                </h1>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditedName(room?.name || "");
+                    setIsEditingName(true);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-white/[0.05] transition-all cursor-pointer text-slate-400"
+                  title="Rename room"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             <p className="text-xs text-slate-400 font-light">
               Parametric 3D scene, dimensions, and allocated budget for this space.
             </p>

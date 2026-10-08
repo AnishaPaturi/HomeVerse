@@ -26,6 +26,7 @@ import { FloorPlanPreview } from "@/components/home-setup/FloorPlanPreview";
 import { DimensionConfirmation, DetectedRoom } from "@/components/home-setup/DimensionConfirmation";
 import { DimensionCorrection } from "@/components/home-setup/DimensionCorrection";
 import { RoomSelector } from "@/components/home-setup/RoomSelector";
+import { BlueprintLayoutViewer } from "@/components/home-setup/BlueprintLayoutViewer";
 import { DesignStyleSelector } from "@/components/home-setup/DesignStyleSelector";
 import { AIDetectionStep, ChecklistItem, BlueprintRoom } from "@/components/home-setup/AIDetectionStep";
 import { GenerationStatus, GenerationStep } from "@/components/ai/GenerationStatus";
@@ -426,6 +427,18 @@ export default function NewHomePage() {
   const [detectedRooms, setDetectedRooms] = useState<DetectedRoom[]>(() => generateRoomsForLayout(3, 2, 2));
   const [isEditingDimensions, setIsEditingDimensions] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState("Drawing Room");
+
+  const handleRenameRoom = (index: number, newName: string) => {
+    if (!newName.trim()) return;
+    const trimmed = newName.trim();
+    const oldName = detectedRooms[index]?.name;
+    setDetectedRooms((prev) =>
+      prev.map((r, idx) => (idx === index ? { ...r, name: trimmed, custom_name: trimmed } : r))
+    );
+    if (selectedRoom === oldName) {
+      setSelectedRoom(trimmed);
+    }
+  };
 
   // Step 8: Design Style DNA
   const [designStyle, setDesignStyle] = useState("Japandi");
@@ -835,7 +848,7 @@ export default function NewHomePage() {
       </header>
 
       {/* Main Wizard Content Area */}
-      <main className="max-w-5xl mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between">
+      <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 ? "max-w-7xl" : "max-w-5xl"}`}>
         {/* Step Indicator Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
@@ -995,44 +1008,76 @@ export default function NewHomePage() {
             />
           )}
 
-          {/* STEP 7: Dimension Confirmation & Adjustment */}
+          {/* STEP 7: Dimension Confirmation & Adjustment with Side-by-Side Layout */}
           {currentStep === 7 && (
-            <div className="space-y-6">
-              {!isEditingDimensions ? (
-                <DimensionConfirmation
-                  rooms={detectedRooms}
-                  onConfirm={confirmCanonicalScene}
-                  onCorrect={() => setIsEditingDimensions(true)}
-                  gatekeeperError={gatekeeperError}
-                  isConfirming={isConfirmingScene}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className="lg:col-span-7 space-y-6">
+                {!isEditingDimensions ? (
+                  <DimensionConfirmation
+                    rooms={detectedRooms}
+                    onConfirm={confirmCanonicalScene}
+                    onCorrect={() => setIsEditingDimensions(true)}
+                    onRenameRoom={handleRenameRoom}
+                    gatekeeperError={gatekeeperError}
+                    isConfirming={isConfirmingScene}
+                  />
+                ) : (
+                  <DimensionCorrection
+                    initialRooms={detectedRooms}
+                    onSave={(updated) => {
+                      setDetectedRooms(
+                        updated.map((u) => ({
+                          ...u,
+                          name: u.name,
+                          source_label: u.name,
+                          custom_name: u.name,
+                          confidence: 99,
+                          dimension_source: "user",
+                          scale_status: "user_verified",
+                        }))
+                      );
+                      setIsEditingDimensions(false);
+                    }}
+                    onCancel={() => setIsEditingDimensions(false)}
+                  />
+                )}
+              </div>
+
+              {/* Side-by-Side Blueprint Layout Preview */}
+              <div className="lg:col-span-5 lg:sticky lg:top-20">
+                <BlueprintLayoutViewer
+                  imageUrl={floorPlanPreviewUrl}
+                  title="Blueprint CAD Layout"
+                  subtitle="Verify walls & printed text while modifying room names and dimensions"
+                  roomsCount={detectedRooms.length}
                 />
-              ) : (
-                <DimensionCorrection
-                  initialRooms={detectedRooms}
-                  onSave={(updated) => {
-                    setDetectedRooms(
-                      updated.map((u) => ({
-                        ...u,
-                        confidence: 99,
-                        dimension_source: "user",
-                        scale_status: "user_verified",
-                      }))
-                    );
-                    setIsEditingDimensions(false);
-                  }}
-                  onCancel={() => setIsEditingDimensions(false)}
-                />
-              )}
+              </div>
             </div>
           )}
 
-          {/* STEP 8: Room Focus Selection */}
+          {/* STEP 8: Room Focus Selection with Side-by-Side Layout */}
           {currentStep === 8 && (
-            <RoomSelector
-              rooms={detectedRooms}
-              selectedRoom={selectedRoom}
-              onSelect={(rName) => setSelectedRoom(rName)}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className="lg:col-span-7">
+                <RoomSelector
+                  rooms={detectedRooms}
+                  selectedRoom={selectedRoom}
+                  onSelect={(rName) => setSelectedRoom(rName)}
+                  onRenameRoom={handleRenameRoom}
+                />
+              </div>
+
+              {/* Side-by-Side Blueprint Layout Preview */}
+              <div className="lg:col-span-5 lg:sticky lg:top-20">
+                <BlueprintLayoutViewer
+                  imageUrl={floorPlanPreviewUrl}
+                  title="Blueprint Layout Reference"
+                  subtitle="Verify room spatial location before choosing style DNA"
+                  highlightedRoom={selectedRoom}
+                  roomsCount={detectedRooms.length}
+                />
+              </div>
+            </div>
           )}
 
           {/* STEP 9: Design Style DNA */}

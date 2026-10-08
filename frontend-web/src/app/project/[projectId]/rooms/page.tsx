@@ -109,6 +109,18 @@ export default function ProjectRoomsPage() {
     }
   };
 
+  const handleRenameRoom = async (roomId: string, newName: string) => {
+    try {
+      await fetchApi(`/api/projects/${projectId}/rooms/${roomId}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: newName }),
+      });
+    } catch (err) {
+      console.warn("Using local room rename fallback", err);
+    }
+    setRooms((prev) => prev.map((r) => (r.id === roomId ? { ...r, name: newName } : r)));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-white">
       <Navbar />
@@ -120,12 +132,12 @@ export default function ProjectRoomsPage() {
           <div>
             <h1 className="text-2xl font-bold">Rooms & Spatial Dimensions</h1>
             <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-              Configure room boundaries, dimensions, and floor plan zones for 3D layout generation.
+              Configure room boundaries, dimensions, and floor plan zones for 3D layout generation. Hover over room names to rename.
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-1.5 transition"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             + Add Room
@@ -154,7 +166,12 @@ export default function ProjectRoomsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} />
+            <RoomCard
+              key={room.id}
+              room={room}
+              projectId={projectId}
+              onRename={handleRenameRoom}
+            />
           ))}
         </div>
       </div>
