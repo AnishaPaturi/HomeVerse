@@ -86,3 +86,14 @@ checkpoints/
 *.bin
 *.onnx
 
+
+
+# HomeVerse generated ML artifacts
+/checkpoints/
+/HomeVerse-Dataset/
+
+# Large generated model files
+*.pt
+*.ckpt
+*.onnx
+*.safetensors
