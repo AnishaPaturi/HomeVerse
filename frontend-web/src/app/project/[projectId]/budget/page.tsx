@@ -10,6 +10,10 @@ import { RoomBudget } from "@/components/budget/RoomBudget";
 import { BudgetBreakdown } from "@/components/budget/BudgetBreakdown";
 import { Budget, BudgetAllocation } from "@/types";
 import { budgetApi } from "@/lib/budgets";
+import {
+  getStoredProjectBudget,
+  getStoredProjectAllocations,
+} from "@/lib/projectStorage";
 import { formatIndianBudget } from "@/lib/utils";
 import {
   Sparkles,
@@ -32,55 +36,30 @@ export default function ProjectBudgetPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const [budget, setBudget] = useState<Budget>({
-    id: "b1",
-    project_id: projectId,
-    total_budget: 1500000,
-    allocated_budget: 1420000,
-    spent_amount: 980000,
-    remaining_amount: 520000,
-    currency: "INR",
-    flexibility: "moderate",
+  const [budget, setBudget] = useState<Budget>(() => {
+    if (typeof window !== "undefined") {
+      const stored = getStoredProjectBudget(projectId);
+      if (stored) return stored;
+    }
+    return {
+      id: "b1",
+      project_id: projectId,
+      total_budget: 1500000,
+      allocated_budget: 1420000,
+      spent_amount: 980000,
+      remaining_amount: 520000,
+      currency: "INR",
+      flexibility: "moderate",
+    };
   });
 
-  const [allocations, setAllocations] = useState<BudgetAllocation[]>([
-    {
-      id: "a1",
-      budget_id: "b1",
-      room_id: "r1",
-      room_name: "Living Room",
-      category: "Living",
-      allocated_amount: 500000,
-      spent_amount: 420000,
-    },
-    {
-      id: "a2",
-      budget_id: "b1",
-      room_id: "r2",
-      room_name: "Kitchen & Dining",
-      category: "Kitchen",
-      allocated_amount: 400000,
-      spent_amount: 290000,
-    },
-    {
-      id: "a3",
-      budget_id: "b1",
-      room_id: "r3",
-      room_name: "Master Suite",
-      category: "Bedroom",
-      allocated_amount: 350000,
-      spent_amount: 180000,
-    },
-    {
-      id: "a4",
-      budget_id: "b1",
-      room_id: "r4",
-      room_name: "Study & Office",
-      category: "Office",
-      allocated_amount: 250000,
-      spent_amount: 90000,
-    },
-  ]);
+  const [allocations, setAllocations] = useState<BudgetAllocation[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = getStoredProjectAllocations(projectId);
+      if (stored && stored.length > 0) return stored;
+    }
+    return [];
+  });
 
   const [optimizing, setOptimizing] = useState(false);
   const [optimization, setOptimization] = useState<OptimizationData | null>(null);
@@ -89,12 +68,27 @@ export default function ProjectBudgetPage() {
     async function loadData() {
       try {
         const b = await budgetApi.getProjectBudget(projectId);
-        if (b && b.total_budget) setBudget(b);
+        if (b && b.total_budget) {
+          setBudget(b);
+        } else {
+          const storedB = getStoredProjectBudget(projectId);
+          if (storedB) setBudget(storedB);
+        }
 
         const a = await budgetApi.getBudgetAllocations(projectId);
-        if (a && a.length > 0) setAllocations(a);
+        if (a && a.length > 0) {
+          setAllocations(a);
+        } else {
+          const storedA = getStoredProjectAllocations(projectId);
+          if (storedA && storedA.length > 0) setAllocations(storedA);
+        }
       } catch (err) {
-        console.warn("Using default budget", err);
+        console.warn("Using stored budget & allocations fallback", err);
+        const storedB = getStoredProjectBudget(projectId);
+        if (storedB) setBudget(storedB);
+
+        const storedA = getStoredProjectAllocations(projectId);
+        if (storedA && storedA.length > 0) setAllocations(storedA);
       }
     }
     loadData();

@@ -9,111 +9,77 @@ import { projectApi } from "@/lib/projects";
 import { floorApi } from "@/lib/floors";
 import { roomApi } from "@/lib/rooms";
 import { Floor, Room, Project } from "@/types";
+import {
+  getStoredProject,
+  getStoredProjectFloors,
+  getStoredProjectRooms,
+} from "@/lib/projectStorage";
 import { ArrowLeft, Compass, Eye, Layers } from "lucide-react";
 
 export default function ProjectWalkthroughPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [floors, setFloors] = useState<Floor[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [project, setProject] = useState<Project | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = getStoredProject(projectId);
+      if (stored) return stored as unknown as Project;
+    }
+    return null;
+  });
+  const [floors, setFloors] = useState<Floor[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedFl = getStoredProjectFloors(projectId);
+      if (storedFl.length > 0) return storedFl;
+    }
+    return [];
+  });
+  const [rooms, setRooms] = useState<Room[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedRm = getStoredProjectRooms(projectId);
+      if (storedRm.length > 0) return storedRm;
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
         const projData = await projectApi.getProject(projectId);
-        setProject(projData);
+        if (projData) setProject(projData);
+        else {
+          const stored = getStoredProject(projectId);
+          if (stored) setProject(stored as unknown as Project);
+        }
 
         const floorsData = await floorApi.getFloorsByProject(projectId);
-        setFloors(floorsData);
-
-        const allRooms: Room[] = [];
-        for (const fl of floorsData) {
-          const flRooms = await roomApi.getRoomsByFloor(fl.id);
-          allRooms.push(...flRooms);
+        if (floorsData && floorsData.length > 0) {
+          setFloors(floorsData);
+          const allRooms: Room[] = [];
+          for (const fl of floorsData) {
+            const flRooms = await roomApi.getRoomsByFloor(fl.id);
+            allRooms.push(...flRooms);
+          }
+          if (allRooms.length > 0) setRooms(allRooms);
+          else {
+            const storedRm = getStoredProjectRooms(projectId);
+            if (storedRm.length > 0) setRooms(storedRm);
+          }
+        } else {
+          const storedFl = getStoredProjectFloors(projectId);
+          if (storedFl.length > 0) setFloors(storedFl);
+          const storedRm = getStoredProjectRooms(projectId);
+          if (storedRm.length > 0) setRooms(storedRm);
         }
-        setRooms(allRooms);
       } catch (err) {
-        // Fallback default structure
-        setFloors([
-          {
-            id: "f1",
-            project_id: projectId,
-            level: 1,
-            name: "Ground Floor",
-            room_count: 3,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "f2",
-            project_id: projectId,
-            level: 2,
-            name: "First Floor",
-            room_count: 2,
-            created_at: "",
-            updated_at: "",
-          },
-        ]);
-        setRooms([
-          {
-            id: "r1",
-            floor_id: "f1",
-            name: "Living Room",
-            room_type: "living_room",
-            width_meters: 5.5,
-            length_meters: 6.5,
-            area_sqm: 35.75,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r2",
-            floor_id: "f1",
-            name: "Kitchen & Dining",
-            room_type: "kitchen",
-            width_meters: 4.0,
-            length_meters: 5.0,
-            area_sqm: 20.0,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r3",
-            floor_id: "f1",
-            name: "Master Suite",
-            room_type: "master_bedroom",
-            width_meters: 4.5,
-            length_meters: 5.0,
-            area_sqm: 22.5,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r4",
-            floor_id: "f2",
-            name: "Bedroom 2",
-            room_type: "bedroom",
-            width_meters: 4.0,
-            length_meters: 4.5,
-            area_sqm: 18.0,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r5",
-            floor_id: "f2",
-            name: "Home Office & Study",
-            room_type: "office",
-            width_meters: 3.5,
-            length_meters: 4.0,
-            area_sqm: 14.0,
-            created_at: "",
-            updated_at: "",
-          },
-        ]);
+        console.warn("Using stored walkthrough data fallback", err);
+        const stored = getStoredProject(projectId);
+        if (stored) setProject(stored as unknown as Project);
+        const storedFl = getStoredProjectFloors(projectId);
+        if (storedFl.length > 0) setFloors(storedFl);
+        const storedRm = getStoredProjectRooms(projectId);
+        if (storedRm.length > 0) setRooms(storedRm);
       } finally {
         setLoading(false);
       }

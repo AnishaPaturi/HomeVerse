@@ -7,19 +7,24 @@ import { Navbar } from "@/components/layout/Navbar";
 import { RoomCard } from "@/components/rooms/RoomCard";
 import { Room } from "@/types";
 import { fetchApi } from "@/lib/api";
+import {
+  getStoredProjectRooms,
+  updateStoredRoom,
+  addStoredRoom,
+} from "@/lib/projectStorage";
 import { Plus, X, Layers, Compass, CheckCircle2 } from "lucide-react";
-
-const INITIAL_ROOMS: Room[] = [
-  { id: "r1", project_id: "p1", name: "Living Room", room_type: "Living Room", area: 240, length: 4.8, width: 4.6 },
-  { id: "r2", project_id: "p1", name: "Master Bedroom", room_type: "Master Bedroom", area: 180, length: 4.2, width: 3.9 },
-  { id: "r3", project_id: "p1", name: "Modular Kitchen", room_type: "Kitchen", area: 120, length: 3.6, width: 3.1 },
-];
 
 export default function ProjectRoomsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
+  const [rooms, setRooms] = useState<Room[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = getStoredProjectRooms(projectId);
+      if (stored.length > 0) return stored;
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,9 +43,14 @@ export default function ProjectRoomsPage() {
         const data = await fetchApi<Room[]>(`/api/projects/${projectId}/rooms`);
         if (data && data.length > 0) {
           setRooms(data);
+        } else {
+          const stored = getStoredProjectRooms(projectId);
+          if (stored.length > 0) setRooms(stored);
         }
       } catch (err) {
-        console.warn("Using initial room data", err);
+        console.warn("Using stored room data", err);
+        const stored = getStoredProjectRooms(projectId);
+        if (stored.length > 0) setRooms(stored);
       } finally {
         setLoading(false);
       }
@@ -70,6 +80,15 @@ export default function ProjectRoomsPage() {
 
       if (created && created.id) {
         setRooms((prev) => [...prev, created]);
+        addStoredRoom(projectId, {
+          id: created.id,
+          name: created.name,
+          room_type: created.room_type,
+          width_meters: created.width || length,
+          length_meters: created.length || width,
+          area_sqm: Number((length * width).toFixed(2)),
+          status: "planning",
+        });
       } else {
         // Fallback local room
         const fallbackRoom: Room = {
@@ -83,6 +102,15 @@ export default function ProjectRoomsPage() {
           status: "planning",
         };
         setRooms((prev) => [...prev, fallbackRoom]);
+        addStoredRoom(projectId, {
+          id: fallbackRoom.id,
+          name,
+          room_type: roomType,
+          width_meters: Number(width),
+          length_meters: Number(length),
+          area_sqm: Number((length * width).toFixed(2)),
+          status: "planning",
+        });
       }
 
       setIsModalOpen(false);
@@ -103,6 +131,15 @@ export default function ProjectRoomsPage() {
         status: "planning",
       };
       setRooms((prev) => [...prev, fallbackRoom]);
+      addStoredRoom(projectId, {
+        id: fallbackRoom.id,
+        name,
+        room_type: roomType,
+        width_meters: Number(width),
+        length_meters: Number(length),
+        area_sqm: Number((length * width).toFixed(2)),
+        status: "planning",
+      });
       setIsModalOpen(false);
     } finally {
       setSubmitting(false);
@@ -118,6 +155,7 @@ export default function ProjectRoomsPage() {
     } catch (err) {
       console.warn("Using local room rename fallback", err);
     }
+    updateStoredRoom(projectId, roomId, { custom_name: newName, name: newName });
     setRooms((prev) => prev.map((r) => (r.id === roomId ? { ...r, name: newName } : r)));
   };
 

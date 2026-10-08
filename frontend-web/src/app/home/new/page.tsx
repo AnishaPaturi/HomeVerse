@@ -727,19 +727,39 @@ export default function NewHomePage() {
     let createdProjectId = generateUUID();
 
     const floorList = [];
-    for (let f = 1; f <= floorCount; f++) {
+    const totalFloors = Math.max(1, floorCount);
+    const roomsPerFloor = Math.ceil(detectedRooms.length / totalFloors);
+    const allRoomsPayload: any[] = [];
+
+    for (let f = 1; f <= totalFloors; f++) {
+      const startIdx = (f - 1) * roomsPerFloor;
+      const endIdx = f === totalFloors ? detectedRooms.length : Math.min(startIdx + roomsPerFloor, detectedRooms.length);
+      const floorRooms = detectedRooms.slice(startIdx, endIdx);
+      const floorId = `f-${f}-${createdProjectId.slice(0, 8)}`;
+
+      const mappedFloorRooms = floorRooms.map((r, rIdx) => ({
+        id: `r-${f}-${rIdx + 1}-${createdProjectId.slice(0, 8)}`,
+        floor_id: floorId,
+        name: r.name,
+        source_label: r.source_label || r.name,
+        custom_name: r.name,
+        room_type: r.room_type,
+        area_sqm: r.area_sqm,
+        width_meters: r.width_m,
+        length_meters: r.length_m,
+        confidence: r.confidence,
+        status: "planning",
+      }));
+
       floorList.push({
+        id: floorId,
         level: f,
         name: f === 1 ? "Ground Floor" : f === 2 ? "First Floor" : `Floor ${f}`,
-        room_count: detectedRooms.length,
-        rooms: detectedRooms.map((r) => ({
-          name: r.name,
-          room_type: r.room_type,
-          area_sqm: r.area_sqm,
-          width_meters: r.width_m,
-          length_meters: r.length_m,
-        })),
+        room_count: mappedFloorRooms.length,
+        rooms: mappedFloorRooms,
       });
+
+      allRoomsPayload.push(...mappedFloorRooms);
     }
 
     const storedUser = getStoredUser();
@@ -747,7 +767,7 @@ export default function NewHomePage() {
       id: createdProjectId,
       name: projectName,
       home_type: propertyType,
-      floors_count: floorCount,
+      floors_count: totalFloors,
       total_rooms: detectedRooms.length,
       total_budget: totalBudget,
       currency: "INR",
@@ -756,17 +776,7 @@ export default function NewHomePage() {
       primary_room: selectedRoom,
       target_room: selectedRoom,
       floors: floorList,
-      rooms: detectedRooms.map((r, idx) => ({
-        id: `r-${idx + 1}-${createdProjectId.slice(0, 8)}`,
-        name: r.name,
-        source_label: r.source_label || r.name,
-        room_type: r.room_type,
-        area_sqm: r.area_sqm,
-        width_meters: r.width_m,
-        length_meters: r.length_m,
-        confidence: r.confidence,
-        status: "planning",
-      })),
+      rooms: allRoomsPayload,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

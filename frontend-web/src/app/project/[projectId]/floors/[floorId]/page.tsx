@@ -9,6 +9,10 @@ import { floorApi } from "@/lib/floors";
 import { roomApi } from "@/lib/rooms";
 import { Floor, Room } from "@/types";
 import {
+  getStoredProjectFloors,
+  getStoredProjectRooms,
+} from "@/lib/projectStorage";
+import {
   Layers,
   ArrowLeft,
   Plus,
@@ -24,64 +28,61 @@ export default function FloorDetailPage() {
   const projectId = params.projectId as string;
   const floorId = params.floorId as string;
 
-  const [floor, setFloor] = useState<Floor | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [floor, setFloor] = useState<Floor | null>(() => {
+    if (typeof window !== "undefined") {
+      const storedFl = getStoredProjectFloors(projectId);
+      const match = storedFl.find((f) => f.id === floorId);
+      if (match) return match;
+      if (storedFl.length > 0) return storedFl[0];
+    }
+    return null;
+  });
+  const [rooms, setRooms] = useState<Room[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedRm = getStoredProjectRooms(projectId, floorId);
+      if (storedRm.length > 0) return storedRm;
+      // If none explicitly matched floorId, return all if 1 floor
+      const all = getStoredProjectRooms(projectId);
+      if (all.length > 0) return all;
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadFloorData() {
       try {
         const floorData = await floorApi.getFloor(floorId);
-        setFloor(floorData);
+        if (floorData) setFloor(floorData);
+        else {
+          const storedFl = getStoredProjectFloors(projectId);
+          const match = storedFl.find((f) => f.id === floorId) || storedFl[0];
+          if (match) setFloor(match);
+        }
 
         const roomsData = await roomApi.getRoomsByFloor(floorId);
-        setRooms(roomsData);
+        if (roomsData && roomsData.length > 0) {
+          setRooms(roomsData);
+        } else {
+          const storedRm = getStoredProjectRooms(projectId, floorId);
+          if (storedRm.length > 0) setRooms(storedRm);
+          else {
+            const all = getStoredProjectRooms(projectId);
+            if (all.length > 0) setRooms(all);
+          }
+        }
       } catch (err) {
-        // Fallback demo state
-        setFloor({
-          id: floorId,
-          project_id: projectId,
-          level: 1,
-          name: "Ground Floor",
-          room_count: 3,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        setRooms([
-          {
-            id: "r1",
-            floor_id: floorId,
-            name: "Living Room",
-            room_type: "living_room",
-            width_meters: 5.5,
-            length_meters: 6.5,
-            area_sqm: 35.75,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r2",
-            floor_id: floorId,
-            name: "Dining & Kitchen",
-            room_type: "kitchen",
-            width_meters: 4.0,
-            length_meters: 5.0,
-            area_sqm: 20.0,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r3",
-            floor_id: floorId,
-            name: "Master Bedroom",
-            room_type: "master_bedroom",
-            width_meters: 4.5,
-            length_meters: 5.0,
-            area_sqm: 22.5,
-            created_at: "",
-            updated_at: "",
-          },
-        ]);
+        console.warn("Using stored floor data fallback", err);
+        const storedFl = getStoredProjectFloors(projectId);
+        const match = storedFl.find((f) => f.id === floorId) || storedFl[0];
+        if (match) setFloor(match);
+
+        const storedRm = getStoredProjectRooms(projectId, floorId);
+        if (storedRm.length > 0) setRooms(storedRm);
+        else {
+          const all = getStoredProjectRooms(projectId);
+          if (all.length > 0) setRooms(all);
+        }
       } finally {
         setLoading(false);
       }

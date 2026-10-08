@@ -72,10 +72,10 @@ export default function ProjectWorkspacePage() {
         setLoading(false);
       }
 
-      // 2. Try fetching from backend API if online
+      // 2. Try fetching from backend API if online (only override if no local authentic project)
       try {
         const projData = await projectApi.getProject(projectId);
-        if (projData && projData.id && projData.name && !projData.name.includes("Demo Project")) {
+        if (projData && projData.id && projData.name && !projData.name.includes("Demo Project") && !storedProj) {
           setProject(projData);
 
           const floorsData = await floorApi.getFloorsByProject(projectId);
@@ -234,8 +234,14 @@ export default function ProjectWorkspacePage() {
           <div className="space-y-6">
             {floors.map((floor, fIdx) => {
               let floorRooms = rooms.filter((r) => r.floor_id === floor.id);
-              if (floorRooms.length === 0 && (floors.length === 1 || fIdx === 0)) {
-                floorRooms = rooms;
+              if (floorRooms.length === 0) {
+                if (floors.length === 1) {
+                  floorRooms = rooms;
+                } else {
+                  const perFl = Math.ceil(rooms.length / floors.length);
+                  const start = fIdx * perFl;
+                  floorRooms = rooms.slice(start, start + perFl);
+                }
               }
 
               return (

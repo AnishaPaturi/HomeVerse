@@ -10,15 +10,43 @@ import { projectApi } from "@/lib/projects";
 import { Sparkles, Plus, Layers } from "lucide-react";
 
 export default function ProjectsDashboardPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("homeverse_projects");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      let localList: Project[] = [];
+      try {
+        const raw = localStorage.getItem("homeverse_projects");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) localList = parsed;
+        }
+      } catch (_) {}
+
       try {
         const data = await projectApi.getProjects();
         if (data && data.length > 0) {
-          setProjects(data);
+          // Merge unique projects with local ones taking priority
+          const map = new Map<string, Project>();
+          localList.forEach((p) => map.set(p.id, p));
+          data.forEach((p) => {
+            if (!map.has(p.id)) map.set(p.id, p);
+          });
+          setProjects(Array.from(map.values()));
+        } else if (localList.length > 0) {
+          setProjects(localList);
         } else {
           setProjects([
             {
@@ -36,7 +64,24 @@ export default function ProjectsDashboardPage() {
           ]);
         }
       } catch {
-        // Fallback
+        if (localList.length > 0) {
+          setProjects(localList);
+        } else {
+          setProjects([
+            {
+              id: "p1-demo",
+              name: "Modern Luxury Villa Residence",
+              home_type: "villa",
+              floors_count: 2,
+              total_rooms: 5,
+              total_budget: 1500000,
+              currency: "INR",
+              budget_flexibility: "moderate",
+              design_style: "Japandi",
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
       } finally {
         setLoading(false);
       }

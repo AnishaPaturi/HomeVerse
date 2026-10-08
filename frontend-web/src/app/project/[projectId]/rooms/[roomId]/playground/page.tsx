@@ -28,6 +28,11 @@ import VoiceAssistantWidget from "@/components/playground/VoiceAssistantWidget";
 import { formatIndianBudget } from "@/lib/utils";
 import { roomApi } from "@/lib/rooms";
 import { budgetApi } from "@/lib/budgets";
+import {
+  getStoredProject,
+  getStoredProjectRooms,
+  getStoredProjectAllocations,
+} from "@/lib/projectStorage";
 
 export default function RoomPlaygroundPage() {
   const params = useParams();
@@ -37,9 +42,30 @@ export default function RoomPlaygroundPage() {
 
   const [activeTab, setActiveTab] = useState<"3d" | "2d">("3d");
   const [selectedObject, setSelectedObject] = useState<any | null>(null);
-  const [roomName, setRoomName] = useState("Living Room");
-  const [roomBudget, setRoomBudget] = useState(350000); // ₹3.5 Lakhs
-  const [spentAmount, setSpentAmount] = useState(315000); // ₹3.15 Lakhs
+  const [roomName, setRoomName] = useState(() => {
+    if (typeof window !== "undefined") {
+      const storedRooms = getStoredProjectRooms(projectId);
+      const matched = storedRooms.find((r) => r.id === roomId || r.name === roomId);
+      if (matched) return matched.name;
+    }
+    return "Room";
+  });
+  const [roomBudget, setRoomBudget] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const allocations = getStoredProjectAllocations(projectId);
+      const matched = allocations.find((a) => a.room_id === roomId);
+      if (matched && typeof matched.allocated_amount === "number") return matched.allocated_amount;
+    }
+    return 350000;
+  });
+  const [spentAmount, setSpentAmount] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const allocations = getStoredProjectAllocations(projectId);
+      const matched = allocations.find((a) => a.room_id === roomId);
+      if (matched && typeof matched.spent_amount === "number") return matched.spent_amount;
+    }
+    return 315000;
+  });
   const [budgetFlexibility, setBudgetFlexibility] = useState("Moderate");
 
   // Modals
@@ -60,19 +86,48 @@ export default function RoomPlaygroundPage() {
       try {
         const roomData = await roomApi.getRoom(roomId);
         if (roomData) setRoomName(roomData.name);
+        else {
+          const storedRooms = getStoredProjectRooms(projectId);
+          const matched = storedRooms.find((r) => r.id === roomId || r.name === roomId) || storedRooms[0];
+          if (matched) setRoomName(matched.name);
+        }
 
         const budgetData = await budgetApi.getProjectBudget(projectId);
         if (budgetData) {
           setBudgetFlexibility(budgetData.flexibility || "Moderate");
+        } else {
+          const proj = getStoredProject(projectId);
+          if (proj) setBudgetFlexibility(proj.budget_flexibility || "Moderate");
         }
 
         const allocations = await budgetApi.getBudgetAllocations(projectId);
         const match = allocations.find((a) => a.room_id === roomId);
         if (match) {
-          setRoomBudget(match.allocated_amount);
-          setSpentAmount(match.spent_amount || match.allocated_amount * 0.9);
+          setRoomBudget(match.allocated_amount || 350000);
+          setSpentAmount(match.spent_amount ?? Math.round((match.allocated_amount || 350000) * 0.9));
+        } else {
+          const storedAllocs = getStoredProjectAllocations(projectId);
+          const storedMatch = storedAllocs.find((a) => a.room_id === roomId) || storedAllocs[0];
+          if (storedMatch) {
+            setRoomBudget(storedMatch.allocated_amount || 350000);
+            setSpentAmount(storedMatch.spent_amount ?? Math.round((storedMatch.allocated_amount || 350000) * 0.9));
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        const storedRooms = getStoredProjectRooms(projectId);
+        const matched = storedRooms.find((r) => r.id === roomId || r.name === roomId) || storedRooms[0];
+        if (matched) setRoomName(matched.name);
+
+        const proj = getStoredProject(projectId);
+        if (proj) setBudgetFlexibility(proj.budget_flexibility || "Moderate");
+
+        const storedAllocs = getStoredProjectAllocations(projectId);
+        const storedMatch = storedAllocs.find((a) => a.room_id === roomId) || storedAllocs[0];
+        if (storedMatch) {
+          setRoomBudget(storedMatch.allocated_amount || 350000);
+          setSpentAmount(storedMatch.spent_amount ?? Math.round((storedMatch.allocated_amount || 350000) * 0.9));
+        }
+      }
     }
     loadData();
   }, [projectId, roomId]);

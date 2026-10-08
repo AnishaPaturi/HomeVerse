@@ -10,6 +10,11 @@ import { budgetApi } from "@/lib/budgets";
 import { formatIndianBudget } from "@/lib/utils";
 import { Room, BudgetAllocation } from "@/types";
 import {
+  getStoredProjectRooms,
+  getStoredProjectAllocations,
+  updateStoredRoom,
+} from "@/lib/projectStorage";
+import {
   ArrowLeft,
   Wand2,
   Box,
@@ -29,8 +34,22 @@ export default function RoomDetailPage() {
   const projectId = params.projectId as string;
   const roomId = params.roomId as string;
 
-  const [room, setRoom] = useState<Room | null>(null);
-  const [allocation, setAllocation] = useState<BudgetAllocation | null>(null);
+  const [room, setRoom] = useState<Room | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = getStoredProjectRooms(projectId);
+      const match = stored.find((r) => r.id === roomId || r.name === roomId) || stored[0];
+      if (match) return match;
+    }
+    return null;
+  });
+  const [allocation, setAllocation] = useState<BudgetAllocation | null>(() => {
+    if (typeof window !== "undefined") {
+      const storedAlloc = getStoredProjectAllocations(projectId);
+      const match = storedAlloc.find((a) => a.room_id === roomId || a.room_name === room?.name) || storedAlloc[0];
+      if (match) return match;
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -41,8 +60,9 @@ export default function RoomDetailPage() {
     try {
       await roomApi.updateRoom(roomId, { name: newName });
     } catch (err) {
-      console.warn("Failed to persist room rename:", err);
+      console.warn("Failed to persist room rename to API:", err);
     }
+    updateStoredRoom(projectId, roomId, { custom_name: newName, name: newName });
     setRoom((prev) => (prev ? { ...prev, name: newName } : null));
     setIsEditingName(false);
   };
@@ -51,32 +71,30 @@ export default function RoomDetailPage() {
     async function loadData() {
       try {
         const roomData = await roomApi.getRoom(roomId);
-        setRoom(roomData);
+        if (roomData) setRoom(roomData);
+        else {
+          const stored = getStoredProjectRooms(projectId);
+          const match = stored.find((r) => r.id === roomId || r.name === roomId) || stored[0];
+          if (match) setRoom(match);
+        }
 
         const allocations = await budgetApi.getBudgetAllocations(projectId);
         const match = allocations.find((a) => a.room_id === roomId);
         if (match) setAllocation(match);
+        else {
+          const storedAlloc = getStoredProjectAllocations(projectId);
+          const sMatch = storedAlloc.find((a) => a.room_id === roomId || a.room_name === room?.name) || storedAlloc[0];
+          if (sMatch) setAllocation(sMatch);
+        }
       } catch (err) {
-        // Fallback default
-        setRoom({
-          id: roomId,
-          floor_id: "f1",
-          name: "Living Room",
-          room_type: "living_room",
-          width_meters: 5.5,
-          length_meters: 6.5,
-          area_sqm: 35.75,
-          created_at: "",
-          updated_at: "",
-        });
-        setAllocation({
-          id: "a1",
-          budget_id: "b1",
-          room_id: roomId,
-          category: "Furniture & Decor",
-          allocated_amount: 350000,
-          spent_amount: 185000,
-        });
+        console.warn("Using stored room detail fallback", err);
+        const stored = getStoredProjectRooms(projectId);
+        const match = stored.find((r) => r.id === roomId || r.name === roomId) || stored[0];
+        if (match) setRoom(match);
+
+        const storedAlloc = getStoredProjectAllocations(projectId);
+        const sMatch = storedAlloc.find((a) => a.room_id === roomId || a.room_name === match?.name) || storedAlloc[0];
+        if (sMatch) setAllocation(sMatch);
       } finally {
         setLoading(false);
       }

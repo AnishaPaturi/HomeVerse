@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { DesignCard } from "@/components/designs/DesignCard";
 import { WhatIfModal } from "@/components/designs/WhatIfModal";
 import { Design } from "@/types";
+import { getStoredProject, getStoredProjectRooms } from "@/lib/projectStorage";
 import { Sparkles, Plus, ArrowLeft } from "lucide-react";
 
 const INITIAL_DESIGNS: Design[] = [
@@ -40,7 +41,27 @@ export default function ProjectDesignsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const [designs, setDesigns] = useState<Design[]>(INITIAL_DESIGNS);
+  const [designs, setDesigns] = useState<Design[]>(() => {
+    if (typeof window !== "undefined") {
+      const proj = getStoredProject(projectId);
+      const rooms = getStoredProjectRooms(projectId);
+      const styleName = proj?.design_style || "Japandi";
+      if (rooms && rooms.length > 0) {
+        return rooms.slice(0, 6).map((r, idx) => ({
+          id: `d-${r.id || idx + 1}`,
+          name: `${styleName} ${r.name}`,
+          style: styleName,
+          estimated_cost:
+            Math.round(
+              ((proj?.total_budget || 1500000) * ((r.area_sqm || 15) / 100)) / 1000
+            ) * 1000 || 100000 + idx * 25000,
+          image_url: "",
+          status: "generated",
+        }));
+      }
+    }
+    return INITIAL_DESIGNS;
+  });
   const [selectedDesignForWhatIf, setSelectedDesignForWhatIf] = useState<Design | null>(null);
 
   const handleDesignUpdated = (updatedDesign: Design) => {
