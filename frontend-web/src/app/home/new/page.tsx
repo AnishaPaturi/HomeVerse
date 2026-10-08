@@ -6,6 +6,7 @@ import {
   Home,
   Layers,
   DoorOpen,
+  DoorClosed,
   IndianRupee,
   Upload,
   Ruler,
@@ -36,9 +37,9 @@ import { generateUUID } from "@/lib/utils";
 export default function NewHomePage() {
   const router = useRouter();
 
-  // Wizard Step (1 to 9)
+  // Wizard Step (1 to 10)
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 9;
+  const totalSteps = 10;
 
   // Step 1: Home Type
   const [propertyType, setPropertyType] = useState<"independent" | "apartment">("apartment");
@@ -448,8 +449,9 @@ export default function NewHomePage() {
     { num: 5, label: "Floor Plan", icon: <Upload className="w-4 h-4" /> },
     { num: 6, label: "AI Detection", icon: <Sparkles className="w-4 h-4" /> },
     { num: 7, label: "Dimensions", icon: <Ruler className="w-4 h-4" /> },
-    { num: 8, label: "Style DNA", icon: <Palette className="w-4 h-4" /> },
-    { num: 9, label: "AI Twin", icon: <Sparkles className="w-4 h-4" /> },
+    { num: 8, label: "Choose Room", icon: <DoorClosed className="w-4 h-4" /> },
+    { num: 9, label: "Style DNA", icon: <Palette className="w-4 h-4" /> },
+    { num: 10, label: "AI Twin", icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   // Pipeline API Operations
@@ -672,6 +674,8 @@ export default function NewHomePage() {
       confirmCanonicalScene();
     } else if (currentStep === 8) {
       setCurrentStep(9);
+    } else if (currentStep === 9) {
+      setCurrentStep(10);
       startGenerationPipeline();
     } else {
       setCurrentStep((prev) => Math.min(totalSteps, prev + 1));
@@ -720,6 +724,8 @@ export default function NewHomePage() {
       currency: "INR",
       budget_flexibility: flexibility.toLowerCase(),
       design_style: designStyle,
+      primary_room: selectedRoom,
+      target_room: selectedRoom,
       floors: floorList,
     };
 
@@ -989,7 +995,7 @@ export default function NewHomePage() {
             />
           )}
 
-          {/* STEP 7: Dimension Confirmation & Adjustment & Room Focus */}
+          {/* STEP 7: Dimension Confirmation & Adjustment */}
           {currentStep === 7 && (
             <div className="space-y-6">
               {!isEditingDimensions ? (
@@ -1017,20 +1023,20 @@ export default function NewHomePage() {
                   onCancel={() => setIsEditingDimensions(false)}
                 />
               )}
-
-              {/* Room Focus Selection */}
-              <div className="pt-4">
-                <RoomSelector
-                  rooms={detectedRooms}
-                  selectedRoom={selectedRoom}
-                  onSelect={(rName) => setSelectedRoom(rName)}
-                />
-              </div>
             </div>
           )}
 
-          {/* STEP 8: Design Style DNA */}
+          {/* STEP 8: Room Focus Selection */}
           {currentStep === 8 && (
+            <RoomSelector
+              rooms={detectedRooms}
+              selectedRoom={selectedRoom}
+              onSelect={(rName) => setSelectedRoom(rName)}
+            />
+          )}
+
+          {/* STEP 9: Design Style DNA */}
+          {currentStep === 9 && (
             <DesignStyleSelector
               selectedStyle={designStyle}
               onSelect={(style) => setDesignStyle(style)}
@@ -1038,8 +1044,8 @@ export default function NewHomePage() {
             />
           )}
 
-          {/* STEP 9: AI Generation Status */}
-          {currentStep === 9 && (
+          {/* STEP 10: AI Generation Status */}
+          {currentStep === 10 && (
             <div className="py-6">
               <GenerationStatus
                 steps={generationSteps}
@@ -1053,8 +1059,8 @@ export default function NewHomePage() {
           )}
         </div>
 
-        {/* Bottom Navigation Buttons (Steps 1 to 8) */}
-        {currentStep < 9 && (
+        {/* Bottom Navigation Buttons (Steps 1 to 9) */}
+        {currentStep < 10 && (
           <div className="pt-6 border-t border-white/[0.08] flex items-center justify-between">
             <button
               onClick={handleBack}
@@ -1081,8 +1087,10 @@ export default function NewHomePage() {
                   : currentStep === 7
                   ? isConfirmingScene
                     ? "Gatekeeper Verifying..."
-                    : "Confirm & Proceed to Style"
+                    : "Confirm & Choose Room"
                   : currentStep === 8
+                  ? "Continue to Style DNA"
+                  : currentStep === 9
                   ? "Synthesize 3D Digital Twin"
                   : "Continue"}
               </span>

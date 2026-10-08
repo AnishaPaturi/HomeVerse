@@ -156,7 +156,7 @@ export const DimensionConfirmation: React.FC<DimensionConfirmationProps> = ({
         className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-indigo-600/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
       >
         <Check className="w-4 h-4 stroke-[3]" />
-        <span>{isConfirming ? "Gatekeeper Verifying Scene..." : "Confirm Measurements & Continue to 3D Model"}</span>
+        <span>{isConfirming ? "Gatekeeper Verifying Scene..." : "Confirm Measurements & Choose Room"}</span>
       </button>
     </div>
   );

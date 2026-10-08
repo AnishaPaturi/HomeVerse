@@ -19,46 +19,46 @@ interface DesignStyleSelectorProps {
 
 const DESIGN_STYLES: StyleOption[] = [
   {
-    name: "Modern",
-    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800",
-    description: "Clean lines, geometric profiles, balanced neutrals, and concealed storage.",
-    budgetEst: "Standard Budget Range",
-    palette: ["#0f172a", "#334155", "#cbd5e1", "#b45309"],
-  },
-  {
     name: "Japandi",
-    image: "https://images.unsplash.com/photo-1615529182904-14819c35db37?q=80&w=800",
-    description: "Warm blonde oak, linen textures, wabi-sabi minimalism, and zen lighting.",
+    image: "/styles/Japandi.png",
+    description: "Warm vertical white-oak acoustic slats, oatmeal bouclé textures, wabi-sabi minimalism, and soft paper lantern glow.",
     budgetEst: "Balanced Value Tier",
     palette: ["#f5f5f4", "#e7e5e4", "#b45309", "#0f766e"],
   },
   {
-    name: "Scandinavian",
-    image: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=800",
-    description: "Light birch, high natural daylighting, plush bouclé fabrics, and functional simplicity.",
-    budgetEst: "Cost-Effective Tier",
-    palette: ["#ffffff", "#e2e8f0", "#0284c7", "#10b981"],
+    name: "Industrial",
+    image: "/styles/Industrial.png",
+    description: "Exposed heritage terracotta brickwork, matte black warehouse steel framing, and distressed cognac saddle leather.",
+    budgetEst: "Robust Mid-Range",
+    palette: ["#18181b", "#27272a", "#ea580c", "#451a03"],
+  },
+  {
+    name: "Minimalist",
+    image: "/styles/Minimalist.png",
+    description: "Monolithic micro-cement concrete, floating platform silhouettes, concealed shadow gaps, and indirect recessed ceiling glow.",
+    budgetEst: "Essential Forms Tier",
+    palette: ["#f1f5f9", "#cbd5e1", "#475569", "#1e293b"],
   },
   {
     name: "Modern Luxury",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800",
-    description: "Statuario marble surfaces, polished champagne brass accents, and custom millwork.",
+    image: "/styles/Modern Luxury.png",
+    description: "Bookmatched Italian Statuario marble, rich emerald velvet sofa with brushed champagne brass, and dark smoked walnut fluting.",
     budgetEst: "Premium Luxury Tier",
-    palette: ["#09090b", "#71717a", "#eab308", "#18181b"],
-  },
-  {
-    name: "Industrial",
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800",
-    description: "Exposed brick, black steel framing, concrete finishes, and rich distressed leather.",
-    budgetEst: "Robust Mid-Range",
-    palette: ["#27272a", "#52525b", "#a1a1aa", "#78350f"],
+    palette: ["#090d16", "#1e1b4b", "#d97706", "#047857"],
   },
   {
     name: "Contemporary",
-    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800",
-    description: "Soft curved contours, bold statement lighting, and fresh trendy silhouettes.",
+    image: "/styles/contemprary.png",
+    description: "Sculptural curved ivory bouclé, fluted warm taupe plaster, honed Roman travertine, and champagne bronze fixtures.",
     budgetEst: "Turnkey Flexible Tier",
-    palette: ["#fafaf9", "#d6d3d1", "#6366f1", "#0f172a"],
+    palette: ["#fafaf9", "#d6d3d1", "#e7e5e4", "#78716c"],
+  },
+  {
+    name: "Modern Scandinavian",
+    image: "/styles/Modern Scandinavian.png",
+    description: "Light blonde birch, chalk-white mineral walls, heather gray linen sectional, and maximum natural daylighting.",
+    budgetEst: "Cost-Effective Tier",
+    palette: ["#ffffff", "#f8fafc", "#e2e8f0", "#0284c7"],
   },
 ];
 
@@ -67,59 +67,81 @@ export const DesignStyleSelector: React.FC<DesignStyleSelectorProps> = ({
   onSelect,
 }) => {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8">
-      <div className="mb-6">
-        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">Select Design Aesthetic</h2>
-        <p className="text-sm text-gray-500 mt-1">Choose the interior design DNA for AI 3D space generation.</p>
+    <div className="bg-slate-900/90 dark:bg-[#090e15] border border-white/[0.08] rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl transition-all">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>STEP 8 OF 9 · AESTHETIC DNA</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-editorial">
+            Select Interior Design Aesthetic
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Choose the material DNA and architectural styling portrayed on the exact same room geometry.
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {DESIGN_STYLES.map((style) => {
-          const active = selectedStyle === style.name;
+          const active =
+            selectedStyle === style.name ||
+            selectedStyle.toLowerCase() === style.name.toLowerCase() ||
+            (selectedStyle === "Scandinavian" && style.name === "Modern Scandinavian") ||
+            (selectedStyle === "Luxury" && style.name === "Modern Luxury") ||
+            (selectedStyle === "Modern" && style.name === "Minimalist");
+
           return (
             <button
               key={style.name}
               type="button"
               onClick={() => onSelect(style.name)}
-              className={`rounded-2xl border text-left overflow-hidden transition-all group flex flex-col ${
+              className={`rounded-2xl border text-left overflow-hidden transition-all duration-300 group flex flex-col cursor-pointer ${
                 active
-                  ? "border-indigo-600 ring-2 ring-indigo-600/30"
-                  : "border-gray-200 dark:border-zinc-800 hover:border-gray-300"
+                  ? "border-emerald-500 ring-2 ring-emerald-500/40 bg-emerald-500/[0.03] shadow-lg shadow-emerald-500/10 scale-[1.01]"
+                  : "border-white/[0.08] hover:border-white/20 bg-slate-950/40 hover:bg-slate-950/60"
               }`}
             >
-              <div className="h-44 w-full relative overflow-hidden bg-gray-100 dark:bg-zinc-800">
+              <div className="h-48 w-full relative overflow-hidden bg-slate-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={style.image}
+                  src={encodeURI(style.image)}
                   alt={style.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                  <span className="text-white font-black text-base">{style.name}</span>
+                  <div>
+                    <span className="text-white font-bold text-base tracking-tight font-editorial block drop-shadow-md">
+                      {style.name}
+                    </span>
+                  </div>
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      active ? "bg-indigo-600 text-white" : "bg-black/50 text-white/60 backdrop-blur-sm"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform ${
+                      active
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/40 scale-105"
+                        : "bg-black/50 text-white/50 backdrop-blur-sm border border-white/20"
                     }`}
                   >
-                    {active && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    {active ? <Check className="w-4 h-4 stroke-[3]" /> : null}
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <p className="text-xs text-gray-500 mb-3">{style.description}</p>
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-1.5">
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <p className="text-xs text-slate-400 leading-relaxed font-light">{style.description}</p>
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
+                  <div className="flex items-center gap-1.5" title="Material Palette">
                     {style.palette.map((c, i) => (
                       <span
                         key={i}
-                        className="w-3.5 h-3.5 rounded-full border border-black/10 inline-block shadow-xs"
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 inline-block shadow-xs"
                         style={{ backgroundColor: c }}
                       />
                     ))}
                   </div>
-                  <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span className="text-[11px] font-mono font-medium text-emerald-400">
                     {style.budgetEst}
                   </span>
                 </div>
