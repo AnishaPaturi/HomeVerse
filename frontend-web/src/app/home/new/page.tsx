@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Home,
@@ -451,6 +451,17 @@ export default function NewHomePage() {
     { id: "3", label: "Generating 3D room geometries & PBR materials (" + designStyle + ")", status: "pending" },
     { id: "4", label: "Assembling spatial scene graph & digital twin", status: "pending" },
   ]);
+
+  // Dynamically keep generation steps in sync with chosen design style and budget
+  useEffect(() => {
+    setGenerationSteps([
+      { id: "1", label: "Parsing architectural structure & floor boundaries", status: "pending" },
+      { id: "2", label: "Allocating ₹" + (totalBudget / 100000).toFixed(1) + "L budget envelopes across rooms", status: "pending" },
+      { id: "3", label: "Generating 3D room geometries & PBR materials (" + designStyle + ")", status: "pending" },
+      { id: "4", label: "Assembling spatial scene graph & digital twin", status: "pending" },
+    ]);
+  }, [designStyle, totalBudget]);
+
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Stepper titles
@@ -704,10 +715,13 @@ export default function NewHomePage() {
     setGenerationError(null);
     setGenerationProgress(15);
 
-    // Step 1: Processing
-    setGenerationSteps((prev) =>
-      prev.map((s, idx) => (idx === 0 ? { ...s, status: "processing" } : s))
-    );
+    // Step 1: Processing with active design style and budget
+    setGenerationSteps([
+      { id: "1", label: "Parsing architectural structure & floor boundaries", status: "processing" },
+      { id: "2", label: `Allocating ₹${(totalBudget / 100000).toFixed(1)}L budget envelopes across rooms`, status: "pending" },
+      { id: "3", label: `Generating 3D room geometries & PBR materials (${designStyle})`, status: "pending" },
+      { id: "4", label: "Assembling spatial scene graph & digital twin", status: "pending" },
+    ]);
 
     let createdProjectId = generateUUID();
 
@@ -1096,7 +1110,7 @@ export default function NewHomePage() {
                 steps={generationSteps}
                 overallProgress={generationProgress}
                 title="Synthesizing Your 3D Digital Home & Budget Envelopes"
-                subtitle="Generating architectural boundaries, PBR materials, spatial clearances, and Indian catalog pricing..."
+                subtitle={`Generating architectural boundaries, ${designStyle} PBR materials, spatial clearances, and Indian catalog pricing...`}
                 error={generationError}
                 onRetry={startGenerationPipeline}
               />
