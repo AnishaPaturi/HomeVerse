@@ -11,6 +11,12 @@ import { budgetApi } from "@/lib/budgets";
 import { formatIndianBudget } from "@/lib/utils";
 import { Project, Floor, Room, Budget } from "@/types";
 import {
+  getStoredProject,
+  getStoredProjectFloors,
+  getStoredProjectRooms,
+  getStoredProjectBudget,
+} from "@/lib/projectStorage";
+import {
   Home,
   Layers,
   DoorOpen,
@@ -40,123 +46,58 @@ export default function ProjectWorkspacePage() {
 
   useEffect(() => {
     async function loadData() {
+      // 1. Immediately read user's authentic project data from browser storage
+      const storedProj = getStoredProject(projectId);
+      const storedFloors = getStoredProjectFloors(projectId);
+      const storedRooms = getStoredProjectRooms(projectId);
+      const storedBudget = getStoredProjectBudget(projectId);
+
+      if (storedProj) {
+        setProject({
+          id: storedProj.id || projectId,
+          name: storedProj.name || "Custom Architectural Project",
+          home_type: storedProj.home_type || "apartment",
+          floors_count: storedProj.floors_count || (storedFloors.length > 0 ? storedFloors.length : 1),
+          total_rooms: storedProj.total_rooms || (storedRooms.length > 0 ? storedRooms.length : 0),
+          total_budget: storedProj.total_budget || 1500000,
+          currency: storedProj.currency || "INR",
+          budget_flexibility: storedProj.budget_flexibility || "moderate",
+          design_style: storedProj.design_style || "Japandi",
+          created_at: storedProj.created_at || new Date().toISOString(),
+          updated_at: storedProj.updated_at || new Date().toISOString(),
+        });
+        if (storedFloors.length > 0) setFloors(storedFloors);
+        if (storedRooms.length > 0) setRooms(storedRooms);
+        if (storedBudget) setBudget(storedBudget);
+        setLoading(false);
+      }
+
+      // 2. Try fetching from backend API if online
       try {
         const projData = await projectApi.getProject(projectId);
-        setProject(projData);
+        if (projData && projData.id && projData.name && !projData.name.includes("Demo Project")) {
+          setProject(projData);
 
-        const floorsData = await floorApi.getFloorsByProject(projectId);
-        setFloors(floorsData);
+          const floorsData = await floorApi.getFloorsByProject(projectId);
+          if (floorsData && floorsData.length > 0) {
+            setFloors(floorsData);
+            const allRooms: Room[] = [];
+            for (const f of floorsData) {
+              const flRooms = await roomApi.getRoomsByFloor(f.id);
+              allRooms.push(...flRooms);
+            }
+            if (allRooms.length > 0) {
+              setRooms(allRooms);
+            }
+          }
 
-        const allRooms: Room[] = [];
-        for (const f of floorsData) {
-          const flRooms = await roomApi.getRoomsByFloor(f.id);
-          allRooms.push(...flRooms);
+          const budgetData = await budgetApi.getProjectBudget(projectId);
+          if (budgetData) {
+            setBudget(budgetData);
+          }
         }
-        setRooms(allRooms);
-
-        const budgetData = await budgetApi.getProjectBudget(projectId);
-        setBudget(budgetData);
       } catch (err) {
-        // Fallback default mock
-        setProject({
-          id: projectId,
-          name: "Modern Family Residence",
-          home_type: "villa",
-          floors_count: 2,
-          total_rooms: 5,
-          total_budget: 1500000,
-          currency: "INR",
-          budget_flexibility: "moderate",
-          design_style: "Japandi",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        setFloors([
-          {
-            id: "f1",
-            project_id: projectId,
-            level: 1,
-            name: "Ground Floor",
-            room_count: 3,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "f2",
-            project_id: projectId,
-            level: 2,
-            name: "First Floor",
-            room_count: 2,
-            created_at: "",
-            updated_at: "",
-          },
-        ]);
-        setRooms([
-          {
-            id: "r1",
-            floor_id: "f1",
-            name: "Living Room",
-            room_type: "living_room",
-            width_meters: 5.5,
-            length_meters: 6.5,
-            area_sqm: 35.75,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r2",
-            floor_id: "f1",
-            name: "Kitchen & Dining",
-            room_type: "kitchen",
-            width_meters: 4.0,
-            length_meters: 5.0,
-            area_sqm: 20.0,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r3",
-            floor_id: "f1",
-            name: "Master Bedroom",
-            room_type: "master_bedroom",
-            width_meters: 4.5,
-            length_meters: 5.0,
-            area_sqm: 22.5,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r4",
-            floor_id: "f2",
-            name: "Guest Bedroom",
-            room_type: "bedroom",
-            width_meters: 4.0,
-            length_meters: 4.5,
-            area_sqm: 18.0,
-            created_at: "",
-            updated_at: "",
-          },
-          {
-            id: "r5",
-            floor_id: "f2",
-            name: "Study & Office",
-            room_type: "office",
-            width_meters: 3.5,
-            length_meters: 4.0,
-            area_sqm: 14.0,
-            created_at: "",
-            updated_at: "",
-          },
-        ]);
-        setBudget({
-          id: "b1",
-          project_id: projectId,
-          total_budget: 1500000,
-          spent_amount: 980000,
-          remaining_amount: 520000,
-          currency: "INR",
-          flexibility: "moderate",
-        });
+        console.warn("Backend API offline or returning fallback, using stored user project:", err);
       } finally {
         setLoading(false);
       }
@@ -291,8 +232,11 @@ export default function ProjectWorkspacePage() {
           </div>
 
           <div className="space-y-6">
-            {floors.map((floor) => {
-              const floorRooms = rooms.filter((r) => r.floor_id === floor.id);
+            {floors.map((floor, fIdx) => {
+              let floorRooms = rooms.filter((r) => r.floor_id === floor.id);
+              if (floorRooms.length === 0 && (floors.length === 1 || fIdx === 0)) {
+                floorRooms = rooms;
+              }
 
               return (
                 <div
@@ -334,7 +278,7 @@ export default function ProjectWorkspacePage() {
                             {room.name}
                           </h4>
                           <div className="text-[10px] text-slate-500 font-mono">
-                            {room.width_meters}m × {room.length_meters}m ({room.area_sqm}m²)
+                            {room.width_meters || room.width}m × {room.length_meters || room.length}m ({room.area_sqm || Math.round((room.area || 100) / 10.764)}m²)
                           </div>
                         </div>
 

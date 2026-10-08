@@ -167,29 +167,42 @@ export function getStoredProjectRooms(projectId: string, floorId?: string): Room
   const proj = getStoredProject(projectId);
   if (!proj) return [];
 
-  const rawRooms: StoredRoomData[] = [];
+  const floors = getStoredProjectFloors(projectId);
+  const rawRooms: (StoredRoomData & { floor_id?: string })[] = [];
 
   if (proj.floors && proj.floors.length > 0) {
     proj.floors.forEach((f, fIdx) => {
       const fid = f.id || `f-${f.level || fIdx + 1}-${projectId.slice(0, 8)}`;
-      if (floorId && floorId !== fid) return;
-
       if (f.rooms && f.rooms.length > 0) {
         f.rooms.forEach((r, rIdx) => {
           rawRooms.push({
             ...r,
             id: r.id || `r-${fIdx + 1}-${rIdx + 1}-${projectId.slice(0, 8)}`,
+            floor_id: fid,
           });
         });
       }
     });
   } else if (proj.rooms && proj.rooms.length > 0) {
-    rawRooms.push(...proj.rooms);
+    const totalFl = Math.max(1, floors.length || proj.floors_count || 1);
+    const roomsPerFloor = Math.ceil(proj.rooms.length / totalFl);
+    proj.rooms.forEach((r, idx) => {
+      const flIndex = Math.min(Math.floor(idx / roomsPerFloor), totalFl - 1);
+      const fl = floors[flIndex] || floors[0];
+      const fid = (r as any).floor_id || fl?.id || `f-${flIndex + 1}-${projectId.slice(0, 8)}`;
+      rawRooms.push({
+        ...r,
+        id: r.id || `r-${idx + 1}-${projectId.slice(0, 8)}`,
+        floor_id: fid,
+      });
+    });
   }
 
   if (rawRooms.length === 0) return [];
 
-  return rawRooms.map((r, idx) => {
+  const filtered = floorId ? rawRooms.filter((r) => r.floor_id === floorId) : rawRooms;
+
+  return filtered.map((r, idx) => {
     const w = r.width_meters ?? 4.0;
     const l = r.length_meters ?? 4.0;
     const sqm = r.area_sqm ?? Number((w * l).toFixed(2));
@@ -198,7 +211,7 @@ export function getStoredProjectRooms(projectId: string, floorId?: string): Room
     return {
       id: r.id || `r-${idx + 1}-${projectId.slice(0, 8)}`,
       project_id: projectId,
-      floor_id: floorId || `f-1-${projectId.slice(0, 8)}`,
+      floor_id: r.floor_id || (floors[0]?.id ?? `f-1-${projectId.slice(0, 8)}`),
       name: r.custom_name || r.name,
       room_type: r.room_type || "Room",
       width_meters: w,
@@ -212,6 +225,47 @@ export function getStoredProjectRooms(projectId: string, floorId?: string): Room
       updated_at: proj.updated_at || "",
     };
   });
+}
+
+/**
+ * Update a room's details (such as custom name or dimensions) in local storage.
+ */
+export function updateStoredRoom(
+  projectId: string,
+  roomId: string,
+  updates: Partial<StoredRoomData>
+): void {
+  const proj = getStoredProject(projectId);
+  if (!proj) return;
+
+  if (proj.rooms) {
+    proj.rooms = proj.rooms.map((r) =>
+      r.id === roomId || r.name === roomId ? { ...r, ...updates } : r
+    );
+  }
+  if (proj.floors) {
+    proj.floors.forEach((f) => {
+      if (f.rooms) {
+        f.rooms = f.rooms.map((r) =>
+          r.id === roomId || r.name === roomId ? { ...r, ...updates } : r
+        );
+      }
+    });
+  }
+  saveProjectLocally(proj);
+}
+
+/**
+ * Add a new room to a project in local storage.
+ */
+export function addStoredRoom(projectId: string, room: StoredRoomData): void {
+  const proj = getStoredProject(projectId);
+  if (!proj) return;
+
+  if (!proj.rooms) proj.rooms = [];
+  proj.rooms.push(room);
+  proj.total_rooms = proj.rooms.length;
+  saveProjectLocally(proj);
 }
 
 /**

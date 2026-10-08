@@ -34,6 +34,7 @@ import { projectApi } from "@/lib/projects";
 import { getStoredUser } from "@/lib/auth";
 import { budgetApi } from "@/lib/budgets";
 import { generateUUID } from "@/lib/utils";
+import { saveProjectLocally } from "@/lib/projectStorage";
 
 export default function NewHomePage() {
   const router = useRouter();
@@ -743,6 +744,7 @@ export default function NewHomePage() {
 
     const storedUser = getStoredUser();
     const projectPayload: any = {
+      id: createdProjectId,
       name: projectName,
       home_type: propertyType,
       floors_count: floorCount,
@@ -754,6 +756,19 @@ export default function NewHomePage() {
       primary_room: selectedRoom,
       target_room: selectedRoom,
       floors: floorList,
+      rooms: detectedRooms.map((r, idx) => ({
+        id: `r-${idx + 1}-${createdProjectId.slice(0, 8)}`,
+        name: r.name,
+        source_label: r.source_label || r.name,
+        room_type: r.room_type,
+        area_sqm: r.area_sqm,
+        width_meters: r.width_m,
+        length_meters: r.length_m,
+        confidence: r.confidence,
+        status: "planning",
+      })),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     if (storedUser?.id && storedUser.id !== "u-demo-123") {
@@ -767,11 +782,12 @@ export default function NewHomePage() {
       const res = await projectApi.createProject(projectPayload);
       if (res && res.id) {
         createdProjectId = res.id;
+        projectPayload.id = res.id;
       }
-    } catch (_) {
-      // Fallback
-      sessionStorage.setItem(`project_${createdProjectId}`, JSON.stringify(projectPayload));
-    }
+    } catch (_) {}
+
+    // Persist full authentic user configuration across browser storage
+    saveProjectLocally(projectPayload);
 
     // Step 1 Done -> Step 2 Processing
     await new Promise((r) => setTimeout(r, 600));
