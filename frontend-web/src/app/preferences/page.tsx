@@ -1,9 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { fetchApi } from "@/lib/api";
+import {
+  getStoredPreferencesProgress,
+  savePreferencesProgress,
+  clearPreferencesProgress,
+  LifestyleAnswers,
+  DEFAULT_LIFESTYLE_ANSWERS,
+} from "@/lib/questionnaireStorage";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { RotateCcw, WifiOff, CheckCircle2, BookmarkCheck } from "lucide-react";
 
 interface ReferenceImage {
   id: string;
@@ -34,37 +43,140 @@ export default function PreferencesPage() {
   const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [resumedMessage, setResumedMessage] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const hasLoadedInitial = useRef(false);
 
   // Questionnaire state
-  const [questionnaire, setQuestionnaire] = useState({
-    family_size: "3-4",
-    pets: false,
-    children: true,
-    work_from_home: "hybrid",
-    entertainment: "frequent",
-    storage_requirements: "high",
-    maintenance_preference: "low_maintenance",
+  const [questionnaire, setQuestionnaire] = useState<LifestyleAnswers>(DEFAULT_LIFESTYLE_ANSWERS);
+
+  // Re-sync with backend if network was reconnected
+  const syncWithBackend = useCallback(async (
+    reacs = reactions,
+    quest = questionnaire,
+    idx = currentIndex,
+    tab = activeTab
+  ) => {
+    try {
+      setIsSyncing(true);
+      await fetchApi("/api/preferences/save-progress", {
+        method: "POST",
+        body: JSON.stringify({
+          reactions: reacs,
+          questionnaire: quest,
+          current_index: idx,
+          active_tab: tab,
+        }),
+      });
+    } catch (err) {
+      // Graceful offline fallback: local storage is already saved
+      console.warn("Progress sync offline fallback:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [reactions, questionnaire, currentIndex, activeTab]);
+
+  const { isOnline, wasOffline } = useNetworkStatus(() => {
+    // Automatically sync stored progress when reconnecting
+    syncWithBackend();
   });
 
   useEffect(() => {
-    // Load reference catalog
+    if (hasLoadedInitial.current) return;
+    hasLoadedInitial.current = true;
+
+    // 1. First restore immediately from client storage (zero latency, resilient to disconnects)
+    const stored = getStoredPreferencesProgress();
+    let initialIndex = 0;
+    let initialReactions: { image_id: string; reaction: string }[] = [];
+    let initialQuest = DEFAULT_LIFESTYLE_ANSWERS;
+
+    if (stored) {
+      if (typeof stored.currentIndex === "number") {
+        initialIndex = stored.currentIndex;
+        setCurrentIndex(stored.currentIndex);
+      }
+      if (stored.reactions && Array.isArray(stored.reactions)) {
+        initialReactions = stored.reactions;
+        setReactions(stored.reactions);
+      }
+      if (stored.questionnaire) {
+        initialQuest = { ...DEFAULT_LIFESTYLE_ANSWERS, ...stored.questionnaire };
+        setQuestionnaire(initialQuest);
+      }
+      if (stored.activeTab) {
+        setActiveTab(stored.activeTab);
+      }
+      if (stored.styleProfile) {
+        setStyleProfile(stored.styleProfile);
+      }
+
+      if (stored.currentIndex > 0 || (stored.reactions && stored.reactions.length > 0)) {
+        setResumedMessage(
+          stored.activeTab === "questionnaire"
+            ? "Resumed your Lifestyle Questionnaire answers. Pick up right where you left off!"
+            : `Resumed from Question ${stored.currentIndex + 1} with previous choices saved.`
+        );
+      }
+    }
+
+    // 2. Load reference catalog
     fetchApi<ReferenceImage[]>("/api/preferences/reference-images")
       .then((data) => {
         if (data && data.length > 0) {
           setReferenceImages(data);
+          // Bound currentIndex within range
+          if (initialIndex >= data.length) {
+            setCurrentIndex(Math.max(0, data.length - 1));
+          }
         }
       })
       .catch((err) => console.error("Failed to load reference images:", err));
 
-    // Load initial user preferences
-    fetchApi<StyleProfile>("/api/preferences")
+    // 3. Load user preferences from backend if local storage was empty
+    fetchApi<any>("/api/preferences")
       .then((data) => {
         if (data) {
-          setStyleProfile(data);
+          if (!stored || !stored.styleProfile) {
+            setStyleProfile(data);
+          }
+          if (data.lifestyle && (!stored || Object.keys(stored.questionnaire || {}).length === 0)) {
+            const remoteQuest = { ...DEFAULT_LIFESTYLE_ANSWERS, ...data.lifestyle };
+            setQuestionnaire(remoteQuest);
+            savePreferencesProgress({ questionnaire: remoteQuest });
+          }
+          if ((!stored || initialReactions.length === 0) && data.reactions && data.reactions.length > 0) {
+            setReactions(data.reactions);
+            const remoteIdx = data.current_index ?? data.reactions.length;
+            setCurrentIndex(remoteIdx);
+            if (data.active_tab) setActiveTab(data.active_tab);
+            savePreferencesProgress({
+              reactions: data.reactions,
+              currentIndex: remoteIdx,
+              activeTab: data.active_tab || "discovery",
+            });
+            setResumedMessage(`Resumed from Question ${remoteIdx + 1} of your saved profile.`);
+          }
         }
       })
-      .catch((err) => console.error("Failed to load current preferences:", err));
+      .catch((err) => console.warn("Failed to load remote preferences:", err));
   }, []);
+
+  const handleTabChange = (tab: "discovery" | "questionnaire") => {
+    setActiveTab(tab);
+    savePreferencesProgress({ activeTab: tab });
+    syncWithBackend(reactions, questionnaire, currentIndex, tab);
+  };
+
+  const handleResetProgress = () => {
+    clearPreferencesProgress();
+    setCurrentIndex(0);
+    setReactions([]);
+    setQuestionnaire(DEFAULT_LIFESTYLE_ANSWERS);
+    setActiveTab("discovery");
+    setResumedMessage(null);
+    calculateProfile([], DEFAULT_LIFESTYLE_ANSWERS, 0, "discovery");
+  };
 
   const handleReaction = async (reaction: "like" | "dislike" | "skip") => {
     if (!referenceImages[currentIndex]) return;
@@ -72,17 +184,45 @@ export default function PreferencesPage() {
     const nextReactions = [...reactions.filter((r) => r.image_id !== currentId), { image_id: currentId, reaction }];
     setReactions(nextReactions);
 
+    const nextIndex = currentIndex < referenceImages.length - 1 ? currentIndex + 1 : currentIndex;
     if (currentIndex < referenceImages.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex(nextIndex);
     }
 
-    // Trigger real-time calculation
-    calculateProfile(nextReactions, questionnaire);
+    // Immediately persist locally so if user disconnects immediately, progress is never lost
+    savePreferencesProgress({
+      currentIndex: nextIndex,
+      reactions: nextReactions,
+      questionnaire,
+      activeTab: "discovery",
+      styleProfile,
+    });
+
+    // Trigger real-time calculation and sync
+    calculateProfile(nextReactions, questionnaire, nextIndex, "discovery");
+  };
+
+  const updateQuestionnaireAnswer = (updates: Partial<LifestyleAnswers>) => {
+    const nextQ = { ...questionnaire, ...updates };
+    setQuestionnaire(nextQ);
+
+    // Save progress locally immediately
+    savePreferencesProgress({
+      questionnaire: nextQ,
+      activeTab: "questionnaire",
+      currentIndex,
+      reactions,
+    });
+
+    // Recalculate and sync
+    calculateProfile(reactions, nextQ, currentIndex, "questionnaire");
   };
 
   const calculateProfile = async (
     reacs = reactions,
-    quest = questionnaire
+    quest = questionnaire,
+    idx = currentIndex,
+    tab = activeTab
   ) => {
     setLoading(true);
     try {
@@ -91,15 +231,27 @@ export default function PreferencesPage() {
         body: JSON.stringify({
           reactions: reacs,
           questionnaire: quest,
+          current_index: idx,
+          active_tab: tab,
         }),
       });
       if (res) {
         setStyleProfile(res);
         setSavedSuccess(true);
+        savePreferencesProgress({
+          styleProfile: res,
+          currentIndex: idx,
+          reactions: reacs,
+          questionnaire: quest,
+          activeTab: tab,
+        });
         setTimeout(() => setSavedSuccess(false), 3000);
       }
     } catch (err) {
-      console.error("Calculation failed:", err);
+      console.warn("Calculation network fallback:", err);
+      // Even if network fails during a disconnect, progress remains 100% saved in storage
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
     } finally {
       setLoading(false);
     }
