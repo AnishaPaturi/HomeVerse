@@ -37,6 +37,13 @@ import { getStoredUser } from "@/lib/auth";
 import { budgetApi } from "@/lib/budgets";
 import { generateUUID } from "@/lib/utils";
 import { saveProjectLocally } from "@/lib/projectStorage";
+import {
+  saveHomeCreationDraft,
+  getStoredHomeCreationDraft,
+  clearHomeCreationDraft,
+} from "@/lib/questionnaireStorage";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { WifiOff, BookmarkCheck, RotateCcw, CheckCircle2 } from "lucide-react";
 
 export default function NewHomePage() {
   const router = useRouter();
@@ -44,6 +51,11 @@ export default function NewHomePage() {
   // Wizard Step (1 to 11)
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 11;
+  const [resumedNotice, setResumedNotice] = useState<string | null>(null);
+  const hasLoadedInitialDraft = React.useRef(false);
+
+  // Network connectivity status
+  const { isOnline } = useNetworkStatus();
 
   // Step 10: Room Photos
   const [roomPhotos, setRoomPhotos] = useState<CapturedPhoto[]>([]);
@@ -485,6 +497,94 @@ export default function NewHomePage() {
     { num: 11, label: "AI Twin", icon: <Sparkles className="w-4 h-4" /> },
   ];
 
+  // 1. Restore from storage on initial mount
+  useEffect(() => {
+    if (hasLoadedInitialDraft.current) return;
+    hasLoadedInitialDraft.current = true;
+
+    const draft = getStoredHomeCreationDraft();
+    if (draft && draft.currentStep) {
+      if (draft.currentStep > 1) {
+        setCurrentStep(draft.currentStep);
+        setResumedNotice(
+          `Resumed at Step ${draft.currentStep} of ${totalSteps} (${stepTitles[draft.currentStep - 1]?.label || "Setup"}). Your entered configuration is preserved.`
+        );
+      }
+      if (draft.propertyType) setPropertyType(draft.propertyType);
+      if (draft.projectName) setProjectName(draft.projectName);
+      if (draft.floorCount) setFloorCount(draft.floorCount);
+      if (draft.bhk) setBhk(draft.bhk);
+      if (draft.bedroomsCount) setBedroomsCount(draft.bedroomsCount);
+      if (draft.bathroomsCount) setBathroomsCount(draft.bathroomsCount);
+      if (draft.balconiesCount) setBalconiesCount(draft.balconiesCount);
+      if (draft.totalBudget) setTotalBudget(draft.totalBudget);
+      if (draft.flexibility) setFlexibility(draft.flexibility);
+      if (draft.floorPlanPreviewUrl) setFloorPlanPreviewUrl(draft.floorPlanPreviewUrl);
+      if (draft.detectedRooms && draft.detectedRooms.length > 0) setDetectedRooms(draft.detectedRooms);
+      if (draft.selectedRoom) setSelectedRoom(draft.selectedRoom);
+      if (draft.designStyle) setDesignStyle(draft.designStyle);
+      if (draft.roomPhotos && draft.roomPhotos.length > 0) setRoomPhotos(draft.roomPhotos);
+    }
+  }, []);
+
+  // 2. Automatically save any change in wizard state to draft storage
+  useEffect(() => {
+    if (!hasLoadedInitialDraft.current) return;
+    saveHomeCreationDraft({
+      currentStep,
+      propertyType,
+      projectName,
+      floorCount,
+      bhk,
+      bedroomsCount,
+      bathroomsCount,
+      balconiesCount,
+      totalBudget,
+      flexibility,
+      floorPlanPreviewUrl,
+      detectedRooms,
+      selectedRoom,
+      designStyle,
+      roomPhotos,
+    });
+  }, [
+    currentStep,
+    propertyType,
+    projectName,
+    floorCount,
+    bhk,
+    bedroomsCount,
+    bathroomsCount,
+    balconiesCount,
+    totalBudget,
+    flexibility,
+    floorPlanPreviewUrl,
+    detectedRooms,
+    selectedRoom,
+    designStyle,
+    roomPhotos,
+  ]);
+
+  const handleResetWizard = () => {
+    clearHomeCreationDraft();
+    setCurrentStep(1);
+    setPropertyType("apartment");
+    setProjectName("My Dream Residence");
+    setFloorCount(1);
+    setBhk(3);
+    setBedroomsCount(3);
+    setBathroomsCount(2);
+    setBalconiesCount(2);
+    setTotalBudget(1500000);
+    setFlexibility("Moderate");
+    setFloorPlanPreviewUrl("/templates/modern_north_layout-a.jpg");
+    setDetectedRooms(generateRoomsForLayout(3, 2, 2));
+    setSelectedRoom("Drawing Room");
+    setDesignStyle("Japandi");
+    setRoomPhotos([]);
+    setResumedNotice(null);
+  };
+
   // Pipeline API Operations
   const runBlueprintAnalysis = async (file?: File, userScaleM?: number) => {
     setIsAnalyzing(true);
@@ -870,6 +970,9 @@ export default function NewHomePage() {
       prev.map((s) => ({ ...s, status: "completed" }))
     );
 
+    // Clean up draft upon successful generation
+    clearHomeCreationDraft();
+
     setTimeout(() => {
       router.push(`/project/${createdProjectId}`);
     }, 700);
@@ -893,10 +996,17 @@ export default function NewHomePage() {
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
-          <span className="text-emerald-400 font-bold">Step {currentStep}</span>
-          <span className="text-slate-500">/ {totalSteps}</span>
-          <span className="text-slate-400 ml-1">· {stepTitles[currentStep - 1]?.label}</span>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-400">
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+            <span>Auto-Saved</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
+            <span className="text-emerald-400 font-bold">Step {currentStep}</span>
+            <span className="text-slate-500">/ {totalSteps}</span>
+            <span className="text-slate-400 ml-1">· {stepTitles[currentStep - 1]?.label}</span>
+          </div>
         </div>
 
         <button
@@ -909,6 +1019,46 @@ export default function NewHomePage() {
 
       {/* Main Wizard Content Area */}
       <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 || currentStep === 10 ? "max-w-7xl" : "max-w-5xl"}`}>
+        {/* Network Disconnect Warning */}
+        {!isOnline && (
+          <div className="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-between text-xs font-mono animate-pulse">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 text-amber-400" />
+              <span>
+                <strong>Network Disconnected:</strong> Offline mode active. All your wizard inputs and step progress are being saved locally. You won&apos;t lose your place.
+              </span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold uppercase">
+              Offline Saved
+            </span>
+          </div>
+        )}
+
+        {/* Resumed Progress Banner */}
+        {resumedNotice && (
+          <div className="mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <BookmarkCheck className="w-4 h-4 text-emerald-400" />
+              <span>{resumedNotice}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleResetWizard}
+                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-red-400 underline transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Start from Step 1</span>
+              </button>
+              <button
+                onClick={() => setResumedNotice(null)}
+                className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Step Indicator Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">

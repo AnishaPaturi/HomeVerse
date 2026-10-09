@@ -263,17 +263,65 @@ export default function PreferencesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-white">
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Offline & Disconnect Warning Banner */}
+        {!isOnline && (
+          <div className="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 flex items-center justify-between text-xs font-medium animate-pulse">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 text-amber-500" />
+              <span>
+                <strong>Network Disconnected:</strong> Offline mode active. All your answers and progress are being saved locally on your device. You will resume right from this question when reconnected.
+              </span>
+            </div>
+            <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 font-mono">
+              Offline Saved
+            </span>
+          </div>
+        )}
+
+        {/* Resumed Progress Banner */}
+        {resumedMessage && (
+          <div className="mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between text-xs font-medium">
+            <div className="flex items-center gap-2">
+              <BookmarkCheck className="w-4 h-4 text-emerald-500" />
+              <span>
+                <strong>Progress Resumed:</strong> {resumedMessage}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleResetProgress}
+                className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-red-500 underline transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Start from Beginning</span>
+              </button>
+              <button
+                onClick={() => setResumedMessage(null)}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-bold"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Design Preference & Style Engine</h1>
-            <p className="text-sm text-gray-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-3xl font-bold">Design Preference & Style Engine</h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <CheckCircle2 className="w-3 h-3" />
+                {isSyncing ? "Syncing..." : "Auto-Saved"}
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
               Discover your aesthetic profile and configure lifestyle requirements for AI generation.
             </p>
           </div>
 
           <div className="flex items-center gap-2 bg-gray-200 dark:bg-zinc-800 p-1 rounded-xl">
             <button
-              onClick={() => setActiveTab("discovery")}
+              onClick={() => handleTabChange("discovery")}
               className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "discovery"
                   ? "bg-white dark:bg-zinc-900 text-indigo-600 shadow-sm"
@@ -283,7 +331,7 @@ export default function PreferencesPage() {
               Visual Discovery
             </button>
             <button
-              onClick={() => setActiveTab("questionnaire")}
+              onClick={() => handleTabChange("questionnaire")}
               className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 activeTab === "questionnaire"
                   ? "bg-white dark:bg-zinc-900 text-indigo-600 shadow-sm"
@@ -302,13 +350,14 @@ export default function PreferencesPage() {
               <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs uppercase font-bold tracking-wider text-indigo-600">
-                    Image {currentIndex + 1} of {referenceImages.length}
+                    Question {currentIndex + 1} of {referenceImages.length || 6}
                   </span>
                   <button
-                    onClick={() => setCurrentIndex(0)}
-                    className="text-xs text-gray-500 hover:underline"
+                    onClick={handleResetProgress}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition-colors"
                   >
-                    Reset Deck
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset Deck</span>
                   </button>
                 </div>
 
@@ -367,7 +416,7 @@ export default function PreferencesPage() {
                   <div className="text-center py-16">
                     <p className="text-gray-500">Deck complete! Review your computed profile on the right.</p>
                     <button
-                      onClick={() => setCurrentIndex(0)}
+                      onClick={handleResetProgress}
                       className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
                     >
                       Restart Discovery
@@ -378,11 +427,16 @@ export default function PreferencesPage() {
             ) : (
               /* Questionnaire Tab */
               <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold mb-1">Lifestyle Questionnaire</h3>
-                  <p className="text-xs text-gray-500">
-                    Define human-centric parameters so the AI designs spaces tailored to your daily routine.
-                  </p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Lifestyle Questionnaire</h3>
+                    <p className="text-xs text-gray-500">
+                      Define human-centric parameters so the AI designs spaces tailored to your daily routine.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                    Instant Auto-Save
+                  </span>
                 </div>
 
                 {/* Family Size */}
@@ -395,7 +449,7 @@ export default function PreferencesPage() {
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setQuestionnaire({ ...questionnaire, family_size: val })}
+                        onClick={() => updateQuestionnaireAnswer({ family_size: val })}
                         className={`py-2 rounded-lg border text-xs font-medium ${
                           questionnaire.family_size === val
                             ? "border-indigo-600 bg-indigo-50/20 text-indigo-600"
@@ -414,7 +468,7 @@ export default function PreferencesPage() {
                     <input
                       type="checkbox"
                       checked={questionnaire.pets}
-                      onChange={(e) => setQuestionnaire({ ...questionnaire, pets: e.target.checked })}
+                      onChange={(e) => updateQuestionnaireAnswer({ pets: e.target.checked })}
                       className="h-4 w-4 text-indigo-600 rounded"
                     />
                     <span className="text-xs font-medium">Has Pets (Scratch Protection)</span>
@@ -423,7 +477,7 @@ export default function PreferencesPage() {
                     <input
                       type="checkbox"
                       checked={questionnaire.children}
-                      onChange={(e) => setQuestionnaire({ ...questionnaire, children: e.target.checked })}
+                      onChange={(e) => updateQuestionnaireAnswer({ children: e.target.checked })}
                       className="h-4 w-4 text-indigo-600 rounded"
                     />
                     <span className="text-xs font-medium">Young Children (Rounded edges)</span>
@@ -440,7 +494,7 @@ export default function PreferencesPage() {
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setQuestionnaire({ ...questionnaire, work_from_home: val })}
+                        onClick={() => updateQuestionnaireAnswer({ work_from_home: val })}
                         className={`py-2 rounded-lg border text-xs font-medium ${
                           questionnaire.work_from_home === val
                             ? "border-indigo-600 bg-indigo-50/20 text-indigo-600"
@@ -463,7 +517,7 @@ export default function PreferencesPage() {
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setQuestionnaire({ ...questionnaire, entertainment: val })}
+                        onClick={() => updateQuestionnaireAnswer({ entertainment: val })}
                         className={`py-2 rounded-lg border text-xs font-medium ${
                           questionnaire.entertainment === val
                             ? "border-indigo-600 bg-indigo-50/20 text-indigo-600"
@@ -484,7 +538,7 @@ export default function PreferencesPage() {
                     </label>
                     <select
                       value={questionnaire.storage_requirements}
-                      onChange={(e) => setQuestionnaire({ ...questionnaire, storage_requirements: e.target.value })}
+                      onChange={(e) => updateQuestionnaireAnswer({ storage_requirements: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs bg-transparent"
                     >
                       <option value="minimal">Minimalist / Concealed</option>
@@ -498,7 +552,7 @@ export default function PreferencesPage() {
                     </label>
                     <select
                       value={questionnaire.maintenance_preference}
-                      onChange={(e) => setQuestionnaire({ ...questionnaire, maintenance_preference: e.target.value })}
+                      onChange={(e) => updateQuestionnaireAnswer({ maintenance_preference: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs bg-transparent"
                     >
                       <option value="low_maintenance">Low Maintenance / Wipe Clean</option>
@@ -510,10 +564,10 @@ export default function PreferencesPage() {
 
                 <button
                   type="button"
-                  onClick={() => calculateProfile(reactions, questionnaire)}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors"
+                  onClick={() => calculateProfile(reactions, questionnaire, currentIndex, "questionnaire")}
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors cursor-pointer"
                 >
-                  Update & Recalculate Profile
+                  Recalculate & Sync Profile
                 </button>
               </div>
             )}
