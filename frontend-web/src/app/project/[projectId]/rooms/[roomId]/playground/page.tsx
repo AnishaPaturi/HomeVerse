@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles,
   ArrowLeft,
@@ -45,14 +45,29 @@ import {
   updateStoredRoom,
   StoredRoomPhoto,
 } from "@/lib/projectStorage";
+import { getDefaultFurnitureForRoom, RoomObject } from "@/lib/defaultRoomDesigns";
 
-export default function RoomPlaygroundPage() {
+function RoomPlaygroundContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.projectId as string;
   const roomId = params.roomId as string;
 
-  const [activeTab, setActiveTab] = useState<"3d" | "2d" | "renders">("3d");
+  const tabQuery = (searchParams.get("tab") || searchParams.get("view")) as "3d" | "2d" | "renders" | null;
+  const [activeTab, setActiveTab] = useState<"3d" | "2d" | "renders">(() => {
+    if (tabQuery === "2d" || tabQuery === "3d" || tabQuery === "renders") {
+      return tabQuery;
+    }
+    return "3d";
+  });
+
+  useEffect(() => {
+    const tab = (searchParams.get("tab") || searchParams.get("view")) as "3d" | "2d" | "renders" | null;
+    if (tab === "2d" || tab === "3d" || tab === "renders") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
   const [selectedObject, setSelectedObject] = useState<any | null>(null);
 
   // Room identification & custom name
@@ -96,6 +111,30 @@ export default function RoomPlaygroundPage() {
     }
     return "Japandi";
   });
+
+  // Designed furniture objects for fully designed room experience
+  const [roomObjects, setRoomObjects] = useState<RoomObject[]>(() => {
+    return getDefaultFurnitureForRoom(
+      roomName,
+      "bedroom",
+      roomDimensions.width,
+      roomDimensions.length,
+      designStyle
+    );
+  });
+
+  useEffect(() => {
+    setRoomObjects((prev) => {
+      if (prev.length > 0) return prev;
+      return getDefaultFurnitureForRoom(
+        roomName,
+        "bedroom",
+        roomDimensions.width,
+        roomDimensions.length,
+        designStyle
+      );
+    });
+  }, [roomName, roomDimensions.width, roomDimensions.length, designStyle]);
 
   // Floor Info
   const [floorName, setFloorName] = useState("Ground Floor");
@@ -568,6 +607,7 @@ export default function RoomPlaygroundPage() {
         <div className="flex-1 relative h-full">
           {activeTab === "3d" ? (
             <CanvasContainer
+              objects={roomObjects}
               roomWidth={roomDimensions.width}
               roomDepth={roomDimensions.length}
               onSelectObject={(obj) => setSelectedObject(obj)}
@@ -575,10 +615,16 @@ export default function RoomPlaygroundPage() {
             />
           ) : activeTab === "2d" ? (
             <BlueprintEditor2D
+              objects={roomObjects}
               roomWidth={roomDimensions.width}
               roomDepth={roomDimensions.length}
               onUpdateRoomDimensions={handleUpdateDimensions}
               onObjectSelect={(obj) => setSelectedObject(obj)}
+              onUpdateObject={(id, updates) => {
+                setRoomObjects((prev) =>
+                  prev.map((o) => (o.id === id ? { ...o, ...updates } : o))
+                );
+              }}
             />
           ) : (
             <RoomRendersViewer
@@ -687,5 +733,19 @@ export default function RoomPlaygroundPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function RoomPlaygroundPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="h-screen w-screen bg-[#070b10] flex items-center justify-center font-mono text-emerald-400">
+          Loading Room Playground...
+        </div>
+      }
+    >
+      <RoomPlaygroundContent />
+    </Suspense>
   );
 }

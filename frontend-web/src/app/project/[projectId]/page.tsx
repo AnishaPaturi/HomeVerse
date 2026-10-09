@@ -288,13 +288,24 @@ export default function ProjectWorkspacePage() {
                           </div>
                         </div>
 
-                        <Link
-                          href={`/project/${projectId}/rooms/${room.id}/playground`}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 group-hover:bg-emerald-500 text-slate-300 group-hover:text-slate-950 font-mono text-xs font-bold transition-all shadow-sm flex items-center gap-1"
-                        >
-                          <Wand2 className="w-3 h-3" />
-                          <span>3D</span>
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/project/${projectId}/rooms/${room.id}/playground?tab=2d`}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 font-mono text-[11px] font-bold border border-slate-800 transition-all shadow-sm flex items-center gap-1"
+                            title="2D Fully Designed Plan"
+                          >
+                            <Layers className="w-3 h-3 text-emerald-400" />
+                            <span>2D</span>
+                          </Link>
+                          <Link
+                            href={`/project/${projectId}/rooms/${room.id}/playground?tab=3d`}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-900 group-hover:bg-emerald-500 text-slate-300 group-hover:text-slate-950 font-mono text-[11px] font-bold transition-all shadow-sm flex items-center gap-1"
+                            title="3D CAD Viewport"
+                          >
+                            <Wand2 className="w-3 h-3" />
+                            <span>3D</span>
+                          </Link>
+                        </div>
                       </div>
                     ))}
                   </div>

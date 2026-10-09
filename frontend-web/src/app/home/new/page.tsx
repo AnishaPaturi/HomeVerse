@@ -32,6 +32,7 @@ import { DesignStyleSelector } from "@/components/home-setup/DesignStyleSelector
 import { RoomPhotoCapture, CapturedPhoto } from "@/components/home-setup/RoomPhotoCapture";
 import { AIDetectionStep, ChecklistItem, BlueprintRoom } from "@/components/home-setup/AIDetectionStep";
 import { GenerationStatus, GenerationStep } from "@/components/ai/GenerationStatus";
+import { PostGenerationRoomChoice } from "@/components/home-setup/PostGenerationRoomChoice";
 import { projectApi } from "@/lib/projects";
 import { getStoredUser } from "@/lib/auth";
 import { budgetApi } from "@/lib/budgets";
@@ -53,6 +54,11 @@ export default function NewHomePage() {
   const totalSteps = 11;
   const [resumedNotice, setResumedNotice] = useState<string | null>(null);
   const hasLoadedInitialDraft = React.useRef(false);
+
+  // Post-completion 2D vs 3D Room Exploration
+  const [isGenerationComplete, setIsGenerationComplete] = useState(false);
+  const [completedProjectId, setCompletedProjectId] = useState<string | null>(null);
+  const [completedRoomId, setCompletedRoomId] = useState<string | null>(null);
 
   // Network connectivity status
   const { isOnline } = useNetworkStatus();
@@ -583,6 +589,9 @@ export default function NewHomePage() {
     setDesignStyle("Japandi");
     setRoomPhotos([]);
     setResumedNotice(null);
+    setIsGenerationComplete(false);
+    setCompletedProjectId(null);
+    setCompletedRoomId(null);
   };
 
   // Pipeline API Operations
@@ -973,9 +982,13 @@ export default function NewHomePage() {
     // Clean up draft upon successful generation
     clearHomeCreationDraft();
 
-    setTimeout(() => {
-      router.push(`/project/${createdProjectId}`);
-    }, 700);
+    const targetRoom = allRoomsPayload.find(
+      (r) => r.name === selectedRoom || r.source_label === selectedRoom
+    ) || allRoomsPayload[0];
+
+    setCompletedProjectId(createdProjectId);
+    setCompletedRoomId(targetRoom ? targetRoom.id : allRoomsPayload[0]?.id || "");
+    setIsGenerationComplete(true);
   };
 
   return (
@@ -999,7 +1012,7 @@ export default function NewHomePage() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-400">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>Auto-Saved</span>
+            <span>{isGenerationComplete ? "Room Complete" : "Auto-Saved"}</span>
           </div>
 
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
@@ -1018,7 +1031,7 @@ export default function NewHomePage() {
       </header>
 
       {/* Main Wizard Content Area */}
-      <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 || currentStep === 10 ? "max-w-7xl" : "max-w-5xl"}`}>
+      <main className={`mx-auto w-full px-6 py-10 flex-1 flex flex-col justify-between transition-all duration-300 ${currentStep === 6 || currentStep === 7 || currentStep === 8 || currentStep === 10 || isGenerationComplete ? "max-w-7xl" : "max-w-5xl"}`}>
         {/* Network Disconnect Warning */}
         {!isOnline && (
           <div className="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-between text-xs font-mono animate-pulse">
@@ -1313,17 +1326,47 @@ export default function NewHomePage() {
             />
           )}
 
-          {/* STEP 11: AI Generation Status */}
+          {/* STEP 11: AI Generation Status & Post-Completion Room 2D/3D Options */}
           {currentStep === 11 && (
             <div className="py-6">
-              <GenerationStatus
-                steps={generationSteps}
-                overallProgress={generationProgress}
-                title="Synthesizing Your 3D Digital Home & Budget Envelopes"
-                subtitle={`Generating architectural boundaries, ${designStyle} PBR materials, spatial clearances, and photorealistic renders from your ${selectedRoom} pictures...`}
-                error={generationError}
-                onRetry={startGenerationPipeline}
-              />
+              {!isGenerationComplete ? (
+                <GenerationStatus
+                  steps={generationSteps}
+                  overallProgress={generationProgress}
+                  title="Synthesizing Your 3D Digital Home & Budget Envelopes"
+                  subtitle={`Generating architectural boundaries, ${designStyle} PBR materials, spatial clearances, and photorealistic renders from your ${selectedRoom} pictures...`}
+                  error={generationError}
+                  onRetry={startGenerationPipeline}
+                />
+              ) : (
+                <PostGenerationRoomChoice
+                  projectId={completedProjectId || ""}
+                  roomId={completedRoomId || ""}
+                  roomName={selectedRoom}
+                  roomType={detectedRooms.find((r) => r.name === selectedRoom)?.room_type || "bedroom"}
+                  designStyle={designStyle}
+                  roomWidth={detectedRooms.find((r) => r.name === selectedRoom)?.width_m || 4.5}
+                  roomDepth={detectedRooms.find((r) => r.name === selectedRoom)?.length_m || 5.0}
+                  roomBudget={Math.round(totalBudget / Math.max(1, detectedRooms.length))}
+                  totalBudget={totalBudget}
+                  floorCount={floorCount}
+                  totalRooms={detectedRooms.length}
+                  roomPhotos={roomPhotos}
+                  onView2D={() => {
+                    router.push(
+                      `/project/${completedProjectId}/rooms/${completedRoomId}/playground?tab=2d`
+                    );
+                  }}
+                  onView3D={() => {
+                    router.push(
+                      `/project/${completedProjectId}/rooms/${completedRoomId}/playground?tab=3d`
+                    );
+                  }}
+                  onGoToProject={() => {
+                    router.push(`/project/${completedProjectId}`);
+                  }}
+                />
+              )}
             </div>
           )}
         </div>

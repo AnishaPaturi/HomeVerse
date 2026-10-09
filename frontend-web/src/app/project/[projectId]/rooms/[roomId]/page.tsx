@@ -117,15 +117,27 @@ export default function RoomDetailPage() {
             <span>Back to Project Overview</span>
           </Link>
 
-          <button
-            onClick={() =>
-              router.push(`/project/${projectId}/rooms/${roomId}/playground`)
-            }
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 hover:scale-105"
-          >
-            <Wand2 className="w-4 h-4" />
-            <span>Open 3D Design Playground</span>
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() =>
+                router.push(`/project/${projectId}/rooms/${roomId}/playground?tab=2d`)
+              }
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-mono text-xs font-bold transition-all cursor-pointer shadow-sm hover:border-emerald-500/40"
+            >
+              <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              <span>2D Designed Plan</span>
+            </button>
+
+            <button
+              onClick={() =>
+                router.push(`/project/${projectId}/rooms/${roomId}/playground?tab=3d`)
+              }
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 hover:scale-105"
+            >
+              <Box className="w-3.5 h-3.5" />
+              <span>3D CAD Viewport</span>
+            </button>
+          </div>
         </div>
 
         {/* Room Header */}
