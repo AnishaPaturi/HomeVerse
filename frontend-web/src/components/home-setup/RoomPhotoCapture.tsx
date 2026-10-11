@@ -115,21 +115,44 @@ export const RoomPhotoCapture: React.FC<RoomPhotoCaptureProps> = ({
     setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
   };
 
+  // Helper to compress an image/video source into a compact JPEG data URL (< 60 KB)
+  const compressSourceToDataUrl = (
+    source: HTMLVideoElement | HTMLImageElement,
+    maxWidth = 960,
+    quality = 0.75
+  ): string => {
+    try {
+      const canvas = document.createElement("canvas");
+      let width = source instanceof HTMLVideoElement ? source.videoWidth || 1280 : source.naturalWidth || 1280;
+      let height = source instanceof HTMLVideoElement ? source.videoHeight || 720 : source.naturalHeight || 720;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(source, 0, 0, width, height);
+        return canvas.toDataURL("image/jpeg", quality);
+      }
+    } catch (err) {
+      console.warn("Image compression failed:", err);
+    }
+    return "";
+  };
+
   // Capture snapshot from live video stream
   const handleSnapPhoto = () => {
     if (!videoRef.current) return;
     setIsCapturing(true);
 
     const video = videoRef.current;
-    const canvas = canvasRef.current || document.createElement("canvas");
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    const dataUrl = compressSourceToDataUrl(video, 960, 0.75);
 
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-
+    if (dataUrl) {
       const photoNum = photos.length + 1;
       const newPhoto: CapturedPhoto = {
         id: `photo-${Date.now()}-${photoNum}`,
@@ -148,28 +171,47 @@ export const RoomPhotoCapture: React.FC<RoomPhotoCaptureProps> = ({
     }, 200);
   };
 
-  // Handle file uploads (multiple images)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file uploads (multiple images) with compression to persist across reloads
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const newPhotos: CapturedPhoto[] = [];
     let currentCount = photos.length;
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       currentCount++;
-      const url = URL.createObjectURL(file);
-      newPhotos.push({
-        id: `upload-${Date.now()}-${currentCount}`,
-        url,
-        source: "upload",
-        label: getAngleLabel(currentCount),
-        name: file.name,
-        timestamp: new Date().toLocaleTimeString(),
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const rawResult = event.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            const compressed = compressSourceToDataUrl(img, 960, 0.75);
+            resolve(compressed || rawResult);
+          };
+          img.onerror = () => resolve(rawResult || "");
+          img.src = rawResult;
+        };
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(file);
       });
-    });
 
-    onPhotosChange([...photos, ...newPhotos]);
+      if (dataUrl) {
+        newPhotos.push({
+          id: `upload-${Date.now()}-${currentCount}`,
+          url: dataUrl,
+          source: "upload",
+          label: getAngleLabel(currentCount),
+          name: file.name,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    }
+
+    if (newPhotos.length > 0) {
+      onPhotosChange([...photos, ...newPhotos]);
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }

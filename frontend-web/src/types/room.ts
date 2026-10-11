@@ -13,6 +13,7 @@ export interface Room {
   height_meters?: number;
   area_sqm?: number;
   status?: "planning" | "in_progress" | "completed" | string;
+  objects?: any[];
   created_at?: string;
   updated_at?: string;
 }
@@ -31,4 +32,5 @@ export interface CreateRoomInput {
   height_meters?: number;
   area_sqm?: number;
   status?: string;
+  objects?: any[];
 }

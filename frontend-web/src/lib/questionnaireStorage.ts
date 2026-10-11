@@ -46,6 +46,13 @@ export interface HomeCreationDraft {
   selectedRoom: string;
   designStyle: string;
   roomPhotos: any[];
+  isGenerationComplete?: boolean;
+  completedProjectId?: string | null;
+  completedRoomId?: string | null;
+  checklist?: any[];
+  scaleStatus?: string;
+  scalePxPerMeter?: number | null;
+  missingRooms?: any[];
   lastSavedAt: string;
 }
 
@@ -151,12 +158,38 @@ export function saveHomeCreationDraft(data: Partial<HomeCreationDraft>): void {
       selectedRoom: data.selectedRoom ?? existing?.selectedRoom ?? "Drawing Room",
       designStyle: data.designStyle ?? existing?.designStyle ?? "Japandi",
       roomPhotos: data.roomPhotos ?? existing?.roomPhotos ?? [],
+      isGenerationComplete: data.isGenerationComplete ?? existing?.isGenerationComplete ?? false,
+      completedProjectId: data.completedProjectId !== undefined ? data.completedProjectId : existing?.completedProjectId ?? null,
+      completedRoomId: data.completedRoomId !== undefined ? data.completedRoomId : existing?.completedRoomId ?? null,
+      checklist: data.checklist ?? existing?.checklist ?? [],
+      scaleStatus: data.scaleStatus ?? existing?.scaleStatus ?? "verified",
+      scalePxPerMeter: data.scalePxPerMeter !== undefined ? data.scalePxPerMeter : existing?.scalePxPerMeter ?? 50.0,
+      missingRooms: data.missingRooms ?? existing?.missingRooms ?? [],
       lastSavedAt: new Date().toISOString(),
     };
 
-    const serialized = JSON.stringify(updated);
-    localStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
-    sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
+    try {
+      const serialized = JSON.stringify(updated);
+      localStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
+      sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
+    } catch (quotaError) {
+      // Safe fallback if room photos exceed storage quota: store draft metadata without heavy photos
+      console.warn("Storage quota hit, saving draft with photo metadata stripped:", quotaError);
+      const fallback = {
+        ...updated,
+        roomPhotos: (updated.roomPhotos || []).map((p: any) => ({
+          id: p.id,
+          source: p.source,
+          label: p.label,
+          name: p.name,
+          timestamp: p.timestamp,
+          url: p.url && p.url.startsWith("data:") ? "" : p.url,
+        })),
+      };
+      const serializedFallback = JSON.stringify(fallback);
+      localStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
+      sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
+    }
   } catch (err) {
     console.warn("Failed to save home creation draft:", err);
   }

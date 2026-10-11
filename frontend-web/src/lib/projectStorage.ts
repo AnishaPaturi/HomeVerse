@@ -19,6 +19,7 @@ export interface StoredRoomData {
   detected_imperial?: string;
   ground_truth_imperial?: string;
   status?: string;
+  objects?: any[];
 }
 
 export interface StoredRoomPhoto {
@@ -232,6 +233,7 @@ export function getStoredProjectRooms(projectId: string, floorId?: string): Room
       area_sqm: sqm,
       area: sqft,
       status: r.status || "planning",
+      objects: r.objects,
       created_at: proj.created_at || "",
       updated_at: proj.updated_at || "",
     };

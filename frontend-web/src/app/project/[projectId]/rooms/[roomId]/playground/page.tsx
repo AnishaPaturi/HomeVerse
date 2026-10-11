@@ -206,6 +206,10 @@ function RoomPlaygroundContent() {
             areaSqft: Math.round(sqm * 10.7639),
           });
 
+          if (matched.objects && matched.objects.length > 0) {
+            setRoomObjects(matched.objects);
+          }
+
           // Floor information
           if (matched.floor_id?.includes("2") || matched.floor_id?.includes("f-2")) {
             setFloorName("Level 2 • First Floor");
@@ -621,9 +625,11 @@ function RoomPlaygroundContent() {
               onUpdateRoomDimensions={handleUpdateDimensions}
               onObjectSelect={(obj) => setSelectedObject(obj)}
               onUpdateObject={(id, updates) => {
-                setRoomObjects((prev) =>
-                  prev.map((o) => (o.id === id ? { ...o, ...updates } : o))
-                );
+                setRoomObjects((prev) => {
+                  const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                  updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                  return updated;
+                });
               }}
             />
           ) : (

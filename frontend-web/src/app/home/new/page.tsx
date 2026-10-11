@@ -44,6 +44,7 @@ import {
   clearHomeCreationDraft,
 } from "@/lib/questionnaireStorage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getDefaultFurnitureForRoom } from "@/lib/defaultRoomDesigns";
 import { WifiOff, BookmarkCheck, RotateCcw, CheckCircle2 } from "lucide-react";
 
 export default function NewHomePage() {
@@ -53,7 +54,9 @@ export default function NewHomePage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 11;
   const [resumedNotice, setResumedNotice] = useState<string | null>(null);
-  const hasLoadedInitialDraft = React.useRef(false);
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   // Post-completion 2D vs 3D Room Exploration
   const [isGenerationComplete, setIsGenerationComplete] = useState(false);
@@ -505,9 +508,6 @@ export default function NewHomePage() {
 
   // 1. Restore from storage on initial mount
   useEffect(() => {
-    if (hasLoadedInitialDraft.current) return;
-    hasLoadedInitialDraft.current = true;
-
     const draft = getStoredHomeCreationDraft();
     if (draft && draft.currentStep) {
       if (draft.currentStep > 1) {
@@ -518,26 +518,45 @@ export default function NewHomePage() {
       }
       if (draft.propertyType) setPropertyType(draft.propertyType);
       if (draft.projectName) setProjectName(draft.projectName);
-      if (draft.floorCount) setFloorCount(draft.floorCount);
-      if (draft.bhk) setBhk(draft.bhk);
-      if (draft.bedroomsCount) setBedroomsCount(draft.bedroomsCount);
-      if (draft.bathroomsCount) setBathroomsCount(draft.bathroomsCount);
-      if (draft.balconiesCount) setBalconiesCount(draft.balconiesCount);
-      if (draft.totalBudget) setTotalBudget(draft.totalBudget);
+      if (typeof draft.floorCount === "number") setFloorCount(draft.floorCount);
+      if (typeof draft.bhk === "number") setBhk(draft.bhk);
+      if (typeof draft.bedroomsCount === "number") setBedroomsCount(draft.bedroomsCount);
+      if (typeof draft.bathroomsCount === "number") setBathroomsCount(draft.bathroomsCount);
+      if (typeof draft.balconiesCount === "number") setBalconiesCount(draft.balconiesCount);
+      if (typeof draft.totalBudget === "number") setTotalBudget(draft.totalBudget);
       if (draft.flexibility) setFlexibility(draft.flexibility);
       if (draft.floorPlanPreviewUrl) setFloorPlanPreviewUrl(draft.floorPlanPreviewUrl);
       if (draft.detectedRooms && draft.detectedRooms.length > 0) setDetectedRooms(draft.detectedRooms);
       if (draft.selectedRoom) setSelectedRoom(draft.selectedRoom);
       if (draft.designStyle) setDesignStyle(draft.designStyle);
       if (draft.roomPhotos && draft.roomPhotos.length > 0) setRoomPhotos(draft.roomPhotos);
+      if (typeof draft.isGenerationComplete === "boolean") setIsGenerationComplete(draft.isGenerationComplete);
+      if (draft.completedProjectId) setCompletedProjectId(draft.completedProjectId);
+      if (draft.completedRoomId) setCompletedRoomId(draft.completedRoomId);
+      if (draft.checklist && draft.checklist.length > 0) setChecklist(draft.checklist);
+      if (draft.scaleStatus) setScaleStatus(draft.scaleStatus);
+      if (typeof draft.scalePxPerMeter === "number") setScalePxPerMeter(draft.scalePxPerMeter);
+      if (draft.missingRooms) setMissingRooms(draft.missingRooms);
+      if (draft.lastSavedAt) {
+        try {
+          setLastSavedTime(
+            new Date(draft.lastSavedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          );
+        } catch (_) {}
+      }
     }
+    setIsDraftRestored(true);
   }, []);
 
-  // 2. Automatically save any change in wizard state to draft storage
-  useEffect(() => {
-    if (!hasLoadedInitialDraft.current) return;
+  // Synchronous draft persistence helper
+  const persistDraftSnapshot = (overrides?: {
+    currentStep?: number;
+    isGenerationComplete?: boolean;
+    completedProjectId?: string | null;
+    completedRoomId?: string | null;
+  }) => {
     saveHomeCreationDraft({
-      currentStep,
+      currentStep: overrides?.currentStep ?? currentStep,
       propertyType,
       projectName,
       floorCount,
@@ -552,8 +571,27 @@ export default function NewHomePage() {
       selectedRoom,
       designStyle,
       roomPhotos,
+      isGenerationComplete: overrides?.isGenerationComplete ?? isGenerationComplete,
+      completedProjectId: overrides?.completedProjectId ?? completedProjectId,
+      completedRoomId: overrides?.completedRoomId ?? completedRoomId,
+      checklist,
+      scaleStatus,
+      scalePxPerMeter,
+      missingRooms,
     });
+    setLastSavedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+  };
+
+  // 2. Automatically save any change in wizard state to draft storage
+  useEffect(() => {
+    if (!isDraftRestored) return; // Prevent overwriting stored draft on initial mount!
+
+    setIsSavingDraft(true);
+    persistDraftSnapshot();
+    const timer = setTimeout(() => setIsSavingDraft(false), 500);
+    return () => clearTimeout(timer);
   }, [
+    isDraftRestored,
     currentStep,
     propertyType,
     projectName,
@@ -569,6 +607,13 @@ export default function NewHomePage() {
     selectedRoom,
     designStyle,
     roomPhotos,
+    isGenerationComplete,
+    completedProjectId,
+    completedRoomId,
+    checklist,
+    scaleStatus,
+    scalePxPerMeter,
+    missingRooms,
   ]);
 
   const handleResetWizard = () => {
@@ -782,6 +827,7 @@ export default function NewHomePage() {
         const data = await res.json();
         if (data.can_proceed_to_3d) {
           setCurrentStep(8);
+          persistDraftSnapshot({ currentStep: 8 });
         } else {
           setGatekeeperError(data.rejection_reason || "Dimensions must be verified before proceeding to 3D.");
         }
@@ -791,11 +837,13 @@ export default function NewHomePage() {
           setGatekeeperError("Cannot proceed: Some rooms lack valid verified dimensions.");
         } else {
           setCurrentStep(8);
+          persistDraftSnapshot({ currentStep: 8 });
         }
       }
     } catch (err) {
       console.warn("Gatekeeper confirm error:", err);
       setCurrentStep(8);
+      persistDraftSnapshot({ currentStep: 8 });
     } finally {
       setIsConfirmingScene(false);
     }
@@ -804,28 +852,37 @@ export default function NewHomePage() {
   const handleNext = () => {
     if (currentStep === 5) {
       setCurrentStep(6);
+      persistDraftSnapshot({ currentStep: 6 });
       runBlueprintAnalysis(floorPlanFile || undefined);
     } else if (currentStep === 6) {
       if (missingRooms.length > 0 || scaleStatus === "missing") {
         return; // Gatekeeper blocks until Step 6A supplied
       }
       setCurrentStep(7);
+      persistDraftSnapshot({ currentStep: 7 });
     } else if (currentStep === 7) {
       confirmCanonicalScene();
     } else if (currentStep === 8) {
       setCurrentStep(9);
+      persistDraftSnapshot({ currentStep: 9 });
     } else if (currentStep === 9) {
       setCurrentStep(10);
+      persistDraftSnapshot({ currentStep: 10 });
     } else if (currentStep === 10) {
       setCurrentStep(11);
+      persistDraftSnapshot({ currentStep: 11 });
       startGenerationPipeline();
     } else {
-      setCurrentStep((prev) => Math.min(totalSteps, prev + 1));
+      const nextStep = Math.min(totalSteps, currentStep + 1);
+      setCurrentStep(nextStep);
+      persistDraftSnapshot({ currentStep: nextStep });
     }
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(1, prev - 1));
+    const prev = Math.max(1, currentStep - 1);
+    setCurrentStep(prev);
+    persistDraftSnapshot({ currentStep: prev });
   };
 
   // Launch the generation pipeline & persist project
@@ -854,19 +911,29 @@ export default function NewHomePage() {
       const floorRooms = detectedRooms.slice(startIdx, endIdx);
       const floorId = `f-${f}-${createdProjectId.slice(0, 8)}`;
 
-      const mappedFloorRooms = floorRooms.map((r, rIdx) => ({
-        id: `r-${f}-${rIdx + 1}-${createdProjectId.slice(0, 8)}`,
-        floor_id: floorId,
-        name: r.name,
-        source_label: r.source_label || r.name,
-        custom_name: r.name,
-        room_type: r.room_type,
-        area_sqm: r.area_sqm,
-        width_meters: r.width_m,
-        length_meters: r.length_m,
-        confidence: r.confidence,
-        status: "planning",
-      }));
+      const mappedFloorRooms = floorRooms.map((r, rIdx) => {
+        const furnObjects = getDefaultFurnitureForRoom(
+          r.name,
+          r.room_type,
+          r.width_m,
+          r.length_m,
+          designStyle
+        );
+        return {
+          id: `r-${f}-${rIdx + 1}-${createdProjectId.slice(0, 8)}`,
+          floor_id: floorId,
+          name: r.name,
+          source_label: r.source_label || r.name,
+          custom_name: r.name,
+          room_type: r.room_type,
+          area_sqm: r.area_sqm,
+          width_meters: r.width_m,
+          length_meters: r.length_m,
+          confidence: r.confidence,
+          status: "planning",
+          objects: furnObjects,
+        };
+      });
 
       floorList.push({
         id: floorId,
@@ -979,16 +1046,21 @@ export default function NewHomePage() {
       prev.map((s) => ({ ...s, status: "completed" }))
     );
 
-    // Clean up draft upon successful generation
-    clearHomeCreationDraft();
-
     const targetRoom = allRoomsPayload.find(
       (r) => r.name === selectedRoom || r.source_label === selectedRoom
     ) || allRoomsPayload[0];
 
+    const finalRoomId = targetRoom ? targetRoom.id : allRoomsPayload[0]?.id || "";
     setCompletedProjectId(createdProjectId);
-    setCompletedRoomId(targetRoom ? targetRoom.id : allRoomsPayload[0]?.id || "");
+    setCompletedRoomId(finalRoomId);
     setIsGenerationComplete(true);
+
+    persistDraftSnapshot({
+      currentStep: 11,
+      isGenerationComplete: true,
+      completedProjectId: createdProjectId,
+      completedRoomId: finalRoomId,
+    });
   };
 
   return (
@@ -1010,9 +1082,23 @@ export default function NewHomePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-400">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>{isGenerationComplete ? "Room Complete" : "Auto-Saved"}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-400">
+            {isSavingDraft ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="text-amber-300">Saving...</span>
+              </>
+            ) : isGenerationComplete ? (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>Room Complete & Saved</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>{lastSavedTime ? `Auto-Saved · ${lastSavedTime}` : "Auto-Saved"}</span>
+              </>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">
@@ -1081,7 +1167,12 @@ export default function NewHomePage() {
               return (
                 <div
                   key={step.num}
-                  onClick={() => currentStep > step.num && setCurrentStep(step.num)}
+                  onClick={() => {
+                    if (currentStep > step.num) {
+                      setCurrentStep(step.num);
+                      persistDraftSnapshot({ currentStep: step.num });
+                    }
+                  }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono transition-all whitespace-nowrap ${
                     isCurrent
                       ? "bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 font-bold"
@@ -1321,6 +1412,7 @@ export default function NewHomePage() {
               onPhotosChange={(newPhotos) => setRoomPhotos(newPhotos)}
               onProceed={() => {
                 setCurrentStep(11);
+                persistDraftSnapshot({ currentStep: 11 });
                 startGenerationPipeline();
               }}
             />
