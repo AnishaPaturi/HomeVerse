@@ -42,10 +42,51 @@ import {
   saveHomeCreationDraft,
   getStoredHomeCreationDraft,
   clearHomeCreationDraft,
+  fetchRemoteHomeCreationDraft,
 } from "@/lib/questionnaireStorage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getDefaultFurnitureForRoom } from "@/lib/defaultRoomDesigns";
 import { WifiOff, BookmarkCheck, RotateCcw, CheckCircle2 } from "lucide-react";
+
+function compressFloorPlanFile(file: File, maxWidth = 1200, quality = 0.8): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (!result) {
+        resolve("");
+        return;
+      }
+      if (file.type.startsWith("image/")) {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL("image/jpeg", quality);
+            resolve(compressed);
+            return;
+          }
+          resolve(result);
+        };
+        img.onerror = () => resolve(result);
+        img.src = result;
+      } else {
+        resolve(result);
+      }
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function NewHomePage() {
   const router = useRouter();
@@ -508,76 +549,105 @@ export default function NewHomePage() {
 
   // 1. Restore from storage on initial mount
   useEffect(() => {
-    const draft = getStoredHomeCreationDraft();
-    if (draft && draft.currentStep) {
-      if (draft.currentStep > 1) {
-        setCurrentStep(draft.currentStep);
-        setResumedNotice(
-          `Resumed at Step ${draft.currentStep} of ${totalSteps} (${stepTitles[draft.currentStep - 1]?.label || "Setup"}). Your entered configuration is preserved.`
-        );
+    let isMounted = true;
+    async function restoreDraft() {
+      // Try local storage first
+      let draft = getStoredHomeCreationDraft();
+      // If empty or missing, fetch from remote backend database
+      if (!draft || !draft.currentStep) {
+        draft = await fetchRemoteHomeCreationDraft();
       }
-      if (draft.propertyType) setPropertyType(draft.propertyType);
-      if (draft.projectName) setProjectName(draft.projectName);
-      if (typeof draft.floorCount === "number") setFloorCount(draft.floorCount);
-      if (typeof draft.bhk === "number") setBhk(draft.bhk);
-      if (typeof draft.bedroomsCount === "number") setBedroomsCount(draft.bedroomsCount);
-      if (typeof draft.bathroomsCount === "number") setBathroomsCount(draft.bathroomsCount);
-      if (typeof draft.balconiesCount === "number") setBalconiesCount(draft.balconiesCount);
-      if (typeof draft.totalBudget === "number") setTotalBudget(draft.totalBudget);
-      if (draft.flexibility) setFlexibility(draft.flexibility);
-      if (draft.floorPlanPreviewUrl) setFloorPlanPreviewUrl(draft.floorPlanPreviewUrl);
-      if (draft.detectedRooms && draft.detectedRooms.length > 0) setDetectedRooms(draft.detectedRooms);
-      if (draft.selectedRoom) setSelectedRoom(draft.selectedRoom);
-      if (draft.designStyle) setDesignStyle(draft.designStyle);
-      if (draft.roomPhotos && draft.roomPhotos.length > 0) setRoomPhotos(draft.roomPhotos);
-      if (typeof draft.isGenerationComplete === "boolean") setIsGenerationComplete(draft.isGenerationComplete);
-      if (draft.completedProjectId) setCompletedProjectId(draft.completedProjectId);
-      if (draft.completedRoomId) setCompletedRoomId(draft.completedRoomId);
-      if (draft.checklist && draft.checklist.length > 0) setChecklist(draft.checklist);
-      if (draft.scaleStatus) setScaleStatus(draft.scaleStatus);
-      if (typeof draft.scalePxPerMeter === "number") setScalePxPerMeter(draft.scalePxPerMeter);
-      if (draft.missingRooms) setMissingRooms(draft.missingRooms);
-      if (draft.lastSavedAt) {
-        try {
-          setLastSavedTime(
-            new Date(draft.lastSavedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+      if (isMounted && draft && draft.currentStep) {
+        if (
+          draft.currentStep > 1 ||
+          (draft.projectName && draft.projectName !== "My Dream Residence") ||
+          (draft.propertyType && draft.propertyType !== "apartment") ||
+          (draft.totalBudget && draft.totalBudget !== 1500000)
+        ) {
+          setCurrentStep(draft.currentStep);
+          setResumedNotice(
+            `Resumed at Step ${draft.currentStep} of ${totalSteps} (${stepTitles[draft.currentStep - 1]?.label || "Setup"}). Your entered configuration is preserved.`
           );
-        } catch (_) {}
+        }
+        if (draft.propertyType) setPropertyType(draft.propertyType);
+        if (draft.projectName) setProjectName(draft.projectName);
+        if (typeof draft.floorCount === "number") setFloorCount(draft.floorCount);
+        if (typeof draft.bhk === "number") setBhk(draft.bhk);
+        if (typeof draft.bedroomsCount === "number") setBedroomsCount(draft.bedroomsCount);
+        if (typeof draft.bathroomsCount === "number") setBathroomsCount(draft.bathroomsCount);
+        if (typeof draft.balconiesCount === "number") setBalconiesCount(draft.balconiesCount);
+        if (typeof draft.totalBudget === "number") setTotalBudget(draft.totalBudget);
+        if (draft.flexibility) setFlexibility(draft.flexibility);
+        if (draft.floorPlanPreviewUrl) {
+          if (draft.floorPlanPreviewUrl.startsWith("blob:")) {
+            setFloorPlanPreviewUrl("/templates/modern_north_layout-a.jpg");
+          } else {
+            setFloorPlanPreviewUrl(draft.floorPlanPreviewUrl);
+          }
+        }
+        if (draft.detectedRooms && draft.detectedRooms.length > 0) setDetectedRooms(draft.detectedRooms);
+        if (draft.selectedRoom) setSelectedRoom(draft.selectedRoom);
+        if (draft.designStyle) setDesignStyle(draft.designStyle);
+        if (draft.roomPhotos && draft.roomPhotos.length > 0) setRoomPhotos(draft.roomPhotos);
+        if (typeof draft.isGenerationComplete === "boolean") setIsGenerationComplete(draft.isGenerationComplete);
+        if (draft.completedProjectId) setCompletedProjectId(draft.completedProjectId);
+        if (draft.completedRoomId) setCompletedRoomId(draft.completedRoomId);
+        if (draft.checklist && draft.checklist.length > 0) setChecklist(draft.checklist);
+        if (draft.scaleStatus) setScaleStatus(draft.scaleStatus);
+        if (typeof draft.scalePxPerMeter === "number") setScalePxPerMeter(draft.scalePxPerMeter);
+        if (draft.missingRooms) setMissingRooms(draft.missingRooms);
+        if (draft.lastSavedAt) {
+          try {
+            setLastSavedTime(
+              new Date(draft.lastSavedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            );
+          } catch (_) {}
+        }
+
+        // If session stopped in between during generation on step 11, resume generation automatically
+        if (draft.currentStep === 11 && !draft.isGenerationComplete) {
+          setTimeout(() => {
+            if (isMounted) startGenerationPipeline();
+          }, 300);
+        }
+      }
+      if (isMounted) {
+        setIsDraftRestored(true);
       }
     }
-    setIsDraftRestored(true);
+    restoreDraft();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Synchronous draft persistence helper
-  const persistDraftSnapshot = (overrides?: {
-    currentStep?: number;
-    isGenerationComplete?: boolean;
-    completedProjectId?: string | null;
-    completedRoomId?: string | null;
-  }) => {
+  const persistDraftSnapshot = (overrides?: Partial<Parameters<typeof saveHomeCreationDraft>[0]>) => {
     saveHomeCreationDraft({
       currentStep: overrides?.currentStep ?? currentStep,
-      propertyType,
-      projectName,
-      floorCount,
-      bhk,
-      bedroomsCount,
-      bathroomsCount,
-      balconiesCount,
-      totalBudget,
-      flexibility,
-      floorPlanPreviewUrl,
-      detectedRooms,
-      selectedRoom,
-      designStyle,
-      roomPhotos,
+      propertyType: overrides?.propertyType ?? propertyType,
+      projectName: overrides?.projectName ?? projectName,
+      floorCount: overrides?.floorCount ?? floorCount,
+      bhk: overrides?.bhk ?? bhk,
+      bedroomsCount: overrides?.bedroomsCount ?? bedroomsCount,
+      bathroomsCount: overrides?.bathroomsCount ?? bathroomsCount,
+      balconiesCount: overrides?.balconiesCount ?? balconiesCount,
+      totalBudget: overrides?.totalBudget ?? totalBudget,
+      flexibility: overrides?.flexibility ?? flexibility,
+      floorPlanPreviewUrl: overrides?.floorPlanPreviewUrl ?? floorPlanPreviewUrl,
+      detectedRooms: overrides?.detectedRooms ?? detectedRooms,
+      selectedRoom: overrides?.selectedRoom ?? selectedRoom,
+      designStyle: overrides?.designStyle ?? designStyle,
+      roomPhotos: overrides?.roomPhotos ?? roomPhotos,
       isGenerationComplete: overrides?.isGenerationComplete ?? isGenerationComplete,
       completedProjectId: overrides?.completedProjectId ?? completedProjectId,
       completedRoomId: overrides?.completedRoomId ?? completedRoomId,
-      checklist,
-      scaleStatus,
-      scalePxPerMeter,
-      missingRooms,
+      checklist: overrides?.checklist ?? checklist,
+      scaleStatus: overrides?.scaleStatus ?? scaleStatus,
+      scalePxPerMeter: overrides?.scalePxPerMeter ?? scalePxPerMeter,
+      missingRooms: overrides?.missingRooms ?? missingRooms,
     });
     setLastSavedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -592,6 +662,43 @@ export default function NewHomePage() {
     return () => clearTimeout(timer);
   }, [
     isDraftRestored,
+    currentStep,
+    propertyType,
+    projectName,
+    floorCount,
+    bhk,
+    bedroomsCount,
+    bathroomsCount,
+    balconiesCount,
+    totalBudget,
+    flexibility,
+    floorPlanPreviewUrl,
+    detectedRooms,
+    selectedRoom,
+    designStyle,
+    roomPhotos,
+    isGenerationComplete,
+    completedProjectId,
+    completedRoomId,
+    checklist,
+    scaleStatus,
+    scalePxPerMeter,
+    missingRooms,
+  ]);
+
+  // 3. Listen for window unload or page hide to flush state synchronously before session closes
+  useEffect(() => {
+    const handleUnload = () => {
+      persistDraftSnapshot();
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
+    };
+  }, [
     currentStep,
     propertyType,
     projectName,
@@ -1278,7 +1385,19 @@ export default function NewHomePage() {
                     selectedFile={floorPlanFile}
                     onFileSelected={async (file) => {
                       setFloorPlanFile(file);
-                      setFloorPlanPreviewUrl(URL.createObjectURL(file));
+                      try {
+                        const dataUrl = await compressFloorPlanFile(file);
+                        if (dataUrl) {
+                          setFloorPlanPreviewUrl(dataUrl);
+                          persistDraftSnapshot({ floorPlanPreviewUrl: dataUrl });
+                        } else {
+                          const fallbackUrl = URL.createObjectURL(file);
+                          setFloorPlanPreviewUrl(fallbackUrl);
+                        }
+                      } catch {
+                        const fallbackUrl = URL.createObjectURL(file);
+                        setFloorPlanPreviewUrl(fallbackUrl);
+                      }
                       // Automatically trigger backend architectural blueprint analysis
                       await runBlueprintAnalysis(file);
                     }}

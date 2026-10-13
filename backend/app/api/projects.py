@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
 from app.db.session import get_db
 from app.models.project import Project as ProjectModel
 from app.models.budget import Budget as BudgetModel
@@ -11,6 +12,11 @@ from app.core.analytics import track_event
 import uuid
 import json
 from datetime import datetime
+
+class HomeCreationDraftPayload(BaseModel):
+    draft: Dict[str, Any]
+    email: Optional[str] = None
+    user_id: Optional[UUID] = None
 
 router = APIRouter()
 
@@ -144,6 +150,72 @@ def list_user_projects(user_id: UUID, db: Session = Depends(get_db)):
     if str(user_id) == "00000000-0000-0000-0000-000000000000":
         user_id = DEMO_USER_ID
     return db.query(ProjectModel).filter(ProjectModel.user_id == user_id).order_by(ProjectModel.created_at.desc()).all()
+
+@router.post("/draft")
+def save_home_creation_draft(payload: HomeCreationDraftPayload, db: Session = Depends(get_db)):
+    """Saves user's in-progress home creation wizard draft."""
+    target_id = payload.user_id
+    target_email = payload.email
+    user = None
+    if target_id and str(target_id) != "00000000-0000-0000-0000-000000000000":
+        user = db.query(UserModel).filter(UserModel.id == target_id).first()
+    elif target_email:
+        user = db.query(UserModel).filter(UserModel.email.ilike(target_email.strip())).first()
+    if not user:
+        user_id = get_or_create_default_user(db)
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
+    if user:
+        pref = db.query(UserPreferenceModel).filter(UserPreferenceModel.user_id == user.id).first()
+        if not pref:
+            pref = UserPreferenceModel(user_id=user.id)
+            db.add(pref)
+        existing_lp = dict(pref.lifestyle_preferences or {})
+        existing_lp["home_creation_draft"] = payload.draft
+        pref.lifestyle_preferences = existing_lp
+        db.commit()
+
+    return {"status": "saved", "draft": payload.draft}
+
+@router.get("/draft")
+def get_home_creation_draft(email: Optional[str] = None, user_id: Optional[UUID] = None, db: Session = Depends(get_db)):
+    """Retrieves user's in-progress home creation wizard draft."""
+    user = None
+    if user_id and str(user_id) != "00000000-0000-0000-0000-000000000000":
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    elif email:
+        user = db.query(UserModel).filter(UserModel.email.ilike(email.strip())).first()
+    if not user and not email and not user_id:
+        user_id = get_or_create_default_user(db)
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
+    if user and user.preferences and user.preferences.lifestyle_preferences:
+        draft = user.preferences.lifestyle_preferences.get("home_creation_draft")
+        if draft:
+            return {"status": "found", "draft": draft}
+
+    return {"status": "empty", "draft": None}
+
+@router.delete("/draft")
+def clear_home_creation_draft(email: Optional[str] = None, user_id: Optional[UUID] = None, db: Session = Depends(get_db)):
+    """Clears user's home creation wizard draft upon completion."""
+    user = None
+    if user_id and str(user_id) != "00000000-0000-0000-0000-000000000000":
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    elif email:
+        user = db.query(UserModel).filter(UserModel.email.ilike(email.strip())).first()
+    if not user and not email and not user_id:
+        user_id = get_or_create_default_user(db)
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
+    if user and user.preferences and user.preferences.lifestyle_preferences:
+        existing_lp = dict(user.preferences.lifestyle_preferences)
+        if "home_creation_draft" in existing_lp:
+            del existing_lp["home_creation_draft"]
+            user.preferences.lifestyle_preferences = existing_lp
+            db.commit()
+
+    return {"status": "cleared"}
 
 @router.get("/{project_id}", response_model=ProjectSchema)
 def get_project(project_id: UUID, db: Session = Depends(get_db)):

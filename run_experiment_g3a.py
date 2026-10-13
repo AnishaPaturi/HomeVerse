@@ -562,9 +562,10 @@ def run_experiment_g3a(epochs=5, batch_size=7, img_size=384, eval_only=False):
 
     f2a_ckpt_path = Path("checkpoints/multitask/experiment_f2a_best.pt")
     g3a_ckpt_path = Path("checkpoints/multitask/experiment_g3a_best.pt")
+    interrupted_ckpt_path = Path("checkpoints/multitask/experiment_g3a_interrupted.pt")
 
     if eval_only:
-        eval_ckpt = g3a_ckpt_path if g3a_ckpt_path.exists() else f2a_ckpt_path
+        eval_ckpt = g3a_ckpt_path if g3a_ckpt_path.exists() else (interrupted_ckpt_path if interrupted_ckpt_path.exists() else f2a_ckpt_path)
         print(f"Loading checkpoint for evaluation: {eval_ckpt}...", flush=True)
         model.load_state_dict(torch.load(eval_ckpt, map_location=device), strict=False)
     else:
@@ -603,51 +604,58 @@ def run_experiment_g3a(epochs=5, batch_size=7, img_size=384, eval_only=False):
         best_val_score = -1e9
         best_epoch = 0
 
-        for epoch in range(1, epochs + 1):
-            t_ep0 = time.time()
-            model.train()
-            train_loss_total = 0.0
-            train_loss_ce = 0.0
-            train_loss_mask = 0.0
+        try:
+            for epoch in range(1, epochs + 1):
+                t_ep0 = time.time()
+                model.train()
+                train_loss_total = 0.0
+                train_loss_ce = 0.0
+                train_loss_mask = 0.0
 
-            for b_idx, (images, targets) in enumerate(train_loader):
-                images = images.to(device)
-                optimizer.zero_grad()
-                outputs = model(images)
-                loss_dict = criterion(outputs, targets)
-                loss = loss_dict["loss"]
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-                optimizer.step()
+                for b_idx, (images, targets) in enumerate(train_loader):
+                    images = images.to(device)
+                    optimizer.zero_grad()
+                    outputs = model(images)
+                    loss_dict = criterion(outputs, targets)
+                    loss = loss_dict["loss"]
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                    optimizer.step()
 
-                train_loss_total += loss.item()
-                train_loss_ce += loss_dict["loss_ce"].item()
-                train_loss_mask += loss_dict["loss_mask"].item()
+                    train_loss_total += loss.item()
+                    train_loss_ce += loss_dict["loss_ce"].item()
+                    train_loss_mask += loss_dict["loss_mask"].item()
 
-            avg_loss = train_loss_total / len(train_loader)
-            avg_ce = train_loss_ce / len(train_loader)
-            avg_mask = train_loss_mask / len(train_loader)
+                avg_loss = train_loss_total / len(train_loader)
+                avg_ce = train_loss_ce / len(train_loader)
+                avg_mask = train_loss_mask / len(train_loader)
 
-            # Evaluate on Validation set
-            val_res = evaluate_g3a(model, val_loader, device, conf_thresh=0.20, detailed=False)
-            val_dice = val_res["hungarian_mask_dice"]
-            val_sem_f1 = val_res["curve"]["iou_50"]["sem_f1"]
-            val_det_f1 = val_res["curve"]["iou_50"]["det_f1"]
+                # Evaluate on Validation set
+                val_res = evaluate_g3a(model, val_loader, device, conf_thresh=0.20, detailed=False)
+                val_dice = val_res["hungarian_mask_dice"]
+                val_sem_f1 = val_res["curve"]["iou_50"]["sem_f1"]
+                val_det_f1 = val_res["curve"]["iou_50"]["det_f1"]
 
-            # Combined score: maximize semantic F1 while protecting mask dice >= 0.80
-            dice_penalty = max(0.0, 0.82 - val_dice) * 5.0
-            val_score = val_sem_f1 * 2.0 + val_det_f1 - dice_penalty
+                # Combined score: maximize semantic F1 while protecting mask dice >= 0.80
+                dice_penalty = max(0.0, 0.82 - val_dice) * 5.0
+                val_score = val_sem_f1 * 2.0 + val_det_f1 - dice_penalty
 
-            ep_time = time.time() - t_ep0
-            print(f"Epoch {epoch:02d}/{epochs:02d} [{ep_time:.1f}s] | Loss: {avg_loss:.4f} (CE: {avg_ce:.4f}, Mask: {avg_mask:.4f}) | Val Dice: {val_dice:.4f} | Val Det F1@50: {val_det_f1:.4f} | Val Sem F1@50: {val_sem_f1:.4f}", flush=True)
+                ep_time = time.time() - t_ep0
+                print(f"Epoch {epoch:02d}/{epochs:02d} [{ep_time:.1f}s] | Loss: {avg_loss:.4f} (CE: {avg_ce:.4f}, Mask: {avg_mask:.4f}) | Val Dice: {val_dice:.4f} | Val Det F1@50: {val_det_f1:.4f} | Val Sem F1@50: {val_sem_f1:.4f}", flush=True)
 
-            if val_score > best_val_score and val_dice >= 0.80:
-                best_val_score = val_score
-                best_epoch = epoch
-                print(f"  --> New Best Model (Epoch {epoch})! Saving to {g3a_ckpt_path}...", flush=True)
+                if val_score > best_val_score and val_dice >= 0.80:
+                    best_val_score = val_score
+                    best_epoch = epoch
+                    print(f"  --> New Best Model (Epoch {epoch})! Saving to {g3a_ckpt_path}...", flush=True)
+                    safe_torch_save(model.state_dict(), g3a_ckpt_path)
+
+            print(f"\nTraining completed. Best checkpoint from Epoch {best_epoch}.", flush=True)
+        except KeyboardInterrupt:
+            print("\n[SESSION INTERRUPT] Training session stopped in between! Saving in-progress model weights...", flush=True)
+            safe_torch_save(model.state_dict(), interrupted_ckpt_path)
+            if not g3a_ckpt_path.exists():
                 safe_torch_save(model.state_dict(), g3a_ckpt_path)
-
-        print(f"\nTraining completed. Best checkpoint from Epoch {best_epoch}.", flush=True)
+            print(f"[SESSION INTERRUPT] In-progress checkpoint safely saved to {interrupted_ckpt_path}.", flush=True)
 
     # 4. Final Benchmark on Completely Unseen Test Split
     print("\nLoading best G3-A checkpoint for final test benchmark...", flush=True)

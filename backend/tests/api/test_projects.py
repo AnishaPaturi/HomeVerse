@@ -51,3 +51,42 @@ def test_project_crud_lifecycle():
     # 6. Verify Deletion
     verify_res = client.get(f"/api/projects/{project_id}")
     assert verify_res.status_code == 404
+
+def test_home_creation_draft_lifecycle():
+    # 1. Save in-progress draft (e.g. stopped at Step 4)
+    draft_data = {
+        "currentStep": 4,
+        "propertyType": "independent",
+        "projectName": "Coastal Sunrise Villa",
+        "floorCount": 2,
+        "bhk": 4,
+        "totalBudget": 2800000,
+        "designStyle": "Warm Contemporary"
+    }
+    save_res = client.post("/api/projects/draft", json={
+        "draft": draft_data,
+        "email": "designer@homeverse.ai"
+    })
+    assert save_res.status_code == 200
+    assert save_res.json()["status"] == "saved"
+    assert save_res.json()["draft"]["currentStep"] == 4
+
+    # 2. Retrieve draft when session resumes
+    get_res = client.get("/api/projects/draft?email=designer@homeverse.ai")
+    assert get_res.status_code == 200
+    retrieved = get_res.json()
+    assert retrieved["status"] == "found"
+    assert retrieved["draft"]["currentStep"] == 4
+    assert retrieved["draft"]["projectName"] == "Coastal Sunrise Villa"
+    assert retrieved["draft"]["totalBudget"] == 2800000
+
+    # 3. Clear draft once wizard completes
+    clear_res = client.delete("/api/projects/draft?email=designer@homeverse.ai")
+    assert clear_res.status_code == 200
+    assert clear_res.json()["status"] == "cleared"
+
+    # 4. Confirm draft is cleared
+    verify_res = client.get("/api/projects/draft?email=designer@homeverse.ai")
+    assert verify_res.status_code == 200
+    assert verify_res.json()["status"] == "empty"
+    assert verify_res.json()["draft"] is None

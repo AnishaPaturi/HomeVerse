@@ -26,9 +26,7 @@ export function clearStoredUser(): void {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.removeItem("user");
-    sessionStorage.clear();
     localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.clear();
   } catch (err) {
     console.warn("Storage clearance warning:", err);
   }

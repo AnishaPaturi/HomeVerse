@@ -612,9 +612,27 @@ function RoomPlaygroundContent() {
           {activeTab === "3d" ? (
             <CanvasContainer
               objects={roomObjects}
+              selectedObjectId={selectedObject?.id || null}
               roomWidth={roomDimensions.width}
               roomDepth={roomDimensions.length}
-              onSelectObject={(obj) => setSelectedObject(obj)}
+              onSelectObject={(objId: any) => {
+                if (!objId) {
+                  setSelectedObject(null);
+                  return;
+                }
+                const found = typeof objId === "string" ? roomObjects.find((o) => o.id === objId) : objId;
+                setSelectedObject(found || null);
+              }}
+              onUpdateObject={(id, updates) => {
+                setRoomObjects((prev) => {
+                  const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                  updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                  return updated;
+                });
+                if (selectedObject?.id === id) {
+                  setSelectedObject((prev: any) => (prev ? { ...prev, ...updates } : null));
+                }
+              }}
               onCopilotAction={handleCopilotAction}
             />
           ) : activeTab === "2d" ? (
@@ -675,6 +693,26 @@ function RoomPlaygroundContent() {
               <div className="flex-1 overflow-y-auto">
                 <ObjectPropertiesPanel
                   selectedObject={selectedObject}
+                  roomWidth={roomDimensions.width}
+                  roomDepth={roomDimensions.length}
+                  onUpdateObject={(id, updates) => {
+                    setRoomObjects((prev) => {
+                      const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                      updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                      return updated;
+                    });
+                    if (selectedObject?.id === id) {
+                      setSelectedObject((prev: any) => (prev ? { ...prev, ...updates } : null));
+                    }
+                  }}
+                  onDeleteObject={(id) => {
+                    setRoomObjects((prev) => {
+                      const updated = prev.filter((o) => o.id !== id);
+                      updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                      return updated;
+                    });
+                    setSelectedObject(null);
+                  }}
                   onUpdate={(updated) => setSelectedObject(updated)}
                 />
               </div>

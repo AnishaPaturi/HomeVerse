@@ -8,9 +8,11 @@ import {
   getStoredPreferencesProgress,
   savePreferencesProgress,
   clearPreferencesProgress,
+  fetchRemotePreferencesProgress,
   LifestyleAnswers,
   DEFAULT_LIFESTYLE_ANSWERS,
 } from "@/lib/questionnaireStorage";
+import { getStoredUser } from "@/lib/auth";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { RotateCcw, WifiOff, CheckCircle2, BookmarkCheck } from "lucide-react";
 
@@ -81,61 +83,108 @@ export default function PreferencesPage() {
     syncWithBackend();
   });
 
+  // Synchronous flush on tab close / reload / navigation
+  const latestStateRef = useRef({ reactions, questionnaire, currentIndex, activeTab });
+  useEffect(() => {
+    latestStateRef.current = { reactions, questionnaire, currentIndex, activeTab };
+  }, [reactions, questionnaire, currentIndex, activeTab]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const state = latestStateRef.current;
+      savePreferencesProgress({
+        reactions: state.reactions,
+        questionnaire: state.questionnaire,
+        currentIndex: state.currentIndex,
+        activeTab: state.activeTab,
+      });
+      const user = getStoredUser();
+      const payload = JSON.stringify({
+        reactions: state.reactions,
+        questionnaire: state.questionnaire,
+        current_index: state.currentIndex,
+        active_tab: state.activeTab,
+        email: user?.email,
+        user_id: user?.id,
+      });
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("http://localhost:8080/api/preferences/save-progress", blob);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handleBeforeUnload);
+    };
+  }, []);
+
   useEffect(() => {
     if (hasLoadedInitial.current) return;
     hasLoadedInitial.current = true;
 
-    // 1. First restore immediately from client storage (zero latency, resilient to disconnects)
-    const stored = getStoredPreferencesProgress();
-    let initialIndex = 0;
-    let initialReactions: { image_id: string; reaction: string }[] = [];
-    let initialQuest = DEFAULT_LIFESTYLE_ANSWERS;
-
-    if (stored) {
-      if (typeof stored.currentIndex === "number") {
-        initialIndex = stored.currentIndex;
-        setCurrentIndex(stored.currentIndex);
-      }
-      if (stored.reactions && Array.isArray(stored.reactions)) {
-        initialReactions = stored.reactions;
-        setReactions(stored.reactions);
-      }
-      if (stored.questionnaire) {
-        initialQuest = { ...DEFAULT_LIFESTYLE_ANSWERS, ...stored.questionnaire };
-        setQuestionnaire(initialQuest);
-      }
-      if (stored.activeTab) {
-        setActiveTab(stored.activeTab);
-      }
-      if (stored.styleProfile) {
-        setStyleProfile(stored.styleProfile);
+    async function initPreferences() {
+      // 1. First restore immediately from client storage (zero latency, resilient to disconnects)
+      let stored = getStoredPreferencesProgress();
+      if (!stored || (stored.currentIndex === 0 && (!stored.reactions || stored.reactions.length === 0))) {
+        const remote = await fetchRemotePreferencesProgress();
+        if (remote) {
+          stored = remote;
+        }
       }
 
-      if (stored.currentIndex > 0 || (stored.reactions && stored.reactions.length > 0)) {
-        setResumedMessage(
-          stored.activeTab === "questionnaire"
-            ? "Resumed your Lifestyle Questionnaire answers. Pick up right where you left off!"
-            : `Resumed from Question ${stored.currentIndex + 1} with previous choices saved.`
-        );
-      }
-    }
+      let initialIndex = 0;
+      let initialReactions: { image_id: string; reaction: string }[] = [];
+      let initialQuest = DEFAULT_LIFESTYLE_ANSWERS;
 
-    // 2. Load reference catalog
-    fetchApi<ReferenceImage[]>("/api/preferences/reference-images")
-      .then((data) => {
+      if (stored) {
+        if (typeof stored.currentIndex === "number") {
+          initialIndex = stored.currentIndex;
+          setCurrentIndex(stored.currentIndex);
+        }
+        if (stored.reactions && Array.isArray(stored.reactions)) {
+          initialReactions = stored.reactions;
+          setReactions(stored.reactions);
+        }
+        if (stored.questionnaire) {
+          initialQuest = { ...DEFAULT_LIFESTYLE_ANSWERS, ...stored.questionnaire };
+          setQuestionnaire(initialQuest);
+        }
+        if (stored.activeTab) {
+          setActiveTab(stored.activeTab);
+        }
+        if (stored.styleProfile) {
+          setStyleProfile(stored.styleProfile);
+        }
+
+        if (stored.currentIndex > 0 || (stored.reactions && stored.reactions.length > 0)) {
+          setResumedMessage(
+            stored.activeTab === "questionnaire"
+              ? "Resumed your Lifestyle Questionnaire answers. Pick up right where you left off!"
+              : `Resumed from Question ${stored.currentIndex + 1} with previous choices saved.`
+          );
+        }
+      }
+
+      // 2. Load reference catalog
+      try {
+        const data = await fetchApi<ReferenceImage[]>("/api/preferences/reference-images");
         if (data && data.length > 0) {
           setReferenceImages(data);
-          // Bound currentIndex within range
-          if (initialIndex >= data.length) {
-            setCurrentIndex(Math.max(0, data.length - 1));
+          // Bound currentIndex within range, allowing reaching data.length for finished state
+          if (initialIndex > data.length) {
+            setCurrentIndex(data.length);
           }
         }
-      })
-      .catch((err) => console.error("Failed to load reference images:", err));
+      } catch (err) {
+        console.error("Failed to load reference images:", err);
+      }
 
-    // 3. Load user preferences from backend if local storage was empty
-    fetchApi<any>("/api/preferences")
-      .then((data) => {
+      // 3. Load user preferences from backend if local storage was empty
+      try {
+        const data = await fetchApi<any>("/api/preferences");
         if (data) {
           if (!stored || !stored.styleProfile) {
             setStyleProfile(data);
@@ -158,8 +207,12 @@ export default function PreferencesPage() {
             setResumedMessage(`Resumed from Question ${remoteIdx + 1} of your saved profile.`);
           }
         }
-      })
-      .catch((err) => console.warn("Failed to load remote preferences:", err));
+      } catch (err) {
+        console.warn("Failed to load remote preferences:", err);
+      }
+    }
+
+    initPreferences();
   }, []);
 
   const handleTabChange = (tab: "discovery" | "questionnaire") => {
@@ -184,10 +237,8 @@ export default function PreferencesPage() {
     const nextReactions = [...reactions.filter((r) => r.image_id !== currentId), { image_id: currentId, reaction }];
     setReactions(nextReactions);
 
-    const nextIndex = currentIndex < referenceImages.length - 1 ? currentIndex + 1 : currentIndex;
-    if (currentIndex < referenceImages.length - 1) {
-      setCurrentIndex(nextIndex);
-    }
+    const nextIndex = Math.min(referenceImages.length, currentIndex + 1);
+    setCurrentIndex(nextIndex);
 
     // Immediately persist locally so if user disconnects immediately, progress is never lost
     savePreferencesProgress({

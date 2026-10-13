@@ -6,6 +6,9 @@
  * from the exact same question/step without losing answers or starting over.
  */
 
+import { fetchApi } from "./api";
+import { getStoredUser } from "./auth";
+
 export interface LifestyleAnswers {
   family_size: string;
   pets: boolean;
@@ -90,15 +93,35 @@ export function savePreferencesProgress(data: Partial<PreferencesProgress>): voi
     };
 
     const serialized = JSON.stringify(updated);
-    localStorage.setItem(PREF_STORAGE_KEY, serialized);
-    sessionStorage.setItem(PREF_STORAGE_KEY, serialized);
+    try {
+      localStorage.setItem(PREF_STORAGE_KEY, serialized);
+    } catch (_) {}
+    try {
+      sessionStorage.setItem(PREF_STORAGE_KEY, serialized);
+    } catch (_) {}
+
+    // Asynchronously synchronize with backend database so session stops never lose progress
+    try {
+      const user = getStoredUser();
+      fetchApi("/api/preferences/save-progress", {
+        method: "POST",
+        body: JSON.stringify({
+          reactions: updated.reactions,
+          questionnaire: updated.questionnaire,
+          current_index: updated.currentIndex,
+          active_tab: updated.activeTab,
+          email: user?.email,
+          user_id: user?.id,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
   } catch (err) {
     console.warn("Failed to save preferences progress locally:", err);
   }
 }
 
 /**
- * Retrieve saved Preferences question progress
+ * Retrieve saved Preferences question progress from local storage
  */
 export function getStoredPreferencesProgress(): PreferencesProgress | null {
   if (typeof window === "undefined") return null;
@@ -117,6 +140,36 @@ export function getStoredPreferencesProgress(): PreferencesProgress | null {
     console.warn("Failed to retrieve stored preferences progress:", err);
   }
 
+  return null;
+}
+
+/**
+ * Fetch saved questionnaire progress from backend database when session was closed or cleared
+ */
+export async function fetchRemotePreferencesProgress(email?: string): Promise<PreferencesProgress | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const targetEmail = email || getStoredUser()?.email;
+    const query = targetEmail ? `?email=${encodeURIComponent(targetEmail)}` : "";
+    const res = await fetchApi<any>(`/api/preferences/progress${query}`);
+    if (res && (res.status === "restored" || res.reactions?.length > 0 || res.current_index > 0)) {
+      const progress: PreferencesProgress = {
+        currentIndex: res.current_index ?? 0,
+        reactions: res.reactions ?? [],
+        questionnaire: res.questionnaire ? { ...DEFAULT_LIFESTYLE_ANSWERS, ...res.questionnaire } : DEFAULT_LIFESTYLE_ANSWERS,
+        activeTab: res.active_tab || "discovery",
+        lastSavedAt: new Date().toISOString(),
+      };
+      try {
+        const serialized = JSON.stringify(progress);
+        localStorage.setItem(PREF_STORAGE_KEY, serialized);
+        sessionStorage.setItem(PREF_STORAGE_KEY, serialized);
+      } catch (_) {}
+      return progress;
+    }
+  } catch (err) {
+    console.warn("Failed to retrieve remote preferences progress:", err);
+  }
   return null;
 }
 
@@ -173,30 +226,89 @@ export function saveHomeCreationDraft(data: Partial<HomeCreationDraft>): void {
       localStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
       sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
     } catch (quotaError) {
-      // Safe fallback if room photos exceed storage quota: store draft metadata without heavy photos
-      console.warn("Storage quota hit, saving draft with photo metadata stripped:", quotaError);
+      console.warn("Storage quota hit, saving draft with photo and large image data stripped:", quotaError);
       const fallback = {
         ...updated,
+        floorPlanPreviewUrl: updated.floorPlanPreviewUrl && updated.floorPlanPreviewUrl.length > 500000
+          ? "/templates/modern_north_layout-a.jpg"
+          : updated.floorPlanPreviewUrl,
         roomPhotos: (updated.roomPhotos || []).map((p: any) => ({
           id: p.id,
           source: p.source,
           label: p.label,
           name: p.name,
           timestamp: p.timestamp,
-          url: p.url && p.url.startsWith("data:") ? "" : p.url,
+          url: p.url && p.url.startsWith("data:") && p.url.length > 50000 ? "" : p.url,
         })),
       };
-      const serializedFallback = JSON.stringify(fallback);
-      localStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
-      sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
+      try {
+        const serializedFallback = JSON.stringify(fallback);
+        localStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
+        sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serializedFallback);
+      } catch (secondErr) {
+        // Minimal fallback guaranteeing all textual step choices are preserved
+        const minimalFallback = {
+          currentStep: updated.currentStep,
+          propertyType: updated.propertyType,
+          projectName: updated.projectName,
+          floorCount: updated.floorCount,
+          bhk: updated.bhk,
+          bedroomsCount: updated.bedroomsCount,
+          bathroomsCount: updated.bathroomsCount,
+          balconiesCount: updated.balconiesCount,
+          totalBudget: updated.totalBudget,
+          flexibility: updated.flexibility,
+          floorPlanPreviewUrl: "/templates/modern_north_layout-a.jpg",
+          detectedRooms: updated.detectedRooms,
+          selectedRoom: updated.selectedRoom,
+          designStyle: updated.designStyle,
+          roomPhotos: [],
+          isGenerationComplete: updated.isGenerationComplete,
+          completedProjectId: updated.completedProjectId,
+          completedRoomId: updated.completedRoomId,
+          lastSavedAt: updated.lastSavedAt,
+        };
+        try {
+          const minimalSerialized = JSON.stringify(minimalFallback);
+          localStorage.setItem(NEW_HOME_DRAFT_KEY, minimalSerialized);
+          sessionStorage.setItem(NEW_HOME_DRAFT_KEY, minimalSerialized);
+        } catch (_) {}
+      }
     }
+
+    // Also persist draft to backend database asynchronously
+    try {
+      const user = getStoredUser();
+      const remoteDraftPayload = {
+        ...updated,
+        floorPlanPreviewUrl: updated.floorPlanPreviewUrl && updated.floorPlanPreviewUrl.length > 500000
+          ? "/templates/modern_north_layout-a.jpg"
+          : updated.floorPlanPreviewUrl,
+        roomPhotos: (updated.roomPhotos || []).map((p: any) => ({
+          id: p.id,
+          source: p.source,
+          label: p.label,
+          name: p.name,
+          timestamp: p.timestamp,
+          url: p.url && p.url.startsWith("data:") && p.url.length > 100000 ? "" : p.url,
+        })),
+      };
+      fetchApi("/api/projects/draft", {
+        method: "POST",
+        body: JSON.stringify({
+          draft: remoteDraftPayload,
+          email: user?.email,
+          user_id: user?.id,
+        }),
+      }).catch(() => {});
+    } catch (_) {}
   } catch (err) {
     console.warn("Failed to save home creation draft:", err);
   }
 }
 
 /**
- * Retrieve saved Home Creation Wizard draft
+ * Retrieve saved Home Creation Wizard draft from local storage
  */
 export function getStoredHomeCreationDraft(): HomeCreationDraft | null {
   if (typeof window === "undefined") return null;
@@ -219,6 +331,30 @@ export function getStoredHomeCreationDraft(): HomeCreationDraft | null {
 }
 
 /**
+ * Fetch saved Home Creation Wizard draft from backend database
+ */
+export async function fetchRemoteHomeCreationDraft(email?: string): Promise<HomeCreationDraft | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const targetEmail = email || getStoredUser()?.email;
+    const query = targetEmail ? `?email=${encodeURIComponent(targetEmail)}` : "";
+    const res = await fetchApi<any>(`/api/projects/draft${query}`);
+    if (res && res.status === "found" && res.draft) {
+      const draft = res.draft as HomeCreationDraft;
+      try {
+        const serialized = JSON.stringify(draft);
+        localStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
+        sessionStorage.setItem(NEW_HOME_DRAFT_KEY, serialized);
+      } catch (_) {}
+      return draft;
+    }
+  } catch (err) {
+    console.warn("Failed to retrieve remote home creation draft:", err);
+  }
+  return null;
+}
+
+/**
  * Clear Home Creation Wizard draft (e.g., when home creation is finished or restarted)
  */
 export function clearHomeCreationDraft(): void {
@@ -227,6 +363,11 @@ export function clearHomeCreationDraft(): void {
   try {
     localStorage.removeItem(NEW_HOME_DRAFT_KEY);
     sessionStorage.removeItem(NEW_HOME_DRAFT_KEY);
+
+    // Also clear from backend database
+    const user = getStoredUser();
+    const query = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+    fetchApi(`/api/projects/draft${query}`, { method: "DELETE" }).catch(() => {});
   } catch (err) {
     console.warn("Failed to clear home creation draft:", err);
   }
