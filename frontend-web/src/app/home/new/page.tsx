@@ -37,7 +37,7 @@ import { projectApi } from "@/lib/projects";
 import { getStoredUser } from "@/lib/auth";
 import { budgetApi } from "@/lib/budgets";
 import { generateUUID } from "@/lib/utils";
-import { saveProjectLocally } from "@/lib/projectStorage";
+import { saveProjectLocally, getStoredProjectRooms } from "@/lib/projectStorage";
 import {
   saveHomeCreationDraft,
   getStoredHomeCreationDraft,
@@ -591,8 +591,25 @@ export default function NewHomePage() {
         if (draft.designStyle) setDesignStyle(draft.designStyle);
         if (draft.roomPhotos && draft.roomPhotos.length > 0) setRoomPhotos(draft.roomPhotos);
         if (typeof draft.isGenerationComplete === "boolean") setIsGenerationComplete(draft.isGenerationComplete);
-        if (draft.completedProjectId) setCompletedProjectId(draft.completedProjectId);
-        if (draft.completedRoomId) setCompletedRoomId(draft.completedRoomId);
+        if (draft.completedProjectId) {
+          setCompletedProjectId(draft.completedProjectId);
+        } else if (draft.isGenerationComplete || draft.currentStep === 11) {
+          const latestId = typeof window !== "undefined" ? localStorage.getItem("latest_project_id") : null;
+          if (latestId) {
+            setCompletedProjectId(latestId);
+          }
+        }
+        if (draft.completedRoomId) {
+          setCompletedRoomId(draft.completedRoomId);
+        } else if (draft.isGenerationComplete || draft.currentStep === 11) {
+          const latestId = draft.completedProjectId || (typeof window !== "undefined" ? localStorage.getItem("latest_project_id") : null);
+          if (latestId) {
+            const rooms = getStoredProjectRooms(latestId);
+            if (rooms && rooms.length > 0) {
+              setCompletedRoomId(rooms[0].id || `r-1-1-${latestId.slice(0, 8)}`);
+            }
+          }
+        }
         if (draft.checklist && draft.checklist.length > 0) setChecklist(draft.checklist);
         if (draft.scaleStatus) setScaleStatus(draft.scaleStatus);
         if (typeof draft.scalePxPerMeter === "number") setScalePxPerMeter(draft.scalePxPerMeter);
@@ -1170,6 +1187,113 @@ export default function NewHomePage() {
     });
   };
 
+  // Resolves and guarantees valid project ID and room ID for 2D/3D navigation
+  const getResolvedProjectAndRoomIds = (): { projId: string; rId: string } => {
+    let projId = completedProjectId;
+    let rId = completedRoomId;
+
+    if (!projId && typeof window !== "undefined") {
+      projId = localStorage.getItem("latest_project_id");
+    }
+    if (!projId) {
+      const draft = getStoredHomeCreationDraft();
+      if (draft?.completedProjectId) projId = draft.completedProjectId;
+    }
+
+    if (!projId || !rId) {
+      const fallbackProjId = projId || generateUUID();
+      projId = fallbackProjId;
+
+      const totalFloors = Math.max(1, floorCount);
+      const roomsPerFloor = Math.ceil(detectedRooms.length / totalFloors);
+      const allRoomsPayload: any[] = [];
+      const floorList = [];
+
+      for (let f = 1; f <= totalFloors; f++) {
+        const startIdx = (f - 1) * roomsPerFloor;
+        const endIdx = f === totalFloors ? detectedRooms.length : Math.min(startIdx + roomsPerFloor, detectedRooms.length);
+        const floorRooms = detectedRooms.slice(startIdx, endIdx);
+        const floorId = `f-${f}-${fallbackProjId.slice(0, 8)}`;
+
+        const mappedFloorRooms = floorRooms.map((r, rIdx) => ({
+          id: `r-${f}-${rIdx + 1}-${fallbackProjId.slice(0, 8)}`,
+          floor_id: floorId,
+          name: r.name,
+          source_label: r.source_label || r.name,
+          custom_name: r.name,
+          room_type: r.room_type,
+          area_sqm: r.area_sqm,
+          width_meters: r.width_m,
+          length_meters: r.length_m,
+          confidence: r.confidence,
+          status: "planning",
+          objects: getDefaultFurnitureForRoom(r.name, r.room_type, r.width_m, r.length_m, designStyle),
+        }));
+
+        floorList.push({
+          id: floorId,
+          level: f,
+          name: f === 1 ? "Ground Floor" : f === 2 ? "First Floor" : `Floor ${f}`,
+          room_count: mappedFloorRooms.length,
+          rooms: mappedFloorRooms,
+        });
+
+        allRoomsPayload.push(...mappedFloorRooms);
+      }
+
+      const targetRoom = allRoomsPayload.find(
+        (r) => r.name === selectedRoom || r.source_label === selectedRoom
+      ) || allRoomsPayload[0];
+      const fallbackRoomId = targetRoom?.id || `r-1-1-${fallbackProjId.slice(0, 8)}`;
+      rId = fallbackRoomId;
+
+      const projectPayload: any = {
+        id: fallbackProjId,
+        name: projectName,
+        home_type: propertyType,
+        floors_count: totalFloors,
+        total_rooms: detectedRooms.length,
+        total_budget: totalBudget,
+        currency: "INR",
+        budget_flexibility: flexibility.toLowerCase(),
+        design_style: designStyle,
+        primary_room: selectedRoom,
+        target_room: selectedRoom,
+        room_photos: roomPhotos,
+        generated_renders: [
+          "/rooms/master-bed-room-1.png",
+          "/rooms/master-bed-room-2.png",
+        ],
+        floors: floorList,
+        rooms: allRoomsPayload,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      saveProjectLocally(projectPayload);
+      setCompletedProjectId(fallbackProjId);
+      setCompletedRoomId(fallbackRoomId);
+      persistDraftSnapshot({
+        completedProjectId: fallbackProjId,
+        completedRoomId: fallbackRoomId,
+        isGenerationComplete: true,
+      });
+    }
+
+    if (!rId && projId) {
+      const storedRooms = getStoredProjectRooms(projId);
+      if (storedRooms && storedRooms.length > 0) {
+        const match = storedRooms.find((r: any) => r.name === selectedRoom) || storedRooms[0];
+        rId = match.id || `r-1-1-${projId.slice(0, 8)}`;
+      } else {
+        rId = `r-1-1-${projId.slice(0, 8)}`;
+      }
+      setCompletedRoomId(rId);
+    }
+
+    return { projId, rId: rId || `r-1-1-${projId.slice(0, 8)}` };
+  };
+
   return (
     <div className="min-h-screen bg-[#070b10] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between">
       {/* Top Navigation */}
@@ -1564,17 +1688,20 @@ export default function NewHomePage() {
                   totalRooms={detectedRooms.length}
                   roomPhotos={roomPhotos}
                   onView2D={() => {
+                    const { projId, rId } = getResolvedProjectAndRoomIds();
                     router.push(
-                      `/project/${completedProjectId}/rooms/${completedRoomId}/playground?tab=2d`
+                      `/project/${projId}/rooms/${rId}/playground?tab=2d`
                     );
                   }}
                   onView3D={() => {
+                    const { projId, rId } = getResolvedProjectAndRoomIds();
                     router.push(
-                      `/project/${completedProjectId}/rooms/${completedRoomId}/playground?tab=3d`
+                      `/project/${projId}/rooms/${rId}/playground?tab=3d`
                     );
                   }}
                   onGoToProject={() => {
-                    router.push(`/project/${completedProjectId}`);
+                    const { projId } = getResolvedProjectAndRoomIds();
+                    router.push(`/project/${projId}`);
                   }}
                 />
               )}

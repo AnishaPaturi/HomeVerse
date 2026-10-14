@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Sparkles,
@@ -60,6 +61,37 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
   onView3D,
   onGoToProject,
 }) => {
+  const router = useRouter();
+
+  const handleSafeView2D = () => {
+    if (onView2D) {
+      onView2D();
+    } else {
+      const pId = projectId || (typeof window !== "undefined" ? localStorage.getItem("latest_project_id") : null) || "latest";
+      const rId = roomId || "r-1-1";
+      router.push(`/project/${pId}/rooms/${rId}/playground?tab=2d`);
+    }
+  };
+
+  const handleSafeView3D = () => {
+    if (onView3D) {
+      onView3D();
+    } else {
+      const pId = projectId || (typeof window !== "undefined" ? localStorage.getItem("latest_project_id") : null) || "latest";
+      const rId = roomId || "r-1-1";
+      router.push(`/project/${pId}/rooms/${rId}/playground?tab=3d`);
+    }
+  };
+
+  const handleSafeGoToProject = () => {
+    if (onGoToProject) {
+      onGoToProject();
+    } else {
+      const pId = projectId || (typeof window !== "undefined" ? localStorage.getItem("latest_project_id") : null) || "latest";
+      router.push(`/project/${pId}`);
+    }
+  };
+
   // Primary active viewing mode: "2d" (2D fully designed look) or "3d" (3D view)
   const [activeMode, setActiveMode] = useState<"2d" | "3d">("3d");
 
@@ -193,8 +225,15 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2">
+              <h3
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSafeView2D();
+                }}
+                className="text-xl font-bold text-white hover:text-emerald-300 transition-colors flex items-center gap-2 cursor-pointer"
+              >
                 <span>Look at 2D Fully Designed Room</span>
+                <ArrowRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
               </h3>
               <p className="text-xs text-slate-400 font-light mt-1.5 leading-relaxed">
                 Inspect the calibrated architectural top-down CAD blueprint, dimensioned
@@ -239,7 +278,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onView2D();
+                handleSafeView2D();
               }}
               className="text-xs font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer group-hover:translate-x-0.5"
             >
@@ -281,8 +320,15 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors flex items-center gap-2">
+              <h3
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSafeView3D();
+                }}
+                className="text-xl font-bold text-white hover:text-cyan-300 transition-colors flex items-center gap-2 cursor-pointer"
+              >
                 <span>Look at 3D View of Room</span>
+                <ArrowRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform" />
               </h3>
               <p className="text-xs text-slate-400 font-light mt-1.5 leading-relaxed">
                 Step into the real-time interactive 3D digital twin with {designStyle} PBR
@@ -327,7 +373,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onView3D();
+                handleSafeView3D();
               }}
               className="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors cursor-pointer group-hover:translate-x-0.5"
             >
@@ -428,7 +474,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             {activeMode === "2d" ? (
               <button
                 type="button"
-                onClick={onView2D}
+                onClick={handleSafeView2D}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-emerald-500/25 hover:scale-105"
               >
                 <Layers className="w-4 h-4" />
@@ -437,7 +483,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             ) : (
               <button
                 type="button"
-                onClick={onView3D}
+                onClick={handleSafeView3D}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-cyan-400/25 hover:scale-105"
               >
                 <Box className="w-4 h-4" />
@@ -549,7 +595,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={onView2D}
+              onClick={handleSafeView2D}
               className="text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Layers className="w-3.5 h-3.5" />
@@ -558,7 +604,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             <span className="text-slate-600">|</span>
             <button
               type="button"
-              onClick={onView3D}
+              onClick={handleSafeView3D}
               className="text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Box className="w-3.5 h-3.5" />
@@ -567,7 +613,7 @@ export const PostGenerationRoomChoice: React.FC<PostGenerationRoomChoiceProps> =
             <span className="text-slate-600">|</span>
             <button
               type="button"
-              onClick={onGoToProject}
+              onClick={handleSafeGoToProject}
               className="text-slate-400 hover:text-white hover:underline flex items-center gap-1 cursor-pointer"
             >
               <span>Project Dashboard</span>
