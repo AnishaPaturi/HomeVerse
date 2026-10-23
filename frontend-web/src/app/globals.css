@@ -183,7 +183,32 @@ html.light .bg-\[\#0a0f18\],
 html.light .bg-\[\#0d131f\],
 html.light .bg-\[\#05080c\],
 html.light .bg-\[\#05070a\],
-html.light .bg-\[\#040608\] {
+html.light .bg-\[\#040608\],
+html.light .bg-\[\#030914\],
+html.light .bg-\[\#060a0f\],
+html.light .bg-\[\#070a0f\],
+html.light .bg-\[\#080808\],
+html.light .bg-\[\#090b10\],
+html.light .bg-\[\#090d14\],
+html.light .bg-\[\#091119\],
+html.light .bg-\[\#0a131f\],
+[data-theme="light"] .bg-\[\#070b10\],
+[data-theme="light"] .bg-\[\#06090e\],
+[data-theme="light"] .bg-\[\#090e15\],
+[data-theme="light"] .bg-\[\#080d14\],
+[data-theme="light"] .bg-\[\#0a0f18\],
+[data-theme="light"] .bg-\[\#0d131f\],
+[data-theme="light"] .bg-\[\#05080c\],
+[data-theme="light"] .bg-\[\#05070a\],
+[data-theme="light"] .bg-\[\#040608\],
+[data-theme="light"] .bg-\[\#030914\],
+[data-theme="light"] .bg-\[\#060a0f\],
+[data-theme="light"] .bg-\[\#070a0f\],
+[data-theme="light"] .bg-\[\#080808\],
+[data-theme="light"] .bg-\[\#090b10\],
+[data-theme="light"] .bg-\[\#090d14\],
+[data-theme="light"] .bg-\[\#091119\],
+[data-theme="light"] .bg-\[\#0a131f\] {
   background-color: #f8fafc !important;
 }
 
@@ -195,7 +220,15 @@ html.light .bg-\[\#080d14\]\/90,
 html.light .bg-black\/20,
 html.light .bg-black\/30,
 html.light .bg-black\/40,
-html.light .bg-black\/50 {
+html.light .bg-black\/50,
+[data-theme="light"] .bg-\[\#070b10\]\/90,
+[data-theme="light"] .bg-\[\#06090e\]\/90,
+[data-theme="light"] .bg-\[\#090e15\]\/90,
+[data-theme="light"] .bg-\[\#080d14\]\/90,
+[data-theme="light"] .bg-black\/20,
+[data-theme="light"] .bg-black\/30,
+[data-theme="light"] .bg-black\/40,
+[data-theme="light"] .bg-black\/50 {
   background-color: rgba(255, 255, 255, 0.92) !important;
 }
 
@@ -206,6 +239,19 @@ html.light .bg-\[\#0b111a\],
 html.light .bg-\[\#0e1624\],
 html.light .bg-\[\#0d131f\],
 html.light .bg-\[\#0b1019\],
+html.light .bg-\[\#0c1017\],
+html.light .bg-\[\#0c121b\],
+html.light .bg-\[\#0c121d\],
+html.light .bg-\[\#0c141e\],
+html.light .bg-\[\#121a28\],
+html.light .bg-\[\#131314\],
+html.light .bg-\[\#1f1f1f\],
+html.light .bg-\[\#202124\],
+html.light .bg-\[\#28292c\],
+html.light .bg-\[\#292a2d\],
+html.light .bg-\[\#2d2e30\],
+html.light .bg-\[\#35363a\],
+html.light .bg-\[\#353739\],
 html.light .bg-slate-900,
 html.light .bg-slate-900\/50,
 html.light .bg-slate-900\/60,
@@ -217,7 +263,38 @@ html.light .bg-slate-950\/50,
 html.light .bg-slate-950\/60,
 html.light .bg-slate-950\/70,
 html.light .bg-slate-950\/80,
-html.light .bg-slate-950\/90 {
+html.light .bg-slate-950\/90,
+[data-theme="light"] .bg-\[\#0a1017\],
+[data-theme="light"] .bg-\[\#0d1522\],
+[data-theme="light"] .bg-\[\#0b111a\],
+[data-theme="light"] .bg-\[\#0e1624\],
+[data-theme="light"] .bg-\[\#0d131f\],
+[data-theme="light"] .bg-\[\#0b1019\],
+[data-theme="light"] .bg-\[\#0c1017\],
+[data-theme="light"] .bg-\[\#0c121b\],
+[data-theme="light"] .bg-\[\#0c121d\],
+[data-theme="light"] .bg-\[\#0c141e\],
+[data-theme="light"] .bg-\[\#121a28\],
+[data-theme="light"] .bg-\[\#131314\],
+[data-theme="light"] .bg-\[\#1f1f1f\],
+[data-theme="light"] .bg-\[\#202124\],
+[data-theme="light"] .bg-\[\#28292c\],
+[data-theme="light"] .bg-\[\#292a2d\],
+[data-theme="light"] .bg-\[\#2d2e30\],
+[data-theme="light"] .bg-\[\#35363a\],
+[data-theme="light"] .bg-\[\#353739\],
+[data-theme="light"] .bg-slate-900,
+[data-theme="light"] .bg-slate-900\/50,
+[data-theme="light"] .bg-slate-900\/60,
+[data-theme="light"] .bg-slate-900\/70,
+[data-theme="light"] .bg-slate-900\/80,
+[data-theme="light"] .bg-slate-900\/90,
+[data-theme="light"] .bg-slate-950,
+[data-theme="light"] .bg-slate-950\/50,
+[data-theme="light"] .bg-slate-950\/60,
+[data-theme="light"] .bg-slate-950\/70,
+[data-theme="light"] .bg-slate-950\/80,
+[data-theme="light"] .bg-slate-950\/90 {
   background-color: #ffffff !important;
 }
 
@@ -227,7 +304,14 @@ html.light .bg-slate-800\/50,
 html.light .bg-slate-800\/60,
 html.light .bg-slate-800\/70,
 html.light .bg-slate-800\/80,
-html.light .bg-slate-850 {
+html.light .bg-slate-850,
+[data-theme="light"] .bg-slate-800,
+[data-theme="light"] .bg-slate-800\/40,
+[data-theme="light"] .bg-slate-800\/50,
+[data-theme="light"] .bg-slate-800\/60,
+[data-theme="light"] .bg-slate-800\/70,
+[data-theme="light"] .bg-slate-800\/80,
+[data-theme="light"] .bg-slate-850 {
   background-color: #f1f5f9 !important;
 }
 
@@ -238,25 +322,74 @@ html.light .hover\:bg-white\/10:hover,
 html.light .bg-white\/\[0\.02\],
 html.light .bg-white\/\[0\.03\],
 html.light .bg-white\/\[0\.05\],
-html.light .bg-white\/5 {
+html.light .bg-white\/5,
+[data-theme="light"] .hover\:bg-white\/\[0\.05\]:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.08\]:hover,
+[data-theme="light"] .hover\:bg-white\/10:hover,
+[data-theme="light"] .bg-white\/\[0\.02\],
+[data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.05\],
+[data-theme="light"] .bg-white\/5 {
   background-color: #f1f5f9 !important;
 }
 
 /* Primary & Strong Headings Text */
 html.light .text-white,
 html.light .text-slate-100,
-html.light .text-slate-200 {
+html.light .text-slate-200,
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 {
   color: #090d16 !important;
 }
 
 /* Secondary / Body Text */
 html.light .text-slate-300,
-html.light .text-slate-400 {
+html.light .text-slate-400,
+[data-theme="light"] .text-slate-300,
+[data-theme="light"] .text-slate-400 {
   color: #475569 !important;
 }
 
-html.light .text-slate-500 {
+html.light .text-slate-500,
+[data-theme="light"] .text-slate-500 {
   color: #64748b !important;
+}
+
+/* Preserve crisp white text on colored accent elements, buttons, badges, chips */
+html.light [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) .text-white,
+html.light [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) span.text-white,
+html.light [class*="bg-indigo-"] .text-white,
+html.light [class*="bg-indigo-"] span.text-white,
+html.light [class*="bg-teal-500"] .text-white,
+html.light [class*="bg-teal-500"] span.text-white,
+html.light [class*="bg-blue-600"] .text-white,
+html.light [class*="bg-rose-500"] .text-white,
+html.light [class*="bg-red-500"] .text-white,
+html.light [class*="from-emerald-"] .text-white,
+html.light [class*="from-indigo-"] .text-white,
+html.light button[class*="bg-emerald-500"] .text-white,
+html.light button[class*="bg-indigo-600"] .text-white,
+[data-theme="light"] [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) .text-white,
+[data-theme="light"] [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) span.text-white,
+[data-theme="light"] [class*="bg-indigo-"] .text-white,
+[data-theme="light"] [class*="bg-indigo-"] span.text-white,
+[data-theme="light"] [class*="bg-teal-500"] .text-white,
+[data-theme="light"] [class*="bg-teal-500"] span.text-white,
+[data-theme="light"] [class*="bg-blue-600"] .text-white,
+[data-theme="light"] [class*="bg-rose-500"] .text-white,
+[data-theme="light"] [class*="bg-red-500"] .text-white,
+[data-theme="light"] [class*="from-emerald-"] .text-white,
+[data-theme="light"] [class*="from-indigo-"] .text-white,
+[data-theme="light"] button[class*="bg-emerald-500"] .text-white,
+[data-theme="light"] button[class*="bg-indigo-600"] .text-white {
+  color: #ffffff !important;
+}
+
+/* Background architectural canvas images in Light Mode */
+html.light .filter.brightness-\[0\.22\],
+[data-theme="light"] .filter.brightness-\[0\.22\] {
+  filter: brightness(0.95) contrast(1.02) opacity(0.2) !important;
 }
 
 /* Borders & Dividers */
@@ -272,44 +405,64 @@ html.light .border-slate-800,
 html.light .border-slate-700,
 html.light .border-slate-700\/80,
 html.light .divide-slate-800 > :not([hidden]) ~ :not([hidden]),
-html.light .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
+html.light .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+[data-theme="light"] .border-white\/\[0\.08\],
+[data-theme="light"] .border-white\/\[0\.05\],
+[data-theme="light"] .border-white\/\[0\.1\],
+[data-theme="light"] .border-white\/\[0\.12\],
+[data-theme="light"] .border-white\/\[0\.15\],
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/15,
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-slate-800,
+[data-theme="light"] .border-slate-700,
+[data-theme="light"] .border-slate-700\/80,
+[data-theme="light"] .divide-slate-800 > :not([hidden]) ~ :not([hidden]),
+[data-theme="light"] .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
   border-color: #e2e8f0 !important;
 }
 
 /* Light Mode Glassmorphism Components */
-html.light .glass-morphism {
+html.light .glass-morphism,
+[data-theme="light"] .glass-morphism {
   background: rgba(255, 255, 255, 0.85) !important;
   border-color: rgba(226, 232, 240, 0.9) !important;
   box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
 html.light .glass-card,
-html.light .glass-panel {
+html.light .glass-panel,
+[data-theme="light"] .glass-card,
+[data-theme="light"] .glass-panel {
   background: rgba(255, 255, 255, 0.9) !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.04) !important;
 }
 
-html.light .glass-morphism-card {
+html.light .glass-morphism-card,
+[data-theme="light"] .glass-morphism-card {
   background: #ffffff !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03) !important;
 }
 
-html.light .glass-morphism-card:hover {
+html.light .glass-morphism-card:hover,
+[data-theme="light"] .glass-morphism-card:hover {
   background: #ffffff !important;
   border-color: rgba(16, 185, 129, 0.5) !important;
   box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.08), 0 0 20px 2px rgba(16, 185, 129, 0.12) !important;
 }
 
-html.light .glass-morphism-input {
+html.light .glass-morphism-input,
+[data-theme="light"] .glass-morphism-input {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #090d16 !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
-html.light .glass-morphism-input:focus {
+html.light .glass-morphism-input:focus,
+[data-theme="light"] .glass-morphism-input:focus {
   background: #ffffff !important;
   border-color: #10b981 !important;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
@@ -318,36 +471,63 @@ html.light .glass-morphism-input:focus {
 /* Light Mode Input Elements */
 html.light input,
 html.light select,
-html.light textarea {
+html.light textarea,
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
   color: #090d16 !important;
 }
 
 html.light input::placeholder,
-html.light textarea::placeholder {
+html.light textarea::placeholder,
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
   color: #94a3b8 !important;
 }
 
 /* Gradients in Light Mode (replaces dark fog with airy architectural daylight) */
 html.light .from-\[\#06090e\],
-html.light .from-\[\#070b10\] {
+html.light .from-\[\#070b10\],
+html.light .from-\[\#040608\],
+html.light .from-\[\#090e15\],
+[data-theme="light"] .from-\[\#06090e\],
+[data-theme="light"] .from-\[\#070b10\],
+[data-theme="light"] .from-\[\#040608\],
+[data-theme="light"] .from-\[\#090e15\] {
   --tw-gradient-from: #f8fafc var(--tw-gradient-from-position) !important;
 }
 
 html.light .via-\[\#06090e\]\/75,
-html.light .via-\[\#070b10\]\/80 {
+html.light .via-\[\#070b10\]\/80,
+html.light .via-\[\#090e15\],
+[data-theme="light"] .via-\[\#06090e\]\/75,
+[data-theme="light"] .via-\[\#070b10\]\/80,
+[data-theme="light"] .via-\[\#090e15\] {
   --tw-gradient-via: rgba(248, 250, 252, 0.85) var(--tw-gradient-via-position) !important;
 }
 
 html.light .to-\[\#06090e\]\/90,
-html.light .to-\[\#070b10\]\/90 {
+html.light .to-\[\#070b10\]\/90,
+html.light .to-\[\#040608\],
+html.light .to-\[\#070b10\],
+html.light .to-\[\#06090e\],
+html.light .to-\[\#090e15\],
+[data-theme="light"] .to-\[\#06090e\]\/90,
+[data-theme="light"] .to-\[\#070b10\]\/90,
+[data-theme="light"] .to-\[\#040608\],
+[data-theme="light"] .to-\[\#070b10\],
+[data-theme="light"] .to-\[\#06090e\],
+[data-theme="light"] .to-\[\#090e15\] {
   --tw-gradient-to: rgba(248, 250, 252, 0.95) var(--tw-gradient-to-position) !important;
 }
 
-html.light .marquee-container::before {
+html.light .marquee-container::before,
+[data-theme="light"] .marquee-container::before {
   background: linear-gradient(to right, #f8fafc 0%, transparent 100%) !important;
 }
 
-html.light .marquee-container::after {
+html.light .marquee-container::after,
+[data-theme="light"] .marquee-container::after {
   background: linear-gradient(to left, #f8fafc 0%, transparent 100%) !important;
 }
 

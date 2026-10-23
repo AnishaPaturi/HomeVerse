@@ -27,28 +27,32 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      data-theme="dark"
       suppressHydrationWarning
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                const stored = localStorage.getItem('homeverse-theme');
-                const isDark = stored === 'dark' || (!stored && true) || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                if (isDark) {
-                  document.documentElement.classList.add('dark');
-                  document.documentElement.classList.remove('light');
-                  document.documentElement.setAttribute('data-theme', 'dark');
-                  document.documentElement.style.colorScheme = 'dark';
-                } else {
-                  document.documentElement.classList.add('light');
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.setAttribute('data-theme', 'light');
-                  document.documentElement.style.colorScheme = 'light';
-                }
-              } catch (_) {}
+              (function() {
+                try {
+                  var stored = localStorage.getItem('homeverse-theme');
+                  var isDark = stored === 'dark' || (!stored) || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var root = document.documentElement;
+                  if (isDark) {
+                    root.classList.add('dark');
+                    root.classList.remove('light');
+                    root.setAttribute('data-theme', 'dark');
+                    root.style.colorScheme = 'dark';
+                  } else {
+                    root.classList.add('light');
+                    root.classList.remove('dark');
+                    root.setAttribute('data-theme', 'light');
+                    root.style.colorScheme = 'light';
+                  }
+                } catch (e) {}
+              })();
             `,
           }}
         />

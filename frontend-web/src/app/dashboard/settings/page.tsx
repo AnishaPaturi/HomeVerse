@@ -17,12 +17,16 @@ import {
   User,
   Mail,
   ShieldAlert,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { getStoredUser, deleteUserAccount } from "@/lib/auth";
 import { User as UserType } from "@/types/user";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export default function SettingsDashboardPage() {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [unit, setUnit] = useState<"imperial" | "metric">("metric");
   const [currency, setCurrency] = useState<"INR" | "USD">("INR");
@@ -202,6 +206,42 @@ export default function SettingsDashboardPage() {
                 }`}
               >
                 $ US Dollar (USD)
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-white/[0.08] space-y-2">
+            <label className="text-sm font-bold text-white font-editorial flex items-center gap-2">
+              <Sun className="w-4 h-4 text-emerald-400" />
+              <span>Studio Appearance & Theme</span>
+            </label>
+            <p className="text-xs text-slate-400 font-light">
+              Toggle between deep architectural night mode and crisp daylight mode.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-mono text-xs font-semibold border transition-all cursor-pointer ${
+                  resolvedTheme === "dark"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    : "bg-white/[0.04] text-slate-400 border-white/10 hover:text-white"
+                }`}
+              >
+                <Moon className="w-4 h-4 text-emerald-400" />
+                <span>Dark Mode (Studio Night)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-mono text-xs font-semibold border transition-all cursor-pointer ${
+                  resolvedTheme === "light"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    : "bg-white/[0.04] text-slate-400 border-white/10 hover:text-white"
+                }`}
+              >
+                <Sun className="w-4 h-4 text-amber-500" />
+                <span>Light Mode (Daylight)</span>
               </button>
             </div>
           </div>

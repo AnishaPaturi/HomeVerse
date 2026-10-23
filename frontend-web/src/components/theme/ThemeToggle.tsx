@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 
@@ -13,24 +13,21 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   className = "",
   showLabel = false,
 }) => {
-  const { resolvedTheme, toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, toggleTheme, mounted } = useTheme();
 
-  useEffect(() => {
-    setMounted(false);
-    const t = setTimeout(() => setMounted(true), 10);
-    return () => clearTimeout(t);
-  }, []);
-
+  // Skeleton / SSR placeholder button to prevent layout shifts and hydration mismatch
   if (!mounted) {
     return (
       <button
         type="button"
-        aria-label="Toggle theme"
-        className={`w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 opacity-60 ${className}`}
+        aria-label="Theme toggle"
+        className={`relative inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-mono border border-white/10 bg-slate-900/80 text-slate-400 opacity-60 ${className}`}
         disabled
       >
-        <Moon className="w-4 h-4" />
+        <div className="w-4 h-4 flex items-center justify-center">
+          <Moon className="w-4 h-4 text-emerald-400/50" />
+        </div>
+        {showLabel && <span className="font-medium tracking-wide">Dark</span>}
       </button>
     );
   }
@@ -46,20 +43,20 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       className={`relative inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 group cursor-pointer ${
         isDark
           ? "bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/30 shadow-sm"
-          : "bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-950 border border-slate-200/90 hover:border-emerald-500/40 shadow-sm"
+          : "bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 border border-slate-200/90 hover:border-emerald-500/40 shadow-sm"
       } ${className}`}
     >
       <div className="relative w-4 h-4 flex items-center justify-center">
         {isDark ? (
-          <Sun className="w-4 h-4 text-amber-400 transform transition-transform duration-500 rotate-0 group-hover:rotate-90 group-hover:scale-110 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
+          <Moon className="w-4 h-4 text-emerald-400 transform transition-transform duration-500 rotate-0 group-hover:-rotate-12 group-hover:scale-110 drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
         ) : (
-          <Moon className="w-4 h-4 text-indigo-600 transform transition-transform duration-500 rotate-0 group-hover:-rotate-12 group-hover:scale-110 drop-shadow-[0_0_6px_rgba(79,70,229,0.4)]" />
+          <Sun className="w-4 h-4 text-amber-500 transform transition-transform duration-500 rotate-0 group-hover:rotate-90 group-hover:scale-110 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
         )}
       </div>
 
       {showLabel && (
         <span className="font-medium tracking-wide select-none">
-          {isDark ? "Light" : "Dark"}
+          {isDark ? "Dark" : "Light"}
         </span>
       )}
     </button>
@@ -67,19 +64,14 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 };
 
 export const FloatingThemeToggle: React.FC = () => {
-  const { resolvedTheme, toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { resolvedTheme, toggleTheme, mounted } = useTheme();
 
   if (!mounted) return null;
 
   const isDark = resolvedTheme === "dark";
 
   return (
-    <div className="fixed bottom-5 right-5 z-[999] pointer-events-auto">
+    <div className="fixed bottom-6 left-6 z-[999] pointer-events-auto">
       <button
         type="button"
         onClick={toggleTheme}
@@ -87,14 +79,14 @@ export const FloatingThemeToggle: React.FC = () => {
         title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
         className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 group ${
           isDark
-            ? "bg-[#0b1019]/90 hover:bg-[#121a28] text-amber-400 border border-white/15 hover:border-amber-400/40 shadow-black/40 backdrop-blur-xl"
-            : "bg-white/95 hover:bg-slate-50 text-indigo-600 border border-slate-200 hover:border-indigo-500/40 shadow-slate-900/10 backdrop-blur-xl"
+            ? "bg-[#0b1019]/90 hover:bg-[#121a28] text-emerald-400 border border-white/15 hover:border-emerald-400/40 shadow-black/40 backdrop-blur-xl"
+            : "bg-white/95 hover:bg-slate-50 text-amber-500 border border-slate-200 hover:border-amber-500/40 shadow-slate-900/10 backdrop-blur-xl"
         }`}
       >
         {isDark ? (
-          <Sun className="w-5 h-5 text-amber-400 transform transition-transform duration-500 group-hover:rotate-90 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+          <Moon className="w-5 h-5 text-emerald-400 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
         ) : (
-          <Moon className="w-5 h-5 text-indigo-600 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+          <Sun className="w-5 h-5 text-amber-500 transform transition-transform duration-500 group-hover:rotate-90 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
         )}
       </button>
     </div>
