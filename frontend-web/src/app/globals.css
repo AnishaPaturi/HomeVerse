@@ -50,6 +50,24 @@ html.light,
   --border: #e2e8f0;
   --input: #ffffff;
   --ring: #059669;
+
+  /* Invert Tailwind CSS color variables in light mode so all utility classes produce high contrast */
+  --color-slate-50: #020617;
+  --color-slate-100: #090d16;
+  --color-slate-200: #1e293b;
+  --color-slate-300: #334155;
+  --color-slate-400: #475569;
+  --color-slate-500: #64748b;
+  --color-zinc-50: #09090b;
+  --color-zinc-100: #18181b;
+  --color-zinc-200: #27272a;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-400: #52525b;
+  --color-gray-50: #030712;
+  --color-gray-100: #111827;
+  --color-gray-200: #1f2937;
+  --color-gray-300: #374151;
+  --color-gray-400: #4b5563;
   color-scheme: light;
 }
 
@@ -335,54 +353,123 @@ html.light .bg-white\/5,
 
 /* Primary & Strong Headings Text */
 html.light .text-white,
+html.light .text-white\/90,
+html.light .text-white\/80,
+html.light .text-white\/70,
+html.light .text-white\/60,
+html.light .text-white\/50,
 html.light .text-slate-100,
 html.light .text-slate-200,
+html.light .text-zinc-100,
+html.light .text-zinc-200,
+html.light .text-gray-100,
+html.light .text-gray-200,
 [data-theme="light"] .text-white,
+[data-theme="light"] .text-white\/90,
+[data-theme="light"] .text-white\/80,
+[data-theme="light"] .text-white\/70,
+[data-theme="light"] .text-white\/60,
+[data-theme="light"] .text-white\/50,
 [data-theme="light"] .text-slate-100,
-[data-theme="light"] .text-slate-200 {
+[data-theme="light"] .text-slate-200,
+[data-theme="light"] .text-zinc-100,
+[data-theme="light"] .text-zinc-200,
+[data-theme="light"] .text-gray-100,
+[data-theme="light"] .text-gray-200 {
   color: #090d16 !important;
 }
 
 /* Secondary / Body Text */
 html.light .text-slate-300,
+html.light .text-slate-350,
 html.light .text-slate-400,
+html.light .text-zinc-300,
+html.light .text-zinc-400,
+html.light .text-gray-300,
+html.light .text-gray-400,
 [data-theme="light"] .text-slate-300,
-[data-theme="light"] .text-slate-400 {
-  color: #475569 !important;
+[data-theme="light"] .text-slate-350,
+[data-theme="light"] .text-slate-400,
+[data-theme="light"] .text-zinc-300,
+[data-theme="light"] .text-zinc-400,
+[data-theme="light"] .text-gray-300,
+[data-theme="light"] .text-gray-400 {
+  color: #334155 !important;
 }
 
 html.light .text-slate-500,
-[data-theme="light"] .text-slate-500 {
+html.light .text-zinc-500,
+html.light .text-gray-500,
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-zinc-500,
+[data-theme="light"] .text-gray-500 {
   color: #64748b !important;
 }
 
-/* Preserve crisp white text on colored accent elements, buttons, badges, chips */
-html.light [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) .text-white,
-html.light [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) span.text-white,
-html.light [class*="bg-indigo-"] .text-white,
-html.light [class*="bg-indigo-"] span.text-white,
-html.light [class*="bg-teal-500"] .text-white,
-html.light [class*="bg-teal-500"] span.text-white,
-html.light [class*="bg-blue-600"] .text-white,
-html.light [class*="bg-rose-500"] .text-white,
-html.light [class*="bg-red-500"] .text-white,
-html.light [class*="from-emerald-"] .text-white,
-html.light [class*="from-indigo-"] .text-white,
-html.light button[class*="bg-emerald-500"] .text-white,
-html.light button[class*="bg-indigo-600"] .text-white,
-[data-theme="light"] [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) .text-white,
-[data-theme="light"] [class*="bg-emerald-"]:not([class*="bg-emerald-500/"]):not([class*="bg-emerald-500/["]) span.text-white,
-[data-theme="light"] [class*="bg-indigo-"] .text-white,
-[data-theme="light"] [class*="bg-indigo-"] span.text-white,
-[data-theme="light"] [class*="bg-teal-500"] .text-white,
-[data-theme="light"] [class*="bg-teal-500"] span.text-white,
-[data-theme="light"] [class*="bg-blue-600"] .text-white,
-[data-theme="light"] [class*="bg-rose-500"] .text-white,
-[data-theme="light"] [class*="bg-red-500"] .text-white,
-[data-theme="light"] [class*="from-emerald-"] .text-white,
-[data-theme="light"] [class*="from-indigo-"] .text-white,
-[data-theme="light"] button[class*="bg-emerald-500"] .text-white,
-[data-theme="light"] button[class*="bg-indigo-600"] .text-white {
+/* All Headings in Light Mode */
+html.light h1:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+html.light h2:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+html.light h3:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+html.light h4, html.light h5, html.light h6,
+[data-theme="light"] h1:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+[data-theme="light"] h2:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+[data-theme="light"] h3:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-teal-"]):not([class*="text-rose-"]):not([class*="text-blue-"]),
+[data-theme="light"] h4, [data-theme="light"] h5, [data-theme="light"] h6 {
+  color: #090d16 !important;
+}
+
+/* Paragraphs & descriptions in Light Mode */
+html.light p:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-rose-"]):not([class*="text-teal-"]):not([class*="text-blue-"]):not([class*="text-slate-950"]),
+[data-theme="light"] p:not([class*="text-transparent"]):not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-indigo-"]):not([class*="text-rose-"]):not([class*="text-teal-"]):not([class*="text-blue-"]):not([class*="text-slate-950"]) {
+  color: #334155 !important;
+}
+
+/* Explicit labels, form controls */
+html.light label,
+[data-theme="light"] label {
+  color: #090d16 !important;
+}
+
+/* Navigation links */
+html.light nav button,
+html.light nav a,
+[data-theme="light"] nav button,
+[data-theme="light"] nav a {
+  color: #334155;
+}
+
+html.light nav button:hover,
+html.light nav a:hover,
+[data-theme="light"] nav button:hover,
+[data-theme="light"] nav a:hover {
+  color: #059669 !important;
+}
+
+/* Hover state overrides */
+html.light .hover\:text-white:hover,
+[data-theme="light"] .hover\:text-white:hover {
+  color: #059669 !important;
+}
+
+/* Maintain crisp white text ONLY on specific solid colored buttons */
+html.light button.bg-emerald-500,
+html.light button.bg-emerald-600,
+html.light button.bg-indigo-600,
+html.light button.bg-blue-600,
+html.light button.bg-rose-500,
+html.light button.bg-red-500,
+html.light a.bg-emerald-500,
+html.light a.bg-indigo-600,
+html.light .bg-gradient-to-r.from-indigo-600,
+[data-theme="light"] button.bg-emerald-500,
+[data-theme="light"] button.bg-emerald-600,
+[data-theme="light"] button.bg-indigo-600,
+[data-theme="light"] button.bg-blue-600,
+[data-theme="light"] button.bg-rose-500,
+[data-theme="light"] button.bg-red-500,
+[data-theme="light"] a.bg-emerald-500,
+[data-theme="light"] a.bg-indigo-600,
+[data-theme="light"] .bg-gradient-to-r.from-indigo-600 {
   color: #ffffff !important;
 }
 
