@@ -21,6 +21,7 @@ import {
   X,
   Camera,
   Image as ImageIcon,
+  Sun,
 } from "lucide-react";
 
 import CanvasContainer from "@/components/playground/CanvasContainer";
@@ -147,6 +148,9 @@ function RoomPlaygroundContent() {
     }
     return [];
   });
+
+  // 3D Viewport Lighting Preset
+  const [lightingPreset, setLightingPreset] = useState<"warm" | "neutral" | "luxury">("warm");
 
   // Financial OS Guardrails
   const [roomBudget, setRoomBudget] = useState<number>(() => {
@@ -519,6 +523,28 @@ function RoomPlaygroundContent() {
             </button>
           </div>
 
+          {/* 3D Lighting Presets Switcher */}
+          {activeTab === "3d" && (
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300">
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-slate-400">Lighting:</span>
+              {(["warm", "neutral", "luxury"] as const).map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setLightingPreset(preset)}
+                  className={`px-2 py-0.5 rounded capitalize transition-all cursor-pointer ${
+                    lightingPreset === preset
+                      ? "bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Intake Photos Reference Drawer Trigger */}
           <button
             onClick={() => setIsPhotosDrawerOpen(true)}
@@ -615,6 +641,7 @@ function RoomPlaygroundContent() {
               selectedObjectId={selectedObject?.id || null}
               roomWidth={roomDimensions.width}
               roomDepth={roomDimensions.length}
+              lightingPreset={lightingPreset}
               onSelectObject={(objId: any) => {
                 if (!objId) {
                   setSelectedObject(null);

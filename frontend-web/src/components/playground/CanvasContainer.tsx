@@ -41,6 +41,7 @@ interface CanvasContainerProps {
   activeFloor?: number;
   renderStyle?: "mockup" | "realistic";
   onCopilotAction?: (actionType: string, payload: any) => void;
+  lightingPreset?: "warm" | "neutral" | "luxury";
 }
 
 // Custom simple 3D Partition Wall component
@@ -1870,10 +1871,46 @@ export default function CanvasContainer({
   activeFloor = 0,
   renderStyle = "realistic",
   onCopilotAction,
+  lightingPreset = "warm",
 }: CanvasContainerProps) {
   const [isWalkthrough, setIsWalkthrough] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate">("translate");
+
+  // Lighting configuration based on preset
+  const getLightingConfig = (preset: "warm" | "neutral" | "luxury" = "warm") => {
+    switch (preset) {
+      case "warm":
+        return {
+          ambientColor: "#fef3c7",
+          ambientIntensity: 0.65,
+          dirColor: "#fffbeb",
+          dirIntensity: 1.4,
+          pointColor: "#fed7aa",
+          pointIntensity: 0.6,
+        };
+      case "luxury":
+        return {
+          ambientColor: "#fef08a",
+          ambientIntensity: 0.55,
+          dirColor: "#fef3c7",
+          dirIntensity: 1.8,
+          pointColor: "#fde047",
+          pointIntensity: 0.7,
+        };
+      default: // neutral
+        return {
+          ambientColor: "#ffffff",
+          ambientIntensity: 0.6,
+          dirColor: "#f8fafc",
+          dirIntensity: 1.3,
+          pointColor: "#e2e8f0",
+          pointIntensity: 0.5,
+        };
+    }
+  };
+
+  const lightCfg = getLightingConfig(lightingPreset);
 
   // Find floor and wall materials from list
   const floorObj = objects.find((o) => o.object_type === "floor");
@@ -1905,14 +1942,15 @@ export default function CanvasContainer({
         shadows={{ type: THREE.PCFShadowMap }}
         onClick={() => onSelectObject(null)}
       >
-        <ambientLight intensity={0.6} />
+        <ambientLight color={lightCfg.ambientColor} intensity={lightCfg.ambientIntensity} />
         <directionalLight
           position={[5, 10 + activeFloor * 3.0, 5]}
-          intensity={1.2}
+          color={lightCfg.dirColor}
+          intensity={lightCfg.dirIntensity}
           castShadow
           shadow-mapSize={[1024, 1024]}
         />
-        <pointLight position={[-5, 5 + activeFloor * 3.0, -5]} intensity={0.5} />
+        <pointLight position={[-5, 5 + activeFloor * 3.0, -5]} color={lightCfg.pointColor} intensity={lightCfg.pointIntensity} />
 
         {/* Render floor slabs and outer walls for all floors up to activeFloor */}
         {Array.from({ length: activeFloor + 1 }).map((_, floorIdx) => {
@@ -2126,6 +2164,14 @@ export default function CanvasContainer({
               Exit Walkthrough
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 3D Viewport Controls Overlay */}
+      {!isWalkthrough && (
+        <div className="absolute bottom-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center gap-2 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span>Click & drag to rotate · Scroll to zoom · Right-click to pan</span>
         </div>
       )}
     </div>
