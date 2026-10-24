@@ -39,6 +39,7 @@ interface CopilotChatProps {
   onCopilotAction: (actionType: string, payload: any) => void;
   onRefresh?: () => void;
   currentStyle?: string;
+  roomPhotosCount?: number;
 }
 
 export default function CopilotChat({
@@ -46,6 +47,7 @@ export default function CopilotChat({
   onCopilotAction,
   onRefresh,
   currentStyle = "Modern",
+  roomPhotosCount = 0,
 }: CopilotChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -77,6 +79,14 @@ export default function CopilotChat({
 
   // AI-generated action chips
   const actionChips = [
+    ...(roomPhotosCount > 0
+      ? [
+          {
+            label: "📸 Match Step 10 Photo",
+            prompt: "Synchronize the 3D room materials, window daylighting, and furniture clearances to match the intake photos captured in Step 10.",
+          },
+        ]
+      : []),
     { label: `✨ Enhance ${currentStyle} DNA`, prompt: `Refine this room strictly following the ${currentStyle} interior architecture style.` },
     { label: "🪵 Add natural wood", prompt: "Switch materials to organic natural wood and light oak finishes." },
     { label: "💡 Improve lighting", prompt: "Add warm ambient floor lamps and increase natural lighting balance." },
@@ -137,7 +147,16 @@ export default function CopilotChat({
     let payload: any = {};
     let replyIntro = "I analyzed your room geometry and prepared the following design adjustments:";
 
-    if (cmd.includes("cozy") || cmd.includes("warm") || cmd.includes("cozier")) {
+    if (cmd.includes("photo") || cmd.includes("step 10") || cmd.includes("intake") || cmd.includes("real room")) {
+      proposalTitle = "Step 10 Real Room Photo Alignment";
+      proposedChanges = [
+        "Calibrated 3D ambient lighting to match real window exposure from Step 10",
+        "Aligned furniture orientation with wall angles identified in photos",
+        "Projected intake reference textures across perimeter CAD boundaries",
+      ];
+      actionType = "align_photos";
+      payload = { wall: "#f8fafc", floor: "wood_light" };
+    } else if (cmd.includes("cozy") || cmd.includes("warm") || cmd.includes("cozier")) {
       proposalTitle = "Warm & Cozy Atmosphere Adjustment";
       proposedChanges = [
         "Warmed wall paint to soft oatmeal (#fbfbfa)",
@@ -276,9 +295,16 @@ export default function CopilotChat({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded-full border border-emerald-800/60">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Active</span>
+        <div className="flex items-center gap-1.5">
+          {roomPhotosCount > 0 && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+              📸 {roomPhotosCount} Photo{roomPhotosCount > 1 ? "s" : ""}
+            </span>
+          )}
+          <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-1 rounded-full border border-emerald-800/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Active</span>
+          </div>
         </div>
       </div>
 

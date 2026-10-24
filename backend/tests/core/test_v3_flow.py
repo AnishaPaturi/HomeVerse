@@ -321,6 +321,26 @@ def test_voice_command_budget_and_timeline():
     assert res_t.json()["action_type"] in ["timeline_query", "timeline_inquiry"]
 
 
+def test_voice_command_irrelevant_text_ignored():
+    """Verifies that non-relevant text or unrelated queries are ignored, and user is explicitly informed."""
+    irrelevant_queries = [
+        "What is the capital of France?",
+        "Tell me a joke",
+        "Who won the match yesterday?",
+        "Hello how are you doing",
+        "random gibberish asdfghjk",
+    ]
+    for q in irrelevant_queries:
+        res = client.post("/api/voice/command", json={"transcript": q})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["action_type"] == "ignored_command"
+        assert data["success"] is False
+        assert data["action_payload"].get("ignored") is True
+        assert "ignored" in data["voice_reply"].lower()
+        assert len(data["action_chips"]) >= 1
+
+
 # ---------------- 6. Advanced PBR Materials & Comparison Tests ----------------
 
 def test_list_and_filter_materials():

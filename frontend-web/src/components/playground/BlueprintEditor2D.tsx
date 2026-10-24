@@ -27,6 +27,8 @@ interface BlueprintEditor2DProps {
   onUpdateRoomDimensions?: (width: number, depth: number) => void;
   activeFloor?: number;
   backgroundImageUrl?: string | null;
+  photoOpacity?: number;
+  showPhotoBackdrop?: boolean;
 }
 
 export default function BlueprintEditor2D({
@@ -42,6 +44,8 @@ export default function BlueprintEditor2D({
   onUpdateRoomDimensions = () => {},
   activeFloor = 0,
   backgroundImageUrl = null,
+  photoOpacity = 0.75,
+  showPhotoBackdrop = true,
 }: BlueprintEditor2DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1.0);
@@ -548,14 +552,14 @@ export default function BlueprintEditor2D({
                 stroke="#475569"
                 strokeWidth="0.8"
               />
-              {backgroundImageUrl && (
+              {backgroundImageUrl && showPhotoBackdrop && (
                 <image
                   href={backgroundImageUrl}
                   x={floorTopLeft.x}
                   y={floorTopLeft.y}
                   width={floorWidth}
                   height={floorHeight}
-                  opacity="0.8"
+                  opacity={photoOpacity}
                   preserveAspectRatio="none"
                 />
               )}

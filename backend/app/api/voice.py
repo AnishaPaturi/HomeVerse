@@ -168,20 +168,57 @@ def process_voice_command(req: VoiceCommandRequest, db: Session = Depends(get_db
             ],
         )
 
-    # 6. Default General Command / AI Copilot fallback
+    # 6. Intent: Furniture & Spatial Layout Modification
+    elif any(k in text_lower for k in ["sofa", "couch", "seating", "table", "chair", "bed", "wardrobe", "cabinet", "shelf", "furniture", "cozy", "rearrange", "layout", "minimalist"]):
+        reply = "Reconfiguring room layout with updated furniture specifications."
+        return VoiceCommandResponse(
+            transcript_received=text,
+            voice_reply=reply,
+            action_type="modify_furniture",
+            action_payload={"furniture_action": "update", "description": text},
+            action_chips=[
+                VoiceActionChip(label="Preview in 3D", action="preview_3d"),
+                VoiceActionChip(label="Check Budget Delta", action="budget", target_url=f"{proj_url_prefix}/budget"),
+            ],
+            success=True,
+        )
+
+    # 7. Intent: Lighting & Ambiance Preset
+    elif any(k in text_lower for k in ["lighting", "light preset", "warm light", "neutral light", "luxury light", "ambient", "daylight"]):
+        preset = "warm"
+        if "luxury" in text_lower or "ambient" in text_lower:
+            preset = "luxury"
+        elif "neutral" in text_lower or "day" in text_lower:
+            preset = "neutral"
+        reply = f"Adjusted 3D scene lighting to {preset} ambiance preset."
+        return VoiceCommandResponse(
+            transcript_received=text,
+            voice_reply=reply,
+            action_type="change_lighting",
+            action_payload={"lighting_preset": preset},
+            action_chips=[
+                VoiceActionChip(label="Preview in 3D", action="preview_3d"),
+            ],
+            success=True,
+        )
+
+    # 8. Non-relevant text / Irrelevant command -> STRICTLY IGNORE and INFORM USER
     else:
         reply = (
-            f"I heard: '{text}'. I can update wall colors, swap flooring materials, re-orient camera views, "
-            f"or summarize your ₹8.0L budget status. What would you like to adjust?"
+            f"Command ignored: '{text}' does not specify a relevant room or design change, so no updates were applied. "
+            f"Please request a relevant design change such as painting walls, switching flooring materials, "
+            f"rearranging furniture, adjusting camera views, or checking your budget."
         )
         return VoiceCommandResponse(
             transcript_received=text,
             voice_reply=reply,
-            action_type="general_query",
-            action_payload={"query": text},
+            action_type="ignored_command",
+            action_payload={"ignored": True, "reason": "non_relevant_text", "query": text},
             action_chips=[
-                VoiceActionChip(label="Try: 'Make walls warm greige'", action="prompt_sample"),
-                VoiceActionChip(label="Try: 'Switch flooring to oak'", action="prompt_sample"),
-                VoiceActionChip(label="Try: 'What is our remaining budget?'", action="prompt_sample"),
+                VoiceActionChip(label="Try: 'Paint walls warm greige'", action="prompt_sample"),
+                VoiceActionChip(label="Try: 'Italian marble floor'", action="prompt_sample"),
+                VoiceActionChip(label="Try: 'Top-down blueprint view'", action="prompt_sample"),
+                VoiceActionChip(label="Try: 'Check remaining budget'", action="prompt_sample"),
             ],
+            success=False,
         )

@@ -36,6 +36,10 @@ interface CanvasContainerProps {
   onSelectObject?: (id: string | null) => void;
   onUpdateObject?: (id: string, updates: Partial<RoomObject>) => void;
   backgroundImageUrl?: string | null;
+  wallPhotoUrl?: string | null;
+  photoOpacity?: number;
+  showPhotoOnWall?: boolean;
+  showPhotoOnFloor?: boolean;
   roomWidth?: number;
   roomDepth?: number;
   activeFloor?: number;
@@ -462,31 +466,74 @@ function Shutters3D({ material, isSelected, onClick }: { material: string; isSel
   );
 }
 
-// Floor blueprint overlay component for 3D view
-function FloorBlueprintOverlay({ url, width, depth, floorY }: { url: string; width: number; depth: number; floorY: number }) {
-  try {
-    const texture = useLoader(THREE.TextureLoader, url);
-    useEffect(() => {
-      if (texture) {
-        texture.wrapS = THREE.ClampToEdgeWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.repeat.set(1, 1);
-        texture.offset.set(0, 0);
-        texture.rotation = 0;
-        texture.flipY = false;
-        texture.needsUpdate = true;
-      }
-    }, [texture]);
+// Floor blueprint / photo overlay component for 3D view
+function FloorBlueprintOverlay({
+  url,
+  width,
+  depth,
+  floorY,
+  opacity = 0.7,
+}: {
+  url: string;
+  width: number;
+  depth: number;
+  floorY: number;
+  opacity?: number;
+}) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  useEffect(() => {
+    if (texture) {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(1, 1);
+      texture.offset.set(0, 0);
+      texture.rotation = 0;
+      texture.flipY = false;
+      texture.needsUpdate = true;
+    }
+  }, [texture]);
 
-    return (
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY + 0.01, -2.5]} scale={[1, 1, 1]}>
-        <planeGeometry args={[width, depth]} />
-        <meshBasicMaterial map={texture} transparent opacity={0.7} depthWrite={false} />
-      </mesh>
-    );
-  } catch (e) {
-    return null;
-  }
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY + 0.01, -2.5]} scale={[1, 1, 1]}>
+      <planeGeometry args={[width, depth]} />
+      <meshBasicMaterial map={texture} transparent opacity={opacity} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// Step 10 Real-room photo backdrop on back wall of 3D scene
+function WallPhotoBackdrop({
+  url,
+  width,
+  height,
+  floorY,
+  roomDepth,
+  opacity = 0.85,
+}: {
+  url: string;
+  width: number;
+  height: number;
+  floorY: number;
+  roomDepth: number;
+  opacity?: number;
+}) {
+  const texture = useLoader(THREE.TextureLoader, url);
+  useEffect(() => {
+    if (texture) {
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(1, 1);
+      texture.offset.set(0, 0);
+      texture.needsUpdate = true;
+    }
+  }, [texture]);
+
+  return (
+    <mesh position={[0, floorY + height / 2, -roomDepth / 2 - 2.5 + 0.06]}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial map={texture} transparent opacity={opacity} depthWrite={false} />
+    </mesh>
+  );
 }
 
 // Custom simple 3D Sofa component made of blocks
@@ -1866,6 +1913,10 @@ export default function CanvasContainer({
   onSelectObject = () => {},
   onUpdateObject,
   backgroundImageUrl = null,
+  wallPhotoUrl = null,
+  photoOpacity = 0.85,
+  showPhotoOnWall = true,
+  showPhotoOnFloor = true,
   roomWidth = 10,
   roomDepth = 10,
   activeFloor = 0,
@@ -1975,10 +2026,16 @@ export default function CanvasContainer({
                 />
               </mesh>
 
-              {/* Render Blueprint Image Trace flat on the floor slab */}
-              {backgroundImageUrl && (
+              {/* Render Blueprint / Intake Photo Trace flat on the floor slab */}
+              {backgroundImageUrl && showPhotoOnFloor && (
                 <Suspense fallback={null}>
-                  <FloorBlueprintOverlay url={backgroundImageUrl} width={roomWidth} depth={roomDepth} floorY={floorY} />
+                  <FloorBlueprintOverlay
+                    url={backgroundImageUrl}
+                    width={roomWidth}
+                    depth={roomDepth}
+                    floorY={floorY}
+                    opacity={photoOpacity}
+                  />
                 </Suspense>
               )}
 
@@ -1995,6 +2052,20 @@ export default function CanvasContainer({
                 <boxGeometry args={[roomWidth, 2.5, 0.1]} />
                 <meshStandardMaterial color={wallObj ? getWallColor(wallObj.material) : "#e2e8f0"} />
               </mesh>
+
+              {/* Step 10 Real Room Photo Backdrop on Back Wall */}
+              {wallPhotoUrl && showPhotoOnWall && (
+                <Suspense fallback={null}>
+                  <WallPhotoBackdrop
+                    url={wallPhotoUrl}
+                    width={roomWidth}
+                    height={2.5}
+                    floorY={floorY}
+                    roomDepth={roomDepth}
+                    opacity={photoOpacity}
+                  />
+                </Suspense>
+              )}
 
               {/* Left Wall */}
               <mesh 

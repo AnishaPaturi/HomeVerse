@@ -22,6 +22,10 @@ import {
   Camera,
   Image as ImageIcon,
   Sun,
+  ChevronLeft,
+  ChevronRight,
+  SplitSquareVertical,
+  Sliders,
 } from "lucide-react";
 
 import CanvasContainer from "@/components/playground/CanvasContainer";
@@ -35,10 +39,12 @@ import VoiceAssistantWidget from "@/components/playground/VoiceAssistantWidget";
 import RoomPhotosDrawer from "@/components/playground/RoomPhotosDrawer";
 import RoomRendersViewer from "@/components/playground/RoomRendersViewer";
 import DimensionEditModal from "@/components/playground/DimensionEditModal";
+import { RealRoomPhotoHUD } from "@/components/playground/RealRoomPhotoHUD";
 
 import { formatIndianBudget } from "@/lib/utils";
 import { roomApi } from "@/lib/rooms";
 import { budgetApi } from "@/lib/budgets";
+import { getStoredHomeCreationDraft } from "@/lib/questionnaireStorage";
 import {
   getStoredProject,
   getStoredProjectRooms,
@@ -73,54 +79,29 @@ function RoomPlaygroundContent() {
 
   // Room identification & custom name
   const [currentRoomId, setCurrentRoomId] = useState<string>(roomId);
-  const [roomName, setRoomName] = useState(() => {
-    if (typeof window !== "undefined") {
-      const storedRooms = getStoredProjectRooms(projectId);
-      const matched = storedRooms.find((r) => r.id === roomId || r.name === roomId) || storedRooms[0];
-      if (matched) return matched.name;
-    }
-    return "Room";
-  });
+  const [roomName, setRoomName] = useState<string>("Room");
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedRoomName, setEditedRoomName] = useState("");
 
   // CAD Room Dimensions
-  const [roomDimensions, setRoomDimensions] = useState(() => {
-    if (typeof window !== "undefined") {
-      const storedRooms = getStoredProjectRooms(projectId);
-      const matched = storedRooms.find((r) => r.id === roomId || r.name === roomId) || storedRooms[0];
-      if (matched) {
-        const w = matched.width_meters ?? 5.5;
-        const l = matched.length_meters ?? 6.5;
-        const sqm = matched.area_sqm ?? Number((w * l).toFixed(2));
-        return {
-          width: w,
-          length: l,
-          areaSqm: sqm,
-          areaSqft: Math.round(sqm * 10.7639),
-        };
-      }
-    }
-    return { width: 5.5, length: 6.5, areaSqm: 35.75, areaSqft: 385 };
+  const [roomDimensions, setRoomDimensions] = useState({
+    width: 5.5,
+    length: 6.5,
+    areaSqm: 35.75,
+    areaSqft: 385,
   });
 
   // Project Style DNA
-  const [designStyle, setDesignStyle] = useState(() => {
-    if (typeof window !== "undefined") {
-      const proj = getStoredProject(projectId);
-      if (proj && proj.design_style) return proj.design_style;
-    }
-    return "Japandi";
-  });
+  const [designStyle, setDesignStyle] = useState<string>("Japandi");
 
   // Designed furniture objects for fully designed room experience
   const [roomObjects, setRoomObjects] = useState<RoomObject[]>(() => {
     return getDefaultFurnitureForRoom(
-      roomName,
+      "Room",
       "bedroom",
-      roomDimensions.width,
-      roomDimensions.length,
-      designStyle
+      5.5,
+      6.5,
+      "Japandi"
     );
   });
 
@@ -140,39 +121,33 @@ function RoomPlaygroundContent() {
   // Floor Info
   const [floorName, setFloorName] = useState("Ground Floor");
 
-  // Room Photos from Intake Step
-  const [roomPhotos, setRoomPhotos] = useState<StoredRoomPhoto[]>(() => {
-    if (typeof window !== "undefined") {
-      const proj = getStoredProject(projectId);
-      if (proj && proj.room_photos) return proj.room_photos;
-    }
-    return [];
-  });
+  // Room Photos from Intake Step (Step 10)
+  const [roomPhotos, setRoomPhotos] = useState<StoredRoomPhoto[]>([
+    {
+      id: "ref-intake-1",
+      url: "/rooms/empty-room.png",
+      source: "intake",
+      label: "Step 10 Intake Photo (Default Reference)",
+      timestamp: "Step 10 Baseline",
+    },
+  ]);
+
+  // Step 10 Real Room Photo Reflection & Projection State
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const [showPhotoOnWall, setShowPhotoOnWall] = useState(true);
+  const [showPhotoOnFloor, setShowPhotoOnFloor] = useState(true);
+  const [photoOpacity, setPhotoOpacity] = useState(0.85);
+  const [compareMode, setCompareMode] = useState<"hidden" | "pip" | "split">("pip");
+
+  const activePhoto = roomPhotos[activePhotoIdx] || roomPhotos[0];
+  const activePhotoUrl = activePhoto?.url || null;
 
   // 3D Viewport Lighting Preset
   const [lightingPreset, setLightingPreset] = useState<"warm" | "neutral" | "luxury">("warm");
 
   // Financial OS Guardrails
-  const [roomBudget, setRoomBudget] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const allocations = getStoredProjectAllocations(projectId);
-      const matched =
-        allocations.find((a) => a.room_id === roomId || a.room_name === roomName) ||
-        allocations[0];
-      if (matched && typeof matched.allocated_amount === "number") return matched.allocated_amount;
-    }
-    return 350000;
-  });
-  const [spentAmount, setSpentAmount] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const allocations = getStoredProjectAllocations(projectId);
-      const matched =
-        allocations.find((a) => a.room_id === roomId || a.room_name === roomName) ||
-        allocations[0];
-      if (matched && typeof matched.spent_amount === "number") return matched.spent_amount;
-    }
-    return 315000;
-  });
+  const [roomBudget, setRoomBudget] = useState<number>(350000);
+  const [spentAmount, setSpentAmount] = useState<number>(315000);
   const [budgetFlexibility, setBudgetFlexibility] = useState("Moderate");
 
   // Modals & Panels
@@ -194,6 +169,21 @@ function RoomPlaygroundContent() {
   useEffect(() => {
     async function loadData() {
       try {
+        const proj = getStoredProject(projectId);
+        const resolvedStyle = proj?.design_style || "Japandi";
+        if (proj) {
+          if (proj.design_style) setDesignStyle(proj.design_style);
+          if (proj.budget_flexibility) setBudgetFlexibility(proj.budget_flexibility);
+          if (proj.room_photos && proj.room_photos.length > 0) {
+            setRoomPhotos(proj.room_photos);
+          } else {
+            const draft = getStoredHomeCreationDraft();
+            if (draft?.roomPhotos && draft.roomPhotos.length > 0) {
+              setRoomPhotos(draft.roomPhotos);
+            }
+          }
+        }
+
         const storedRooms = getStoredProjectRooms(projectId);
         const matched =
           storedRooms.find((r) => r.id === roomId || r.name === roomId) || storedRooms[0];
@@ -212,6 +202,16 @@ function RoomPlaygroundContent() {
 
           if (matched.objects && matched.objects.length > 0) {
             setRoomObjects(matched.objects);
+          } else {
+            setRoomObjects(
+              getDefaultFurnitureForRoom(
+                matched.name,
+                "bedroom",
+                w,
+                l,
+                resolvedStyle
+              )
+            );
           }
 
           // Floor information
@@ -220,13 +220,6 @@ function RoomPlaygroundContent() {
           } else {
             setFloorName("Level 1 • Ground Floor");
           }
-        }
-
-        const proj = getStoredProject(projectId);
-        if (proj) {
-          if (proj.design_style) setDesignStyle(proj.design_style);
-          if (proj.budget_flexibility) setBudgetFlexibility(proj.budget_flexibility);
-          if (proj.room_photos) setRoomPhotos(proj.room_photos);
         }
 
         const allocations = await budgetApi.getBudgetAllocations(projectId).catch(() => []);
@@ -317,6 +310,11 @@ function RoomPlaygroundContent() {
 
   // Handle AI Copilot Action & Budget Delta calculation
   const handleCopilotAction = (actionType: string, payload: any) => {
+    // Strictly ignore non-relevant text / commands: do not alter budget or trigger alerts
+    if (actionType === "ignored_command" || actionType === "voice_cmd_ignored" || !actionType) {
+      return;
+    }
+
     let delta = 0;
     let desc = "";
     let alt = undefined;
@@ -406,7 +404,10 @@ function RoomPlaygroundContent() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 group">
-                  <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                  <span
+                    suppressHydrationWarning
+                    className="font-mono text-xs font-bold text-white uppercase tracking-wider"
+                  >
                     {roomName}
                   </span>
                   <button
@@ -427,7 +428,10 @@ function RoomPlaygroundContent() {
                 PLAYGROUND
               </span>
 
-              <span className="hidden xl:inline-block text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+              <span
+                suppressHydrationWarning
+                className="hidden xl:inline-block text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400"
+              >
                 {floorName}
               </span>
             </div>
@@ -443,7 +447,7 @@ function RoomPlaygroundContent() {
           {/* Style DNA Badge */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>{designStyle} DNA</span>
+            <span suppressHydrationWarning>{designStyle} DNA</span>
           </div>
 
           {/* CAD Dimensions Button / Modal Trigger */}
@@ -453,7 +457,7 @@ function RoomPlaygroundContent() {
             title="Adjust CAD Room Dimensions"
           >
             <Ruler className="w-3.5 h-3.5 text-emerald-400" />
-            <span>
+            <span suppressHydrationWarning>
               {roomDimensions.width}m × {roomDimensions.length}m ({roomDimensions.areaSqm} m²)
             </span>
           </button>
@@ -463,23 +467,23 @@ function RoomPlaygroundContent() {
         <div className="hidden 2xl:flex items-center gap-3 px-4 py-1.5 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs">
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400">Allocated:</span>
-            <span className="text-white font-bold">{formatIndianBudget(roomBudget)}</span>
+            <span suppressHydrationWarning className="text-white font-bold">{formatIndianBudget(roomBudget)}</span>
           </div>
           <span className="text-slate-700">|</span>
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400">Cost:</span>
-            <span className={`font-bold ${isOverBudget ? "text-rose-400" : "text-emerald-400"}`}>
+            <span suppressHydrationWarning className={`font-bold ${isOverBudget ? "text-rose-400" : "text-emerald-400"}`}>
               {formatIndianBudget(spentAmount)}
             </span>
           </div>
           <span className="text-slate-700">|</span>
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400">Remaining:</span>
-            <span className={`font-bold ${isOverBudget ? "text-rose-400" : "text-teal-400"}`}>
+            <span suppressHydrationWarning className={`font-bold ${isOverBudget ? "text-rose-400" : "text-teal-400"}`}>
               {formatIndianBudget(remaining)}
             </span>
           </div>
-          <span className="text-[9px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 uppercase">
+          <span suppressHydrationWarning className="text-[9px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 uppercase">
             {budgetFlexibility}
           </span>
         </div>
@@ -545,14 +549,21 @@ function RoomPlaygroundContent() {
             </div>
           )}
 
-          {/* Intake Photos Reference Drawer Trigger */}
+          {/* Intake Photos Reference & Projection Indicator */}
           <button
-            onClick={() => setIsPhotosDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-mono text-slate-300 hover:text-white transition-colors cursor-pointer"
-            title="Inspect captured intake room photos"
+            onClick={() => {
+              if (compareMode === "hidden") {
+                setCompareMode("pip");
+              } else {
+                setIsPhotosDrawerOpen(true);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer shadow-sm group"
+            title="Inspect & Toggle Step 10 Real-Room Intake Photos"
           >
-            <Camera className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Photos ({roomPhotos.length})</span>
+            <Camera className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline font-bold">Step 10 Twin ({roomPhotos.length})</span>
+            <span className={`w-2 h-2 rounded-full ${showPhotoOnWall || showPhotoOnFloor ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
           </button>
 
           {/* Materials Modal Trigger */}
@@ -634,69 +645,271 @@ function RoomPlaygroundContent() {
       {/* Main Workspace Split: Center Viewport | Properties Panel | Copilot Drawer */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Center: 3D Viewport OR 2D Blueprint OR Photorealistic AI Renders */}
-        <div className="flex-1 relative h-full">
-          {activeTab === "3d" ? (
-            <CanvasContainer
-              objects={roomObjects}
-              selectedObjectId={selectedObject?.id || null}
-              roomWidth={roomDimensions.width}
-              roomDepth={roomDimensions.length}
-              lightingPreset={lightingPreset}
-              onSelectObject={(objId: any) => {
-                if (!objId) {
-                  setSelectedObject(null);
-                  return;
-                }
-                const found = typeof objId === "string" ? roomObjects.find((o) => o.id === objId) : objId;
-                setSelectedObject(found || null);
-              }}
-              onUpdateObject={(id, updates) => {
-                setRoomObjects((prev) => {
-                  const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
-                  updateStoredRoom(projectId, currentRoomId, { objects: updated });
-                  return updated;
-                });
-                if (selectedObject?.id === id) {
-                  setSelectedObject((prev: any) => (prev ? { ...prev, ...updates } : null));
-                }
-              }}
-              onCopilotAction={handleCopilotAction}
-            />
-          ) : activeTab === "2d" ? (
-            <BlueprintEditor2D
-              objects={roomObjects}
-              roomWidth={roomDimensions.width}
-              roomDepth={roomDimensions.length}
-              onUpdateRoomDimensions={handleUpdateDimensions}
-              onObjectSelect={(obj) => setSelectedObject(obj)}
-              onUpdateObject={(id, updates) => {
-                setRoomObjects((prev) => {
-                  const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
-                  updateStoredRoom(projectId, currentRoomId, { objects: updated });
-                  return updated;
-                });
-              }}
-            />
+        <div className="flex-1 relative h-full flex flex-col overflow-hidden">
+          {compareMode === "split" && activeTab !== "renders" ? (
+            <div className="w-full h-full flex flex-col lg:flex-row overflow-hidden bg-slate-950">
+              {/* Left Panel: Real-World Step 10 Photo Viewer */}
+              <div className="w-full lg:w-1/2 h-1/2 lg:h-full border-b lg:border-b-0 lg:border-r border-emerald-500/30 bg-[#070b10] flex flex-col relative select-none">
+                {/* Real-World Header */}
+                <div className="h-10 px-4 bg-[#090e15] border-b border-white/[0.08] flex items-center justify-between z-10 shrink-0">
+                  <div className="flex items-center gap-2 font-mono text-xs text-white">
+                    <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="font-bold uppercase tracking-wider text-[11px]">
+                      Real-World As-Built (Step 10 Intake)
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                      {activePhotoIdx + 1} / {roomPhotos.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {roomPhotos.length > 1 && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : roomPhotos.length - 1))}
+                          className="p-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                          title="Previous photo angle"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setActivePhotoIdx((prev) => (prev < roomPhotos.length - 1 ? prev + 1 : 0))}
+                          className="p-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                          title="Next photo angle"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setCompareMode("pip")}
+                      className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold cursor-pointer"
+                    >
+                      Exit Split
+                    </button>
+                  </div>
+                </div>
+
+                {/* Photo Frame */}
+                <div className="flex-1 relative overflow-hidden flex items-center justify-center p-3 bg-slate-950">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activePhotoUrl || "/rooms/empty-room.png"}
+                    alt={activePhoto?.label || "Step 10 Photo"}
+                    className="max-h-full max-w-full object-contain rounded-xl border border-white/10 shadow-2xl"
+                  />
+                  <div className="absolute bottom-5 left-5 right-5 p-2.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/10 flex items-center justify-between text-xs font-mono text-slate-300">
+                    <span className="font-bold text-white truncate pr-2">
+                      {activePhoto?.label || `${roomName} Real Capture`}
+                    </span>
+                    <span className="text-emerald-400 text-[10px] uppercase font-bold shrink-0">
+                      Step 10 • {activePhoto?.source || "capture"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Panel: 3D CAD or 2D Blueprint */}
+              <div className="w-full lg:w-1/2 h-1/2 lg:h-full relative flex flex-col">
+                <div className="h-10 px-4 bg-[#090e15] border-b border-white/[0.08] flex items-center justify-between z-10 shrink-0">
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                    <Box className="w-3.5 h-3.5" />
+                    <span>Digital Twin ({activeTab === "3d" ? "3D CAD" : "2D Blueprint"})</span>
+                  </span>
+                </div>
+                <div className="flex-1 relative">
+                  {activeTab === "3d" ? (
+                    <CanvasContainer
+                      objects={roomObjects}
+                      selectedObjectId={selectedObject?.id || null}
+                      roomWidth={roomDimensions.width}
+                      roomDepth={roomDimensions.length}
+                      lightingPreset={lightingPreset}
+                      backgroundImageUrl={showPhotoOnFloor ? activePhotoUrl : null}
+                      wallPhotoUrl={showPhotoOnWall ? activePhotoUrl : null}
+                      photoOpacity={photoOpacity}
+                      showPhotoOnWall={showPhotoOnWall}
+                      showPhotoOnFloor={showPhotoOnFloor}
+                      onSelectObject={(objId: any) => {
+                        if (!objId) {
+                          setSelectedObject(null);
+                          return;
+                        }
+                        const found = typeof objId === "string" ? roomObjects.find((o) => o.id === objId) : objId;
+                        setSelectedObject(found || null);
+                      }}
+                      onUpdateObject={(id, updates) => {
+                        setRoomObjects((prev) => {
+                          const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                          updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                          return updated;
+                        });
+                        if (selectedObject?.id === id) {
+                          setSelectedObject((prev: any) => (prev ? { ...prev, ...updates } : null));
+                        }
+                      }}
+                      onCopilotAction={handleCopilotAction}
+                    />
+                  ) : (
+                    <BlueprintEditor2D
+                      objects={roomObjects}
+                      roomWidth={roomDimensions.width}
+                      roomDepth={roomDimensions.length}
+                      backgroundImageUrl={activePhotoUrl}
+                      photoOpacity={photoOpacity}
+                      showPhotoBackdrop={showPhotoOnFloor}
+                      onUpdateRoomDimensions={handleUpdateDimensions}
+                      onObjectSelect={(obj) => setSelectedObject(obj)}
+                      onUpdateObject={(id, updates) => {
+                        setRoomObjects((prev) => {
+                          const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                          updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                          return updated;
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
           ) : (
-            <RoomRendersViewer
-              roomName={roomName}
-              designStyle={designStyle}
-              roomWidth={roomDimensions.width}
-              roomDepth={roomDimensions.length}
-              roomBudget={roomBudget}
-              intakePhotos={roomPhotos}
-              onApplyPaletteTo3D={(mat) =>
-                handleCopilotAction("update_material", { material: mat })
-              }
-              onSwitchTo3D={() => setActiveTab("3d")}
-            />
+            <div className="w-full h-full relative">
+              {activeTab === "3d" ? (
+                <CanvasContainer
+                  objects={roomObjects}
+                  selectedObjectId={selectedObject?.id || null}
+                  roomWidth={roomDimensions.width}
+                  roomDepth={roomDimensions.length}
+                  lightingPreset={lightingPreset}
+                  backgroundImageUrl={showPhotoOnFloor ? activePhotoUrl : null}
+                  wallPhotoUrl={showPhotoOnWall ? activePhotoUrl : null}
+                  photoOpacity={photoOpacity}
+                  showPhotoOnWall={showPhotoOnWall}
+                  showPhotoOnFloor={showPhotoOnFloor}
+                  onSelectObject={(objId: any) => {
+                    if (!objId) {
+                      setSelectedObject(null);
+                      return;
+                    }
+                    const found = typeof objId === "string" ? roomObjects.find((o) => o.id === objId) : objId;
+                    setSelectedObject(found || null);
+                  }}
+                  onUpdateObject={(id, updates) => {
+                    setRoomObjects((prev) => {
+                      const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                      updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                      return updated;
+                    });
+                    if (selectedObject?.id === id) {
+                      setSelectedObject((prev: any) => (prev ? { ...prev, ...updates } : null));
+                    }
+                  }}
+                  onCopilotAction={handleCopilotAction}
+                />
+              ) : activeTab === "2d" ? (
+                <BlueprintEditor2D
+                  objects={roomObjects}
+                  roomWidth={roomDimensions.width}
+                  roomDepth={roomDimensions.length}
+                  backgroundImageUrl={activePhotoUrl}
+                  photoOpacity={photoOpacity}
+                  showPhotoBackdrop={showPhotoOnFloor}
+                  onUpdateRoomDimensions={handleUpdateDimensions}
+                  onObjectSelect={(obj) => setSelectedObject(obj)}
+                  onUpdateObject={(id, updates) => {
+                    setRoomObjects((prev) => {
+                      const updated = prev.map((o) => (o.id === id ? { ...o, ...updates } : o));
+                      updateStoredRoom(projectId, currentRoomId, { objects: updated });
+                      return updated;
+                    });
+                  }}
+                />
+              ) : (
+                <RoomRendersViewer
+                  roomName={roomName}
+                  designStyle={designStyle}
+                  roomWidth={roomDimensions.width}
+                  roomDepth={roomDimensions.length}
+                  roomBudget={roomBudget}
+                  intakePhotos={roomPhotos}
+                  onApplyPaletteTo3D={(mat) =>
+                    handleCopilotAction("update_material", { material: mat })
+                  }
+                  onSwitchTo3D={() => setActiveTab("3d")}
+                />
+              )}
+
+              {/* Floating Real-Room Photo HUD (PIP & In-Scene Projection Controls) */}
+              {activeTab !== "renders" && roomPhotos.length > 0 && (
+                <RealRoomPhotoHUD
+                  photos={roomPhotos}
+                  activePhotoIndex={activePhotoIdx}
+                  onSelectPhotoIndex={(idx) => setActivePhotoIdx(idx)}
+                  showPhotoOnWall={showPhotoOnWall}
+                  onTogglePhotoOnWall={(show) => setShowPhotoOnWall(show)}
+                  showPhotoOnFloor={showPhotoOnFloor}
+                  onTogglePhotoOnFloor={(show) => setShowPhotoOnFloor(show)}
+                  photoOpacity={photoOpacity}
+                  onChangePhotoOpacity={(opacity) => setPhotoOpacity(opacity)}
+                  compareMode={compareMode}
+                  onSetCompareMode={(mode) => setCompareMode(mode)}
+                  onOpenDrawer={() => setIsPhotosDrawerOpen(true)}
+                  roomName={roomName}
+                />
+              )}
+            </div>
           )}
 
-          {/* Floating Voice Assistant Widget (in 3D/2D views) */}
+          {/* Floating Website-Style Voice Assistant Chat Button (in 3D/2D views) */}
           {activeTab !== "renders" && (
-            <div className="absolute bottom-6 left-6 z-20">
+            <div className="absolute bottom-6 left-20 z-30">
               <VoiceAssistantWidget
-                onVoiceCommand={(cmd) => handleCopilotAction("voice_cmd", { prompt: cmd })}
+                onWallColorChange={(hex, name) => {
+                  setRoomObjects((prev) => {
+                    const wall = prev.find((o) => o.object_type === "wall");
+                    if (wall) {
+                      return prev.map((o) => (o.id === wall.id ? { ...o, material: hex } : o));
+                    }
+                    return prev;
+                  });
+                  handleCopilotAction("update_material", { material: name });
+                }}
+                onFlooringChange={(material, costDelta) => {
+                  setRoomObjects((prev) => {
+                    const floor = prev.find((o) => o.object_type === "floor");
+                    if (floor) {
+                      return prev.map((o) => (o.id === floor.id ? { ...o, material } : o));
+                    }
+                    return prev;
+                  });
+                  if (costDelta !== 0) {
+                    const updated = spentAmount + costDelta;
+                    setSpentAmount(updated);
+                    setDeltaNotification({
+                      amount: costDelta,
+                      description: `Swapped flooring to ${material}`,
+                      newTotal: updated,
+                    });
+                  }
+                }}
+                onCameraChange={(viewType) => {
+                  if (viewType === "top_down") {
+                    setActiveTab("2d");
+                  } else {
+                    setActiveTab("3d");
+                  }
+                }}
+                onLightingChange={(preset) => {
+                  setLightingPreset(preset);
+                }}
+                onVoiceCommand={(_cmd, isRelevant, actionType, payload) => {
+                  // Any text other than relevant room/design changes MUST BE STRICTLY IGNORED
+                  if (!isRelevant || actionType === "ignored_command") {
+                    return;
+                  }
+                  if (actionType) {
+                    handleCopilotAction(actionType, payload);
+                  }
+                }}
               />
             </div>
           )}
@@ -749,6 +962,7 @@ function RoomPlaygroundContent() {
               designId={currentRoomId}
               currentStyle={designStyle}
               onCopilotAction={handleCopilotAction}
+              roomPhotosCount={roomPhotos.length}
             />
           )}
         </div>
