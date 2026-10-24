@@ -234,6 +234,11 @@ def load_g3b_from_f2a(model, f2a_ckpt_path, device="cpu"):
                 model_state[k_hr].copy_(v)
                 custom_loaded.append(k_hr)
 
+    # 4. Initialize p8_proj with gentle scaling to preserve initial stability
+    nn.init.kaiming_normal_(model.p8_proj[0].weight, mode="fan_out", nonlinearity="relu")
+    model.p8_proj[0].weight.data *= 0.1
+    nn.init.constant_(model.p8_proj[0].bias, 0.0)
+
     model.load_state_dict(model_state)
     uninitialized = [k for k in model_state if k not in matched_keys and not any(k.startswith(p) for p in ["decoder_global", "decoder_highres", "query_embed_global", "query_embed_highres"])]
     return len(matched_keys), len(custom_loaded), uninitialized
@@ -688,6 +693,95 @@ def evaluate_g3b(model, dataloader, device, conf_thresh=0.25, detailed=False):
 
 
 # =====================================================================
+# Sample Visualizer (Global vs High-Res Queries, Ground Truth vs Pred)
+# =====================================================================
+
+def visualize_g3b_sample(model, test_ds, device, out_path, sample_idx=0, conf_thresh=0.20):
+    model.eval()
+    sample_entry = test_ds.items[sample_idx]
+    sample = sample_entry.get("sample_meta", sample_entry)
+    orig_img_path = Path("HomeVerse-Dataset") / sample["image_path"]
+
+    if not orig_img_path.exists():
+        return
+
+    orig_img = Image.open(orig_img_path).convert("RGB")
+    orig_w, orig_h = orig_img.size
+
+    item = test_ds[sample_idx]
+    img_tensor = item["image"].unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        outputs = model(img_tensor)
+        pred_logits = outputs["pred_logits"][0]
+        pred_boxes = outputs["pred_boxes"][0]
+        pred_masks = outputs["pred_masks"][0]
+        pred_scale = outputs["pred_scale"][0].item()
+        probs = pred_logits.softmax(-1)
+
+    top_scores, top_classes = probs.max(dim=-1)
+    keep = (top_classes != NO_ROOM_ID) & (top_scores >= conf_thresh)
+    keep_indices = torch.where(keep)[0]
+
+    canvas = Image.new("RGB", (orig_w * 2, orig_h), (255, 255, 255))
+    canvas.paste(orig_img, (0, 0))
+    canvas.paste(orig_img, (orig_w, 0))
+
+    overlay = Image.new("RGBA", (orig_w * 2, orig_h), (255, 255, 255, 0))
+    draw_overlay = ImageDraw.Draw(overlay)
+    draw_canvas = ImageDraw.Draw(canvas)
+
+    palette = [
+        (0, 180, 0), (30, 144, 255), (255, 140, 0), (186, 85, 211),
+        (220, 20, 60), (0, 206, 209), (255, 215, 0), (128, 128, 0)
+    ]
+
+    gt_scale = sample.get("pixels_per_meter", 100.0)
+    # Ground Truth Left
+    draw_canvas.text((15, 15), f"GROUND TRUTH (GT Scale: {gt_scale:.1f} px/m)", fill=(0, 120, 0))
+    for i, room in enumerate(sample.get("rooms", [])):
+        col = palette[i % len(palette)]
+        bx, by, bw, bh = room["bbox"]
+        area = room.get("area_m2", room.get("dimensions", {}).get("area_m2", 10.0))
+        is_small = (area < 6.0)
+        tag = "[SMALL] " if is_small else ""
+        label = f"{tag}{room['type']} ({area:.1f}m²)"
+        x0, y0 = int(bx * orig_w), int(by * orig_h)
+        w_px, h_px = int(bw * orig_w), int(bh * orig_h)
+        draw_canvas.rectangle([x0, y0, x0 + w_px, y0 + h_px], outline=(255, 50, 50) if is_small else col, width=3 if is_small else 2)
+        draw_canvas.rectangle([x0, max(0, y0 - 18), x0 + len(label) * 7, y0], fill=(255, 50, 50) if is_small else col)
+        draw_canvas.text((x0 + 2, max(0, y0 - 16)), label, fill=(255, 255, 255))
+
+    # Prediction Right (G3-B Two-Scale: Global vs High-Res)
+    draw_canvas.text((orig_w + 15, 15), f"G3-B TWO-SCALE PREDICTIONS [Blue=Global, Orange=High-Res] (Scale: {pred_scale:.1f} px/m)", fill=(180, 0, 0))
+
+    for idx in keep_indices:
+        q_idx = idx.item()
+        grp = "[G]" if q_idx < 20 else "[HR]"
+        score = top_scores[q_idx].item()
+        c_id = top_classes[q_idx].item()
+        label_name = ROOM_CLASSES[c_id] if c_id < len(ROOM_CLASSES) else "Room"
+
+        col = (30, 144, 255) if q_idx < 20 else (255, 140, 0)
+        cx, cy, bw_n, bh_n = pred_boxes[q_idx].tolist()
+        x0 = int((cx - bw_n / 2.0) * orig_w) + orig_w
+        y0 = int((cy - bh_n / 2.0) * orig_h)
+        w_px = int(bw_n * orig_w)
+        h_px = int(bh_n * orig_h)
+
+        draw_canvas.rectangle([x0, y0, x0 + w_px, y0 + h_px], outline=col, width=3)
+        label_txt = f"{grp} {label_name} ({score:.2f})"
+        draw_canvas.rectangle([x0, max(0, y0 - 18), x0 + len(label_txt) * 7, y0], fill=col)
+        draw_canvas.text((x0 + 2, max(0, y0 - 16)), label_txt, fill=(255, 255, 255))
+
+    combined = Image.alpha_composite(canvas.convert("RGBA"), overlay).convert("RGB")
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    combined.save(out_path)
+    print(f"Saved visualization to {out_path}.", flush=True)
+
+
+# =====================================================================
 # Main Experiment G3-B Training & Evaluation Pipeline
 # =====================================================================
 
@@ -803,6 +897,19 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
     )
 
     if not eval_only:
+        print("\nPre-extracting ViT encoder representations for 350 train layouts (1,050 images)...", flush=True)
+        t_fe0 = time.time()
+        train_features = []
+        with torch.no_grad():
+            for b_idx, (images, targets) in enumerate(train_loader):
+                enc = model.encoder(pixel_values=images.to(device), output_hidden_states=True)
+                cls_tok = enc.last_hidden_state[:, 0, :].cpu()
+                f6 = enc.hidden_states[6][:, 1:, :].cpu()
+                f9 = enc.hidden_states[9][:, 1:, :].cpu()
+                f12 = enc.hidden_states[12][:, 1:, :].cpu()
+                train_features.append((cls_tok, f6, f9, f12, targets))
+        print(f"Pre-extracted ViT features for 150 batches in {time.time() - t_fe0:.1f}s. Fast training enabled!", flush=True)
+
         print("\nEvaluating baseline validation performance before starting training...", flush=True)
         base_val_m = evaluate_g3b(model, val_loader, device, conf_thresh=0.25, detailed=False)
         best_val_score = base_val_m["curve"]["iou_50"]["det_f1"] + base_val_m["hungarian_mask_dice"]
@@ -820,10 +927,13 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
                 train_loss_bbox = 0.0
                 train_loss_mask = 0.0
 
-                for b_idx, (images, targets) in enumerate(train_loader):
-                    images = images.to(device)
+                for b_idx, (cls_tok, f6, f9, f12, targets) in enumerate(train_features):
+                    cls_tok = cls_tok.to(device)
+                    f6 = f6.to(device)
+                    f9 = f9.to(device)
+                    f12 = f12.to(device)
                     optimizer.zero_grad()
-                    outputs = model(images)
+                    outputs = model.forward_with_features(cls_tok, f6, f9, f12)
                     loss_dict = criterion(outputs, targets)
                     loss = loss_dict["loss"]
                     loss.backward()
@@ -837,10 +947,10 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
 
                 scheduler.step()
 
-                avg_loss = train_loss_total / len(train_loader)
-                avg_ce = train_loss_ce / len(train_loader)
-                avg_bbox = train_loss_bbox / len(train_loader)
-                avg_mask = train_loss_mask / len(train_loader)
+                avg_loss = train_loss_total / len(train_features)
+                avg_ce = train_loss_ce / len(train_features)
+                avg_bbox = train_loss_bbox / len(train_features)
+                avg_mask = train_loss_mask / len(train_features)
 
                 # Validation
                 val_res = evaluate_g3b(model, val_loader, device, conf_thresh=0.25, detailed=False)

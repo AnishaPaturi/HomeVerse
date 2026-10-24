@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import { getItemThumbnail } from "./pdfThumbnails";
 
 export interface PaletteColor {
   name: string;
@@ -914,9 +913,8 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(55, 65, 81);
-    doc.text("Featured Item / Material Ensembles", margin + 3, thY + 4.8);
-    doc.text("Preview", margin + 85, thY + 4.8, { align: "center" });
-    doc.text("Item Price (INR)", margin + 130, thY + 4.8, { align: "right" });
+    doc.text("Featured Item & Material Specification", margin + 3, thY + 4.8);
+    doc.text("Item Price (INR)", margin + 125, thY + 4.8, { align: "right" });
     doc.text("Installation Cost (INR)", margin + contentWidth - 4, thY + 4.8, { align: "right" });
 
     // 5 Rows (pitch = 13mm)
@@ -940,42 +938,20 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
 
       // Item Name & Subtitle
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
+      doc.setFontSize(8.5);
       doc.setTextColor(17, 24, 39);
       doc.text(item.name, margin + 3, rowY + 5.2);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.8);
+      doc.setFontSize(7);
       doc.setTextColor(107, 114, 128);
       doc.text(item.subtitle, margin + 3, rowY + 9.5);
-
-      // Embedded Item Thumbnail Image (100% reliable pre-encoded PNG base64)
-      const thumbData = getItemThumbnail(item.thumb, st.slug, ii);
-      if (thumbData) {
-        try {
-          doc.setFillColor(255, 255, 255);
-          doc.roundedRect(margin + 77.5, rowY + 1.2, 15, 10.5, 1.5, 1.5, "F");
-          doc.addImage(thumbData, "PNG", margin + 78, rowY + 1.5, 14, 10, undefined, "FAST");
-          doc.setDrawColor(226, 232, 240);
-          doc.setLineWidth(0.2);
-          doc.roundedRect(margin + 77.5, rowY + 1.2, 15, 10.5, 1.5, 1.5, "D");
-        } catch (e) {
-          console.error("Error adding thumbnail to PDF:", item.name, e);
-        }
-      } else {
-        doc.setFillColor(241, 245, 249);
-        doc.roundedRect(margin + 77.5, rowY + 1.2, 15, 10.5, 1.5, 1.5, "F");
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(6);
-        doc.setTextColor(156, 163, 175);
-        doc.text("Item", margin + 85, rowY + 7, { align: "center" });
-      }
 
       // Price
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(17, 24, 39);
-      doc.text(formatINR(item.price), margin + 130, rowY + 7.5, { align: "right" });
+      doc.text(formatINR(item.price), margin + 125, rowY + 7.5, { align: "right" });
 
       // Installation
       doc.setFont("helvetica", "normal");
