@@ -304,18 +304,16 @@ export const DesignStyleSelector: React.FC<DesignStyleSelectorProps> = ({
                 Your six-style catalogue, colour palettes, material breakdown and estimated installation costs.
               </p>
 
-              {/* Dynamic Context Preview Pills */}
+              {/* Catalogue Scope Pills */}
               <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px] font-mono text-slate-400">
                 <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
-                  Target Room: <strong className="text-emerald-400">{selectedRoom || "Drawing Room"}</strong>
+                  Scope: <strong className="text-emerald-400">All 6 Design Styles</strong>
                 </span>
-                {roomDimensions && (
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
-                    Dimensions: <strong className="text-white">{roomDimensions.width || 4.5}m × {roomDimensions.length || 5.0}m ({roomDimensions.area || 22.5} m²)</strong>
-                  </span>
-                )}
                 <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
-                  Document: <strong className="text-white">PDF · A4 · 8 Pages</strong>
+                  Pricing: <strong className="text-white">Per Sq.Ft Benchmarks & Ensembles</strong>
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
+                  Format: <strong className="text-white">PDF · A4 · 8 Pages</strong>
                 </span>
               </div>
             </div>

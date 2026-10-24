@@ -853,33 +853,44 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
         print(f"Successfully loaded {n_matched} identical keys and {n_custom} mapped two-scale keys.", flush=True)
         print(f"Newly initialized layers (P8 projection): {uninit}", flush=True)
 
-    # 4. Partial ViT Unfreezing & Optimizer Setup (Identical to F2-A)
-    # Freeze ViT embeddings & Blocks 1-8; train top blocks 9-12 with 1.5e-5
-    for p in model.encoder.embeddings.parameters():
+    # 4. Partial ViT Unfreezing & Optimizer Setup (Differential Learning Rates)
+    # Freeze ViT embeddings & Blocks 1-8; ViT features are pre-extracted
+    for p in model.encoder.parameters():
         p.requires_grad = False
-    vit_layers = model.encoder.encoder.layer if hasattr(model.encoder, "encoder") else model.encoder.layers
-    for layer in vit_layers[:8]:
-        for p in layer.parameters():
-            p.requires_grad = False
-    for layer in vit_layers[8:]:
-        for p in layer.parameters():
-            p.requires_grad = True
-    for p in model.encoder.layernorm.parameters():
-        p.requires_grad = True
-    if hasattr(model.encoder, "pooler") and model.encoder.pooler is not None:
-        for p in model.encoder.pooler.parameters():
-            p.requires_grad = False
 
-    vit_trainable = [p for p in model.encoder.parameters() if p.requires_grad]
-    head_trainable = [p for n, p in model.named_parameters() if not n.startswith("encoder") and p.requires_grad]
+    new_branch_params = (
+        list(model.p8_proj.parameters()) +
+        list(model.query_embed_highres.parameters()) +
+        list(model.decoder_highres.parameters())
+    )
+    global_query_params = (
+        list(model.query_embed_global.parameters()) +
+        list(model.decoder_global.parameters())
+    )
+    fpn_scale_params = (
+        list(model.fpn.parameters()) +
+        list(model.scale_head.parameters())
+    )
+    head_params = (
+        list(model.class_head.parameters()) +
+        list(model.bbox_head.parameters()) +
+        list(model.query_mask_proj.parameters()) +
+        list(model.semantic_head.parameters())
+    )
 
-    print(f"Trainable parameters: ViT top-4 blocks: {len(vit_trainable)} tensors | Decoders, FPN & Heads: {len(head_trainable)} tensors", flush=True)
-    total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Trainable parameters:", flush=True)
+    print(f"  - New High-Res Pathway (P8 proj + Dec + Embed): {sum(p.numel() for p in new_branch_params):,} params (LR: 1.5e-4)", flush=True)
+    print(f"  - Global Query Pathway (Dec + Embed):          {sum(p.numel() for p in global_query_params):,} params (LR: 3.0e-5)", flush=True)
+    print(f"  - Shared Detection Heads (Class, BBox, Mask):   {sum(p.numel() for p in head_params):,} params (LR: 4.0e-5)", flush=True)
+    print(f"  - FPN & Scale Head (Protected representation):   {sum(p.numel() for p in fpn_scale_params):,} params (LR: 1.0e-5)", flush=True)
+    total_trainable = sum(p.numel() for p in new_branch_params + global_query_params + head_params + fpn_scale_params)
     print(f"Total trainable parameters: {total_trainable:,}", flush=True)
 
     optimizer = torch.optim.AdamW([
-        {"params": vit_trainable, "lr": 1.5e-5, "weight_decay": 1e-4},
-        {"params": head_trainable, "lr": 1.5e-4, "weight_decay": 1e-5},
+        {"params": new_branch_params, "lr": 1.5e-4, "weight_decay": 1e-4},
+        {"params": global_query_params, "lr": 3.0e-5, "weight_decay": 1e-4},
+        {"params": head_params, "lr": 4.0e-5, "weight_decay": 1e-5},
+        {"params": fpn_scale_params, "lr": 1.0e-5, "weight_decay": 1e-4},
     ])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -982,12 +993,22 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
         model.load_state_dict(torch.load(g3b_ckpt_path, map_location=device), strict=False)
 
     print("Running comprehensive evaluation on 75 Unseen Test Layouts (225 images)...", flush=True)
-    test_res_25 = evaluate_g3b(model, test_loader, device, conf_thresh=0.25, detailed=True)
-    test_res_20 = evaluate_g3b(model, test_loader, device, conf_thresh=0.20, detailed=True)
-    test_res_10 = evaluate_g3b(model, test_loader, device, conf_thresh=0.10, detailed=True)
+    conf_thresholds = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50]
+    sweep_results = {}
+
+    for cth in conf_thresholds:
+        is_detailed = (cth in [0.10, 0.20, 0.25, 0.50])
+        print(f"Evaluating test split at conf >= {cth:.2f}...", flush=True)
+        res_th = evaluate_g3b(model, test_loader, device, conf_thresh=cth, detailed=is_detailed)
+        sweep_results[f"conf_{int(cth*100):02d}"] = res_th
+
+    test_res_25 = sweep_results["conf_25"]
+    test_res_20 = sweep_results["conf_20"]
+    test_res_10 = sweep_results["conf_10"]
 
     # Package full evaluation bundle
     full_eval = {
+        "sweep": sweep_results,
         "conf_25": test_res_25,
         "conf_20": test_res_20,
         "conf_10": test_res_10,
@@ -1002,6 +1023,19 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(full_eval, f, indent=2)
     print(f"Saved evaluation results to {out_json}.", flush=True)
+
+    # 7. Generate Qualitative Visualization Artifact
+    vis_path = Path("evaluation_results/experiment_g3b_vis.png")
+    brain_vis = Path("C:/Users/anish/.gemini/antigravity-cli/brain/3e2d9c80-17a9-418d-96bc-438e9de44d1e/experiment_g3b_vis.png")
+    try:
+        visualize_g3b_sample(model, test_ds, device, vis_path, sample_idx=0, conf_thresh=0.20)
+        if vis_path.exists():
+            import shutil
+            brain_vis.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(vis_path, brain_vis)
+            print(f"Copied visualization artifact to {brain_vis}.", flush=True)
+    except Exception as e:
+        print(f"Visualization generation note: {e}", flush=True)
 
     # Print Summary Tables
     print("\n" + "=" * 80)
@@ -1025,7 +1059,16 @@ def run_experiment_g3b(epochs=5, batch_size=7, img_size=384, eval_only=False):
         th_val = int(k.split("_")[1]) / 100.0
         print(f"IoU >= {th_val:<9.2f} | {v['det_p']:.4f}    | {v['det_r']:.4f}   | {v['det_f1']:.4f}   | {v['sem_p']:.4f}    | {v['sem_r']:.4f}   | {v['sem_f1']:.4f}")
 
-    print("\n--- Query-Group Performance Breakdown (Global vs High-Res Queries) ---")
+    print("\n--- Confidence Sweep Summary (IoU >= 0.25) ---")
+    print(f"{'Conf Thresh':<12} | {'Det Prec':<9} | {'Det Rec':<8} | {'Det F1':<8} | {'Sem F1':<8} | {'FG Preds':<8} | {'BG Rejected'}")
+    print("-" * 75)
+    for cth in conf_thresholds:
+        k = f"conf_{int(cth*100):02d}"
+        res = sweep_results[k]
+        c25 = res["curve"]["iou_25"]
+        print(f"Conf >= {cth:<5.2f} | {c25['det_p']:.4f}    | {c25['det_r']:.4f}   | {c25['det_f1']:.4f}   | {c25['sem_f1']:.4f}   | {res['fg_predictions']:<8d} | {res['bg_rejected']}")
+
+    print("\n--- Query-Group Performance Breakdown (Global vs High-Res Queries, Conf >= 0.25) ---")
     qg = test_res_25["query_group_stats"]
     print(f"Global Queries (0-19):    Predictions = {qg['global']['predictions']:<5d} | TP = {qg['global']['tp']:<4d} | Small Room TP = {qg['global']['small_room_tp']}")
     print(f"High-Res Queries (20-39): Predictions = {qg['highres']['predictions']:<5d} | TP = {qg['highres']['tp']:<4d} | Small Room TP = {qg['highres']['small_room_tp']}")

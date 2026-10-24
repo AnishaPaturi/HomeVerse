@@ -14,6 +14,13 @@ export interface ReportFeaturedItem {
   install: number;
 }
 
+export interface PerSqFtBenchmark {
+  materialPerSqFt: number;
+  installPerSqFt: number;
+  totalPerSqFt: number;
+  typical1000SqFt: string;
+}
+
 export interface ReportStyleData {
   name: string;
   slug: string;
@@ -23,6 +30,7 @@ export interface ReportStyleData {
   bestFor: string;
   budgetTier: string;
   badgeText: string;
+  perSqFt: PerSqFtBenchmark;
   palette: PaletteColor[];
   items: ReportFeaturedItem[];
 }
@@ -51,6 +59,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "natural wood, linen, organic shapes, soft lighting and uncluttered spaces.",
     budgetTier: "Balanced Value Tier",
     badgeText: "Best Balance & Value",
+    perSqFt: {
+      materialPerSqFt: 1850,
+      installPerSqFt: 350,
+      totalPerSqFt: 2200,
+      typical1000SqFt: "Rs. 22.0 Lakhs",
+    },
     palette: [
       { name: "Warm Ivory", hex: "#F5F0E8", role: "Primary" },
       { name: "Sand Beige", hex: "#D8C8B0", role: "Secondary" },
@@ -106,6 +120,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "exposed brick, concrete walls, black steel, distressed leather and reclaimed wood.",
     budgetTier: "Robust Mid-Range Tier",
     badgeText: "Urban Architectural",
+    perSqFt: {
+      materialPerSqFt: 2550,
+      installPerSqFt: 500,
+      totalPerSqFt: 3050,
+      typical1000SqFt: "Rs. 30.5 Lakhs",
+    },
     palette: [
       { name: "Concrete", hex: "#D6D2CB", role: "Primary" },
       { name: "Cement Gray", hex: "#8B8580", role: "Secondary" },
@@ -161,6 +181,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "clean geometry, open space, hidden storage and minimal decoration.",
     budgetTier: "Essential Forms Tier",
     badgeText: "Most Budget-Friendly",
+    perSqFt: {
+      materialPerSqFt: 1550,
+      installPerSqFt: 300,
+      totalPerSqFt: 1850,
+      typical1000SqFt: "Rs. 18.5 Lakhs",
+    },
     palette: [
       { name: "Pure White", hex: "#FFFFFF", role: "Primary" },
       { name: "Off White", hex: "#F2F2F0", role: "Secondary" },
@@ -216,6 +242,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "marble, velvet, metallic finishes, statement lighting and premium furniture.",
     budgetTier: "Premium Luxury Tier",
     badgeText: "Premium Luxury Tier",
+    perSqFt: {
+      materialPerSqFt: 4800,
+      installPerSqFt: 950,
+      totalPerSqFt: 5750,
+      typical1000SqFt: "Rs. 57.5 Lakhs",
+    },
     palette: [
       { name: "Champagne", hex: "#F1E7D6", role: "Primary" },
       { name: "Gold", hex: "#C6A875", role: "Accent" },
@@ -271,6 +303,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "mixed materials, curved furniture, artistic lighting, layered textures and balanced neutral tones.",
     budgetTier: "Turnkey Flexible Tier",
     badgeText: "Modern Versatility",
+    perSqFt: {
+      materialPerSqFt: 3100,
+      installPerSqFt: 650,
+      totalPerSqFt: 3750,
+      typical1000SqFt: "Rs. 37.5 Lakhs",
+    },
     palette: [
       { name: "Soft Cream", hex: "#F4F1EB", role: "Primary" },
       { name: "Greige", hex: "#C7BDB0", role: "Secondary" },
@@ -326,6 +364,12 @@ export const REPORT_STYLES: ReportStyleData[] = [
     bestFor: "light wood, natural daylight, cozy textiles, functional furniture and subtle pastel accents.",
     budgetTier: "Cost-Effective Tier",
     badgeText: "Cozy & Functional",
+    perSqFt: {
+      materialPerSqFt: 2050,
+      installPerSqFt: 400,
+      totalPerSqFt: 2450,
+      typical1000SqFt: "Rs. 24.5 Lakhs",
+    },
     palette: [
       { name: "Snow White", hex: "#FAF9F6", role: "Primary" },
       { name: "Oat Beige", hex: "#E8DDCA", role: "Secondary" },
@@ -421,7 +465,6 @@ async function loadStyleImageDataUrl(url: string, maxWidth = 900, quality = 0.85
           resolve(dataUrl);
         } catch {
           URL.revokeObjectURL(objectUrl);
-          // Fallback to direct blob reading
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.onerror = () => resolve(null);
@@ -441,15 +484,12 @@ async function loadStyleImageDataUrl(url: string, maxWidth = 900, quality = 0.85
 }
 
 /**
- * Generates an 8-page turnkey interior design PDF report with custom spatial dimensions,
- * 6 style pages, colour palettes, itemized materials, installation costs, and comparison matrix.
+ * Generates an 8-page turnkey interior design PDF report with per-sqft benchmarks,
+ * 6 style guides, colour palettes, itemized materials, installation costs, and comparison matrix.
+ * Universal home catalogue without room-specific restrictions.
  */
 export async function generateInteriorDesignReport(options: ReportGeneratorOptions = {}): Promise<void> {
   const {
-    roomName = "Drawing Room",
-    roomDimensions = { width: 4.5, length: 5.0, area: 22.5 },
-    totalBudget = 1500000,
-    homeType = "Residential Apartment",
     selectedStyle = "Japandi",
     onProgress,
   } = options;
@@ -467,7 +507,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   try {
     await Promise.race([
       Promise.all(heroPromises),
-      new Promise((res) => setTimeout(res, 3500)), // 3.5s timeout fallback
+      new Promise((res) => setTimeout(res, 3500)),
     ]);
   } catch {
     // Continue even if some hero images fail
@@ -492,8 +532,6 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     year: "numeric",
   });
 
-  const cleanRoomName = (roomName || "Drawing Room").replace(/[^a-zA-Z0-9_-]/g, "_");
-
   function drawHeader(pageNum: number, styleName: string | null) {
     // Top border bar
     doc.setFillColor(16, 185, 129); // Emerald-500
@@ -513,7 +551,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setFontSize(8);
     doc.setTextColor(16, 185, 129);
     doc.text(
-      styleName ? `${styleName.toUpperCase()} STYLE GUIDE` : "PROJECT REPORT",
+      styleName ? `${styleName.toUpperCase()} STYLE GUIDE` : "INTERIOR CATALOGUE",
       pageWidth - margin,
       margin,
       { align: "right" }
@@ -541,7 +579,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
 
     doc.setFontSize(7);
     doc.setTextColor(156, 163, 175);
-    doc.text("CONFIDENTIAL | PREPARED FOR HOME ESTIMATION", pageWidth / 2, footY + 1, {
+    doc.text("TURNKEY SPECIFICATION & BUDGET BENCHMARK", pageWidth / 2, footY + 1, {
       align: "center",
     });
 
@@ -567,11 +605,11 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
 
   // Badge
   doc.setFillColor(6, 78, 59); // Emerald 900
-  doc.roundedRect(margin + 8, 33, 50, 6, 2, 2, "F");
+  doc.roundedRect(margin + 8, 33, 56, 6, 2, 2, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.setTextColor(52, 211, 153); // Emerald 400
-  doc.text("INTERIOR SPECIFICATION REPORT", margin + 11, 37.2);
+  doc.text("UNIVERSAL STYLE & BUDGET GUIDE", margin + 11, 37.2);
 
   // Main Report Title
   doc.setFont("helvetica", "bold");
@@ -581,27 +619,24 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
 
   doc.setFontSize(13);
   doc.setTextColor(209, 213, 219); // Gray 300
-  doc.text("& Turnkey Installation Cost Estimation", margin + 8, 55);
+  doc.text("& Turnkey Execution Budget Estimator (Per Sq.Ft)", margin + 8, 55);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(156, 163, 175);
   const coverIntro =
-    "Dynamic architectural analysis combining spatial dimensions, curated 5-element furniture ensembles, authentic material swatches, and certified contractor labour estimates.";
+    "Comprehensive architectural guide to help homeowners select their ideal interior aesthetic. Features detailed color palettes, signature 5-piece ensembles, and standardized turnkey budget rates per square foot.";
   doc.text(doc.splitTextToSize(coverIntro, contentWidth - 16), margin + 8, 63);
 
-  // Metadata ribbon inside banner
+  // Metadata ribbon inside banner (Per-sqft & Universal focus)
   const ribbonY = 78;
   doc.setFillColor(30, 41, 59); // Slate 800
   doc.roundedRect(margin + 8, ribbonY, contentWidth - 16, 15, 2, 2, "F");
 
   const metaItems = [
-    { label: "ROOM FOCUS", val: roomName },
-    {
-      label: "DIMENSIONS",
-      val: `${roomDimensions.width || 4.5}m x ${roomDimensions.length || 5.0}m (${roomDimensions.area || 22.5} sq.m)`,
-    },
-    { label: "TARGET BUDGET", val: formatINR(totalBudget) },
+    { label: "CATALOGUE SCOPE", val: "All 6 Design Styles" },
+    { label: "PRICING BASIS", val: "Turnkey Rate (Per Sq.Ft)" },
+    { label: "ESTIMATION MODEL", val: "Material + Labour Benchmark" },
     { label: "REPORT DATE", val: reportDate },
   ];
 
@@ -634,42 +669,42 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
       p: "Page 2",
       title: "Japandi Style Guide",
       desc: "Calm + Natural + Balanced | Japanese minimalism with Nordic warmth",
-      cost: "Rs. 93,100",
+      cost: "Rs. 2,200 / sq.ft",
     },
     {
       p: "Page 3",
       title: "Industrial Style Guide",
       desc: "Raw + Bold + Urban | Concrete, steel framing, distressed leather & brick",
-      cost: "Rs. 1,28,300",
+      cost: "Rs. 3,050 / sq.ft",
     },
     {
       p: "Page 4",
       title: "Minimalist Style Guide",
       desc: "Clean + Simple + Uncluttered | Essential geometries & pure neutral discipline",
-      cost: "Rs. 88,600",
+      cost: "Rs. 1,850 / sq.ft",
     },
     {
       p: "Page 5",
       title: "Modern Luxury Style Guide",
       desc: "Elegant + Rich + Sophisticated | Italian marble, velvet & brushed gold brass",
-      cost: "Rs. 2,79,000",
+      cost: "Rs. 5,750 / sq.ft",
     },
     {
       p: "Page 6",
       title: "Contemporary Style Guide",
       desc: "Current + Refined + Versatile | Curved silhouettes, travertine & slate blue",
-      cost: "Rs. 1,42,800",
+      cost: "Rs. 3,750 / sq.ft",
     },
     {
       p: "Page 7",
       title: "Modern Scandinavian Style Guide",
       desc: "Bright + Cozy + Airy | Light blonde woods, cozy textiles & functional craft",
-      cost: "Rs. 1,01,400",
+      cost: "Rs. 2,450 / sq.ft",
     },
     {
       p: "Page 8",
       title: "Overall Cost Comparison Matrix",
-      desc: "Comprehensive financial comparison, budget alignment & contractor notes",
+      desc: "Side-by-side per sq.ft financial matrix, budget ranking & execution insights",
       cost: "All 6 Styles",
     },
   ];
@@ -701,7 +736,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setTextColor(107, 114, 128);
     doc.text(t.desc, margin + 22, tocY + 9.8);
 
-    // Est Cost Pill
+    // Turnkey Rate Pill
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(15, 23, 42);
@@ -720,16 +755,16 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(4, 120, 87);
-  doc.text("Key Highlights of this Estimation Report", margin + 6, noteY + 7);
+  doc.text("How to Use this 6-Style Catalogue", margin + 6, noteY + 7);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(55, 65, 81);
   const bulletLines = [
-    "- Tailored Room Estimation: Based on your selected room and dimensions, providing precise spatial itemization.",
-    "- Turnkey Labour Breakdown: Material costs and contractor installation charges are separated for transparent budgeting.",
-    "- Curated Colour DNA: Exact Hex color palettes specified for wall coatings, cabinetry, and secondary accents.",
-    "- Comparative ROI: Page 8 provides a side-by-side comparative table ranking styles from most budget-friendly to luxury.",
+    "- Universal Aesthetic Evaluation: Designed for the entire home, allowing you to select an aesthetic theme that unifies all rooms.",
+    "- Per-Sq.Ft Turnkey Benchmark: Rates are calibrated per square foot of built-up/carpet area, easily scalable to any home layout.",
+    "- Transparent Material & Labour Split: Material procurement costs and certified contractor charges are itemized separately.",
+    "- Cross-Style Comparison Matrix: Page 8 provides side-by-side per-sq.ft rate comparisons with standard 1,000 sq.ft home projections.",
   ];
   bulletLines.forEach((b, bi) => {
     doc.text(b, margin + 6, noteY + 14 + bi * 5.5);
@@ -812,7 +847,6 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
         console.error("Failed to render style image:", st.name, e);
       }
     } else {
-      // Fallback placeholder card
       doc.setFillColor(241, 245, 249);
       doc.setDrawColor(203, 213, 225);
       doc.setLineWidth(0.4);
@@ -825,7 +859,6 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
 
     // ------------------------------------------
     // SECTION 1: STYLE OVERVIEW & COLOUR PALETTE
-    // Fixed layout: Title and descriptive subtitle on separate lines to prevent text overlap!
     // ------------------------------------------
     const sec1Y = topY + 54; // = 74mm
     doc.setFont("helvetica", "bold");
@@ -833,7 +866,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setTextColor(17, 24, 39);
     doc.text("1. Style Overview & Architectural Colour DNA", margin, sec1Y);
 
-    // Subtitle placed cleanly on its OWN distinct line!
+    // Subtitle placed cleanly on its OWN distinct line
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.2);
     doc.setTextColor(107, 114, 128);
@@ -879,31 +912,28 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     });
 
     // ------------------------------------------
-    // SECTION 2: FEATURED ITEMS & INSTALLATION TABLE
-    // Fixed layout: Title and descriptive subtitle on separate lines!
+    // SECTION 2: FEATURED ITEMS & INSTALLATION TABLE (Clean 3-column layout)
     // ------------------------------------------
     const sec2Y = swatchRowY + 23; // = 106.5mm
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(17, 24, 39);
-    doc.text("2. Featured Items & Installation Cost Matrix", margin, sec2Y);
+    doc.text("2. Signature Ensemble Items & Turnkey Pricing", margin, sec2Y);
 
-    // Subtitle placed cleanly on its OWN distinct line!
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.2);
     doc.setTextColor(107, 114, 128);
     doc.text(
-      "Curated 5-element furniture ensemble, lighting, flooring, and certified contractor labour",
+      "Representative 5-element ensemble displaying material grades and professional installation costs",
       margin,
       sec2Y + 4.2
     );
 
-    // Green accent underline beneath subtitle
     doc.setDrawColor(16, 185, 129);
     doc.setLineWidth(0.8);
     doc.line(margin, sec2Y + 6.2, margin + 32, sec2Y + 6.2);
 
-    // Table Header
+    // Table Header (Clean 3-column table without preview column)
     const thY = sec2Y + 9; // = 115.5mm
     doc.setFillColor(243, 244, 246);
     doc.setDrawColor(209, 213, 219);
@@ -962,7 +992,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
       rowY += rowH;
     });
 
-    // Total Cost Summary Box
+    // Sample Ensemble Investment Summary Box
     const totalY = rowY + 3; // = 190.5mm
     const grandTotal = sumItems + sumInstall;
 
@@ -974,18 +1004,17 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(6, 78, 59);
-    doc.text("Estimated Total Investment", margin + 4, totalY + 6.5);
+    doc.text("Sample 5-Piece Ensemble Total", margin + 4, totalY + 6.5);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.2);
     doc.setTextColor(75, 85, 99);
     doc.text(
-      "Combined 5-piece bespoke material cost + certified turnkey installation charges",
+      "Combined material acquisition + certified turnkey contractor installation charges",
       margin + 4,
       totalY + 12
     );
 
-    // Summary numbers on the right
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(75, 85, 99);
@@ -999,47 +1028,107 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(4, 120, 87);
-    doc.text(`Total: ${formatINR(grandTotal)}`, margin + contentWidth - 4, totalY + 13.5, {
+    doc.text(`Ensemble: ${formatINR(grandTotal)}`, margin + contentWidth - 4, totalY + 13.5, {
       align: "right",
     });
 
-    // Dynamic Room Context Adaptation Box
-    const adaptY = totalY + 21; // = 211.5mm
+    // ------------------------------------------
+    // SECTION 3: TURNKEY EXECUTION BUDGET (PER SQ.FT BENCHMARK)
+    // Displayed per sq.ft across the entire home, NOT based on a single room!
+    // ------------------------------------------
+    const sqftBoxY = totalY + 22; // = 212.5mm
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.roundedRect(margin, adaptY, contentWidth, 20, 2, 2, "FD");
+    doc.roundedRect(margin, sqftBoxY, contentWidth, 36, 3, 3, "FD");
 
+    // Header inside box
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.setTextColor(30, 41, 59);
-    doc.text(
-      `Room Customization for: ${roomName} (${roomDimensions.width || 4.5}m x ${roomDimensions.length || 5.0}m | ${roomDimensions.area || 22.5} sq.m)`,
-      margin + 4,
-      adaptY + 5.5
-    );
+    doc.setFontSize(9);
+    doc.setTextColor(17, 24, 39);
+    doc.text("3. Turnkey Execution Budget (Per Sq.Ft Benchmark)", margin + 4, sqftBoxY + 6);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(6.8);
+    doc.setTextColor(107, 114, 128);
+    doc.text(
+      "Standardized full-home budget benchmark based on built-up / carpet area for complete turnkey delivery.",
+      margin + 4,
+      sqftBoxY + 10.5
+    );
+
+    // 3 Stat Cards inside the box
+    const cardW = (contentWidth - 14) / 3;
+    const cardY = sqftBoxY + 14;
+
+    // Stat 1: Material Rate
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(margin + 3, cardY, cardW, 18, 2, 2, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
-    const roomBudgetRef = Math.max(1, totalBudget / 8);
-    const budgetPct = ((grandTotal / roomBudgetRef) * 100).toFixed(1);
-    doc.text(
-      `Estimated budget envelope fit: Represents approx. ${budgetPct}% of standard single-room allocation.`,
-      margin + 4,
-      adaptY + 10.5
-    );
-    doc.text(
-      "Materials curated for this layout: Includes spatial clearances, proper traffic circulation, and recommended lumens.",
-      margin + 4,
-      adaptY + 15
-    );
+    doc.text("MATERIAL RATE", margin + 6, cardY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(17, 24, 39);
+    doc.text(`Rs. ${st.perSqFt.materialPerSqFt.toLocaleString("en-IN")} / sq.ft`, margin + 6, cardY + 11);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.2);
+    doc.setTextColor(156, 163, 175);
+    doc.text("Cabinetry, finishes & fixtures", margin + 6, cardY + 15);
+
+    // Stat 2: Installation Rate
+    const card2X = margin + 3 + cardW + 4;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(card2X, cardY, cardW, 18, 2, 2, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("LABOUR & INSTALLATION", card2X + 3, cardY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(5, 150, 105);
+    doc.text(`Rs. ${st.perSqFt.installPerSqFt.toLocaleString("en-IN")} / sq.ft`, card2X + 3, cardY + 11);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.2);
+    doc.setTextColor(156, 163, 175);
+    doc.text("Civil, electrical & fitting warranty", card2X + 3, cardY + 15);
+
+    // Stat 3: Total Turnkey Rate
+    const card3X = card2X + cardW + 4;
+    doc.setFillColor(240, 253, 244);
+    doc.setDrawColor(16, 185, 129);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(card3X, cardY, cardW, 18, 2, 2, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(4, 120, 87);
+    doc.text("COMBINED TURNKEY RATE", card3X + 3, cardY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(4, 120, 87);
+    doc.text(`Rs. ${st.perSqFt.totalPerSqFt.toLocaleString("en-IN")} / sq.ft`, card3X + 3, cardY + 11);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(5, 150, 105);
+    doc.text(`Est. 1,000 sq.ft: ${st.perSqFt.typical1000SqFt}`, card3X + 3, cardY + 15);
 
     drawFooter(pageNum, st.name);
   });
 
   // ==========================================
-  // PAGE 8: OVERALL COST COMPARISON MATRIX
+  // PAGE 8: OVERALL COST COMPARISON MATRIX (PER SQ.FT BASIS)
   // ==========================================
   onProgress?.(85, "Compiling Comparison Matrix & Budget Insights...");
   doc.addPage();
@@ -1051,13 +1140,13 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(17, 24, 39);
-  doc.text("Overall Cost Comparison & Budget Optimization", margin, p8TopY + 3);
+  doc.text("Overall Turnkey Cost Comparison & Budget Matrix", margin, p8TopY + 3);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
   doc.text(
-    "Side-by-side financial comparison of all six interior design aesthetics calibrated for your space.",
+    "Side-by-side financial comparison of all six interior design aesthetics benchmarked per square foot.",
     margin,
     p8TopY + 8
   );
@@ -1071,29 +1160,25 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   doc.setFontSize(7.5);
   doc.setTextColor(255, 255, 255);
   doc.text("Design Aesthetic", margin + 3, cthY + 5.5);
-  doc.text("Style Tier", margin + 40, cthY + 5.5);
-  doc.text("Material Cost", margin + 85, cthY + 5.5, { align: "right" });
-  doc.text("Labour / Install", margin + 118, cthY + 5.5, { align: "right" });
-  doc.text("Total Investment", margin + 152, cthY + 5.5, { align: "right" });
-  doc.text("Recommendation", margin + contentWidth - 3, cthY + 5.5, { align: "right" });
+  doc.text("Style Tier", margin + 36, cthY + 5.5);
+  doc.text("Material / sq.ft", margin + 78, cthY + 5.5, { align: "right" });
+  doc.text("Labour / sq.ft", margin + 108, cthY + 5.5, { align: "right" });
+  doc.text("Turnkey Rate (sq.ft)", margin + 144, cthY + 5.5, { align: "right" });
+  doc.text("1,000 sq.ft Projection", margin + contentWidth - 3, cthY + 5.5, { align: "right" });
 
   let cRowY = cthY + 8;
   const cRowH = 13.5;
 
-  let grandSumMaterials = 0;
-  let grandSumInstall = 0;
-  let minTotal = Infinity;
+  let grandSumSqFt = 0;
+  let minSqFt = Infinity;
   let minStyle = "";
 
   REPORT_STYLES.forEach((st, idx) => {
-    const matSum = st.items.reduce((acc, it) => acc + it.price, 0);
-    const insSum = st.items.reduce((acc, it) => acc + it.install, 0);
-    const tot = matSum + insSum;
-    grandSumMaterials += matSum;
-    grandSumInstall += insSum;
+    const rate = st.perSqFt.totalPerSqFt;
+    grandSumSqFt += rate;
 
-    if (tot < minTotal) {
-      minTotal = tot;
+    if (rate < minSqFt) {
+      minSqFt = rate;
       minStyle = st.name;
     }
 
@@ -1111,7 +1196,7 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setLineWidth(0.2);
     doc.rect(margin, cRowY, contentWidth, cRowH, "FD");
 
-    // Style Name
+    // Style Name & Tagline
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(17, 24, 39);
@@ -1126,35 +1211,48 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(75, 85, 99);
-    doc.text(st.budgetTier.replace(" Tier", ""), margin + 40, cRowY + 7.5);
+    doc.text(st.budgetTier.replace(" Tier", ""), margin + 36, cRowY + 7.5);
 
-    // Material Cost
+    // Material / sq.ft
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(17, 24, 39);
-    doc.text(formatINR(matSum), margin + 85, cRowY + 7.5, { align: "right" });
+    doc.text(`Rs. ${st.perSqFt.materialPerSqFt.toLocaleString("en-IN")}`, margin + 78, cRowY + 7.5, {
+      align: "right",
+    });
 
-    // Labour / Install
+    // Labour / sq.ft
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(5, 150, 105);
-    doc.text(formatINR(insSum), margin + 118, cRowY + 7.5, { align: "right" });
+    doc.text(`Rs. ${st.perSqFt.installPerSqFt.toLocaleString("en-IN")}`, margin + 108, cRowY + 7.5, {
+      align: "right",
+    });
 
-    // Total Investment
+    // Combined Turnkey Rate / sq.ft
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(formatINR(tot), margin + 152, cRowY + 7.5, { align: "right" });
+    doc.text(`Rs. ${rate.toLocaleString("en-IN")} / sq.ft`, margin + 144, cRowY + 7.5, {
+      align: "right",
+    });
 
-    // Badge
+    // Typical 1,000 sq.ft Projection
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.2);
+    doc.setFontSize(8);
     doc.setTextColor(
-      tot === 88600 ? 5 : tot > 200000 ? 180 : 31,
-      tot === 88600 ? 150 : tot > 200000 ? 83 : 41,
-      tot === 88600 ? 105 : tot > 200000 ? 9 : 55
+      rate === 1850 ? 5 : rate > 4000 ? 180 : 4,
+      rate === 1850 ? 150 : rate > 4000 ? 83 : 120,
+      rate === 1850 ? 105 : rate > 4000 ? 9 : 87
     );
-    doc.text(st.badgeText, margin + contentWidth - 3, cRowY + 7.5, { align: "right" });
+    doc.text(
+      rate === 1850
+        ? `${st.perSqFt.typical1000SqFt} (Best Budget)`
+        : st.perSqFt.typical1000SqFt,
+      margin + contentWidth - 3,
+      cRowY + 7.5,
+      { align: "right" }
+    );
 
     cRowY += cRowH;
   });
@@ -1166,20 +1264,20 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   const kpis = [
     {
       title: "MOST BUDGET-FRIENDLY",
-      val: minStyle,
-      sub: `${formatINR(minTotal)} complete turnkey`,
+      val: `Rs. ${minSqFt.toLocaleString("en-IN")} / sq.ft`,
+      sub: `${minStyle} · 1,000 sq.ft: Rs. 18.5 L`,
       color: [16, 185, 129],
     },
     {
-      title: "AVERAGE STYLE COST",
-      val: formatINR(Math.round((grandSumMaterials + grandSumInstall) / 6)),
-      sub: "Balanced median benchmark",
+      title: "AVERAGE TURNKEY RATE",
+      val: `Rs. ${Math.round(grandSumSqFt / 6).toLocaleString("en-IN")} / sq.ft`,
+      sub: "Across all 6 architectural styles",
       color: [59, 130, 246],
     },
     {
-      title: "LABOUR COST RANGE",
-      val: "Rs. 4,100 - 11,000",
-      sub: "Certified installer warranty",
+      title: "TURNKEY RATE RANGE",
+      val: "Rs. 1,850 - 5,750 / sq.ft",
+      sub: "Essential to Premium Luxury",
       color: [139, 92, 246],
     },
   ];
@@ -1191,7 +1289,6 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
     doc.setLineWidth(0.3);
     doc.roundedRect(kx, kpiY, kpiW, 20, 2, 2, "FD");
 
-    // Colored accent pill
     doc.setFillColor(k.color[0], k.color[1], k.color[2]);
     doc.roundedRect(kx + 3, kpiY + 3, 2, 14, 1, 1, "F");
 
@@ -1221,23 +1318,23 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(180, 83, 9);
-  doc.text("HomeVerse Budget & Style Strategy Recommendation", margin + 4, guideY + 5.5);
+  doc.text("HomeVerse Turnkey Budget & Style Strategy Recommendation", margin + 4, guideY + 5.5);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.2);
   doc.setTextColor(120, 53, 15);
   doc.text(
-    "- For Budget-Conscious Turnkey Execution: Minimalist (Rs. 88,600) and Japandi (Rs. 93,100) provide exceptional ROI without sacrificing design elegance.",
+    "- For Budget-Conscious Homes: Minimalist (Rs. 1,850/sq.ft) and Japandi (Rs. 2,200/sq.ft) deliver maximum value, completing a 1,000 sq.ft home for Rs. 18.5L - 22.0L.",
     margin + 4,
     guideY + 11
   );
   doc.text(
-    "- For Contemporary Warmth: Modern Scandinavian (Rs. 1,01,400) pairs natural daylight with light ash wood and cozy functional craftsmanship.",
+    "- For Contemporary Warmth: Modern Scandinavian (Rs. 2,450/sq.ft) and Industrial (Rs. 3,050/sq.ft) pair natural light ash and architectural steel for Rs. 24.5L - 30.5L.",
     margin + 4,
     guideY + 16
   );
   doc.text(
-    "- For Statement Luxury Living: Modern Luxury (Rs. 2,79,000) integrates imported Italian Calacatta marble, fluted walnut millwork, and opulent crystal lighting.",
+    "- For Statement Luxury Residences: Modern Luxury (Rs. 5,750/sq.ft) and Contemporary (Rs. 3,750/sq.ft) integrate imported Italian Calacatta marble, fluted walnut millwork, and brass.",
     margin + 4,
     guideY + 21
   );
@@ -1258,12 +1355,12 @@ export async function generateInteriorDesignReport(options: ReportGeneratorOptio
   doc.setFontSize(6.5);
   doc.setTextColor(107, 114, 128);
   const discText =
-    "All pricing figures, item rates, material specifications, and installation charges shown in this document are estimates based on standard Tier-1 supplier benchmarks and prevailing turnkey contractor rates in India. Final quotes may vary depending on geographic location, site accessibility, architectural customization, material grade choices, and applicable GST taxes. HomeVerse strongly recommends a physical site survey by an accredited turnkey engineer before finalizing procurement contracts.";
+    "All pricing figures and per-square-foot benchmarks shown in this document are estimates based on standard Tier-1 supplier benchmarks and prevailing turnkey contractor rates in India. Final quotes may vary depending on geographic location, site accessibility, architectural customization, material grade choices, and applicable GST taxes. HomeVerse strongly recommends a physical site survey by an accredited turnkey engineer before finalizing procurement contracts.";
   const discLines = doc.splitTextToSize(discText, contentWidth - 8);
   doc.text(discLines, margin + 4, discY + 9);
 
   drawFooter(8, "Comparison Matrix");
 
   onProgress?.(100, "Downloading PDF report...");
-  doc.save(`HomeVerse_${cleanRoomName}_6Style_Design_Report.pdf`);
+  doc.save("HomeVerse_6Style_Interior_Design_Catalogue.pdf");
 }
