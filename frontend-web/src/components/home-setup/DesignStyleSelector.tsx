@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
-import { Check, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Check, Sparkles, Download, FileText, Loader2, CheckCircle2 } from "lucide-react";
+import { generateInteriorDesignReport } from "@/lib/pdfReportGenerator";
 
 export interface PaletteColor {
   name: string;
@@ -23,6 +24,14 @@ interface DesignStyleSelectorProps {
   selectedStyle: string;
   onSelect: (styleName: string) => void;
   budgetAmount?: number;
+  selectedRoom?: string;
+  roomDimensions?: {
+    width?: number;
+    length?: number;
+    area?: number;
+  };
+  detectedRooms?: any[];
+  homeType?: string;
 }
 
 const DESIGN_STYLES: StyleOption[] = [
@@ -121,7 +130,39 @@ const DESIGN_STYLES: StyleOption[] = [
 export const DesignStyleSelector: React.FC<DesignStyleSelectorProps> = ({
   selectedStyle,
   onSelect,
+  budgetAmount,
+  selectedRoom = "Drawing Room",
+  roomDimensions,
+  homeType,
 }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgressText, setDownloadProgressText] = useState("");
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true);
+    setDownloadProgressText("Pre-loading visual assets...");
+    try {
+      await generateInteriorDesignReport({
+        roomName: selectedRoom,
+        roomDimensions: roomDimensions || { width: 4.5, length: 5.0, area: 22.5 },
+        totalBudget: budgetAmount || 1500000,
+        homeType: homeType || "Residential Apartment",
+        selectedStyle,
+        onProgress: (_progress, status) => {
+          setDownloadProgressText(status);
+        },
+      });
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 4000);
+    } catch (error) {
+      console.error("Failed to generate PDF report:", error);
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgressText("");
+    }
+  };
+
   return (
     <div className="bg-slate-900/90 dark:bg-[#090e15] border border-white/[0.08] rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl transition-all">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -242,6 +283,74 @@ export const DesignStyleSelector: React.FC<DesignStyleSelectorProps> = ({
             </button>
           );
         })}
+      </div>
+
+      {/* Step 9: Interior Design Report Download Banner */}
+      <div className="mt-8 pt-6 border-t border-white/[0.08]">
+        <div className="rounded-2xl p-6 sm:p-7 bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950 border border-emerald-500/30 shadow-2xl relative overflow-hidden group">
+          {/* Background Ambient Glow */}
+          <div className="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-emerald-500/15 transition-all duration-700" />
+
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono">
+                <FileText className="w-3.5 h-3.5" />
+                <span>OFFICIAL SPECIFICATION & COST CATALOGUE</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-editorial">
+                Your Interior Design Report
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
+                Your six-style catalogue, colour palettes, material breakdown and estimated installation costs.
+              </p>
+
+              {/* Dynamic Context Preview Pills */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px] font-mono text-slate-400">
+                <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
+                  Target Room: <strong className="text-emerald-400">{selectedRoom || "Drawing Room"}</strong>
+                </span>
+                {roomDimensions && (
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
+                    Dimensions: <strong className="text-white">{roomDimensions.width || 4.5}m × {roomDimensions.length || 5.0}m ({roomDimensions.area || 22.5} m²)</strong>
+                  </span>
+                )}
+                <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
+                  Document: <strong className="text-white">PDF · A4 · 8 Pages</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-stretch sm:items-end gap-2 w-full lg:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+                className="relative inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>{downloadProgressText || "Generating PDF..."}</span>
+                  </>
+                ) : downloadSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                    <span>Report Downloaded!</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                    <span>Download PDF Report</span>
+                  </>
+                )}
+              </button>
+
+              <span className="text-[11px] font-mono text-slate-400 text-center sm:text-right">
+                PDF · A4 · 6 interior styles
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

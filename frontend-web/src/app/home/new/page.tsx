@@ -1643,6 +1643,19 @@ export default function NewHomePage() {
               selectedStyle={designStyle}
               onSelect={(style) => setDesignStyle(style)}
               budgetAmount={totalBudget}
+              selectedRoom={selectedRoom}
+              roomDimensions={{
+                width: detectedRooms.find((r) => r.name === selectedRoom)?.width_m || 4.5,
+                length: detectedRooms.find((r) => r.name === selectedRoom)?.length_m || 5.0,
+                area:
+                  Math.round(
+                    ((detectedRooms.find((r) => r.name === selectedRoom)?.width_m || 4.5) *
+                      (detectedRooms.find((r) => r.name === selectedRoom)?.length_m || 5.0)) *
+                      100
+                  ) / 100,
+              }}
+              detectedRooms={detectedRooms}
+              homeType={propertyType}
             />
           )}
 
