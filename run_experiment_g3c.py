@@ -382,8 +382,8 @@ class MultiTaskCriterionG3C(nn.Module):
             loss_mask = torch.tensor(0.0, device=pred_logits.device)
 
         # 4. Scale Loss
-        gt_scales = torch.stack([t["scale_px_per_m"] for t in targets]).to(pred_logits.device)
-        has_scale = torch.stack([t["has_scale"] for t in targets]).to(pred_logits.device)
+        gt_scales = torch.stack([t["scale_px_per_m"] for t in targets]).to(pred_logits.device).view_as(pred_log_scale)
+        has_scale = torch.stack([t["has_scale"] for t in targets]).to(pred_logits.device).view_as(pred_log_scale)
         gt_log_scale = torch.log(gt_scales.clamp(min=1.0))
         raw_scale_loss = F.smooth_l1_loss(pred_log_scale, gt_log_scale, reduction="none")
         scale_denom = max(1.0, has_scale.sum().item())
