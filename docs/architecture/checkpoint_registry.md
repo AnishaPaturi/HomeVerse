@@ -40,7 +40,22 @@ Evaluated on the authoritative 75-layout unseen test benchmark (2,202 ground-tru
 
 ---
 
-## 🗺️ Next Steps
+## 🗺️ Experimental Roadmap & Research Trajectory
 
-- **Hierarchical Functional Supervision**: Decoupling the flat 22-class classification into functional macro-categories (Living, Sleeping, Service, Circulation) to eliminate within-group misclassifications.
-- **Irregular / Non-Convex Geometry**: Exploring instance masks / polygon vertices to resolve L-shaped and irregular room contractions caused by axis-aligned bounding boxes.
+| Experiment | Focus & Intervention | Status |
+| :--- | :--- | :--- |
+| **F2-A** | Original ViT-B/16 baseline on 75-split benchmark | **Preserved Baseline** |
+| **G3-A** | Class-balanced semantic calibration & loss weighting | **Benchmark Reference** |
+| **G3-B** | Two-Scale Query Pathway (20 Global + 20 High-Res P8 queries) | **Preserved Predecessor** |
+| **G3-C** | Iterative Bounding-Box Refinement (Inverse-Sigmoid deltas) | **Current Best Candidate** |
+| **G4-A** | Hierarchical Functional Supervision (9 parent categories + consistency loss) | **In Progress** |
+| **G4-B** | Dynamic Instance Mask Head (High-Res FPN features for non-convex / L-shaped rooms) | **Approved Next** |
+| **G4-C** | Polygon Geometry Refinement (Contour extraction & polygon vertex approximation) | **Future Study** |
+
+### Eventual Geometry Pipeline (Post-G4-A)
+1. **Detect Room Instance**: Query localization via two-scale transformer decoders.
+2. **Predict Dynamic Pixel Mask**: Per-query dynamic convolution over FPN features.
+3. **Extract Outer Contour**: Snapping to wall segmentation boundaries.
+4. **Approximate Polygon**: Vertex reduction for CAD representation.
+5. **Compute Accurate Dimensions**: True polygonal area ($m^2$) for non-convex rooms (L-shaped living/dining).
+6. **Apply Scale Calibration**: Millimeter-accurate dimension derivation.
