@@ -11,14 +11,20 @@ import {
   CornerDownLeft,
   ArrowRight,
   CheckCircle2,
-  RefreshCw,
-  AlertTriangle,
+  Layers,
+  Radio,
 } from "lucide-react";
+import {
+  classifyUnifiedIntent,
+  UnifiedSceneState,
+  ActionProposal,
+} from "@/lib/playgroundOrchestrator";
 
 export interface VoiceActionChip {
   label: string;
   action: string;
   target_url?: string;
+  promptText?: string;
 }
 
 export interface VoiceCommandResponse {
@@ -49,172 +55,62 @@ export interface VoiceAssistantWidgetProps {
   ) => void;
   position?: "bottom-left" | "bottom-right";
   className?: string;
+
+  // Shared Orchestrator Props
+  sharedSceneState?: UnifiedSceneState;
+  onApplyImmediateAction?: (actionType: string, payload: any, summary: string) => void;
+  onTriggerProposalRequest?: (prompt: string, proposal: ActionProposal) => void;
+  externalSpeechEvent?: { id: string; text: string; source?: "copilot" | "system" } | null;
 }
 
 /**
  * Classifies whether a voice or text command represents a relevant room/design change.
- * Non-relevant text is strictly ignored and the user is informed with actionable alternatives.
  */
-export function classifyVoiceCommand(transcript: string): VoiceCommandResponse {
-  const text = transcript.trim();
-  const textLower = text.toLowerCase();
+export function classifyVoiceCommand(
+  transcript: string,
+  sceneState?: UnifiedSceneState
+): VoiceCommandResponse {
+  const defaultScene: UnifiedSceneState = sceneState || {
+    style: "Japandi",
+    walls: { color: "#EAE5D9", material: "limestone_wash", name: "Limestone Wash" },
+    flooring: { material: "wood_light", name: "European Natural Oak", costDelta: 18000 },
+    lighting: { preset: "warm", intensity: 0.8 },
+    camera: { view: "3d" },
+    budget: { totalBudget: 350000, spentAmount: 315000, remaining: 35000, currency: "INR" },
+    actionHistory: [],
+  };
 
-  // 1. Wall Color / Paint / Finish
-  if (/wall|paint|color|colour|wallpaper|stucco/.test(textLower)) {
-    let colorHex = "#D8D0C5";
-    let colorName = "Designer Warm Greige";
-    if (/greige|warm/.test(textLower)) {
-      colorHex = "#D8D0C5";
-      colorName = "Designer Warm Greige";
-    } else if (/charcoal|dark|black/.test(textLower)) {
-      colorHex = "#2C302E";
-      colorName = "Studio Charcoal Accent";
-    } else if (/white|alabaster/.test(textLower)) {
-      colorHex = "#EDEAE0";
-      colorName = "Alabaster Architectural White";
-    } else if (/sage|green/.test(textLower)) {
-      colorHex = "#B2BCA2";
-      colorName = "Muted Sage Mineral";
-    } else if (/navy|blue/.test(textLower)) {
-      colorHex = "#1E293B";
-      colorName = "Deep Midnight Navy";
-    }
-    return {
-      transcript_received: text,
-      voice_reply: `Applying ${colorName} to walls in your 3D view.`,
-      action_type: "change_wall_color",
-      action_payload: { color_hex: colorHex, color_name: colorName },
-      action_chips: [
-        { label: "Preview in 3D", action: "preview_3d" },
-        { label: "Compare Finishes", action: "materials" },
-      ],
-      success: true,
-    };
+  const res = classifyUnifiedIntent(transcript, defaultScene, "aura");
+
+  let chips: VoiceActionChip[] = [
+    { label: "Change to Japandi style", action: "prompt_sample", promptText: "Change the room to Japandi style" },
+    { label: "Make 15% cheaper", action: "prompt_sample", promptText: "Can you make this design 15% cheaper without losing the Japandi look?" },
+    { label: "Italian marble floor", action: "prompt_sample", promptText: "Switch flooring to Italian statuario marble" },
+    { label: "Top-down blueprint", action: "prompt_sample", promptText: "Show top-down blueprint view" },
+  ];
+
+  if (res.actionType === "apply_instant_style") {
+    chips = [
+      { label: "Make 15% cheaper", action: "prompt_sample", promptText: "Can you make this design 15% cheaper without losing the Japandi look?" },
+      { label: "Top-down view", action: "preview_3d", promptText: "Show top-down view" },
+      { label: "Warm ambient lighting", action: "prompt_sample", promptText: "Set warm ambient lighting" },
+    ];
+  } else if (!res.isRelevant) {
+    chips = [
+      { label: "Try: 'Change to Japandi style'", action: "prompt_sample", promptText: "Change the room to Japandi style" },
+      { label: "Try: 'Make this 15% cheaper'", action: "prompt_sample", promptText: "Can you make this design 15% cheaper without losing the Japandi look?" },
+      { label: "Try: 'Paint walls warm greige'", action: "prompt_sample", promptText: "Paint walls warm greige" },
+      { label: "Try: 'Italian marble floor'", action: "prompt_sample", promptText: "Switch to Italian marble floor" },
+    ];
   }
 
-  // 2. Camera View & Blueprint
-  if (/view|camera|top-down|top down|walkthrough|isometric|perspective|floor plan|blueprint|bird's eye|overhead/.test(textLower)) {
-    let viewType: "isometric" | "walkthrough" | "top_down" = "isometric";
-    let reply = "Orienting camera to 3D isometric overview.";
-    if (/top|down|plan|blueprint/.test(textLower)) {
-      viewType = "top_down";
-      reply = "Switching to top-down architectural blueprint view.";
-    } else if (/walk|first|person/.test(textLower)) {
-      viewType = "walkthrough";
-      reply = "Entering first-person walkthrough perspective.";
-    }
-    return {
-      transcript_received: text,
-      voice_reply: reply,
-      action_type: "switch_camera_view",
-      action_payload: { view_type: viewType },
-      action_chips: [
-        { label: "Reset Camera", action: "reset_camera" },
-        { label: "View in AR", action: "view_ar" },
-      ],
-      success: true,
-    };
-  }
-
-  // 3. Flooring Material
-  if (/flooring|marble|tile|tiles|wood floor|hardwood|oak|terrazzo|parquet|carpet|laminate|herringbone/.test(textLower) || (/floor/.test(textLower) && !/plan/.test(textLower))) {
-    let materialName = "European White Oak (Herringbone)";
-    let costImpact = 0;
-    let reply = "Updating flooring to natural European White Oak in a herringbone layout.";
-    if (/marble/.test(textLower)) {
-      materialName = "Italian Statuario Marble Slabs";
-      costImpact = 90720;
-      reply = "Switching flooring to Italian Statuario Marble. Cost impact is approximately +₹90,000.";
-    } else if (/tile|vitrified/.test(textLower)) {
-      materialName = "Large-Format Glazed Vitrified Tiles";
-      costImpact = -35000;
-      reply = "Swapping flooring to Glazed Vitrified Tiles, saving ₹35,000.";
-    } else if (/terrazzo/.test(textLower)) {
-      materialName = "Venetian Terrazzo";
-      costImpact = -15000;
-      reply = "Updating floor to Venetian Terrazzo with satin polished finish.";
-    }
-    return {
-      transcript_received: text,
-      voice_reply: reply,
-      action_type: "change_flooring",
-      action_payload: { flooring_material: materialName, cost_impact: costImpact },
-      action_chips: [
-        { label: "Simulate Cost Impact", action: "cost_impact" },
-        { label: "Material Specs", action: "materials" },
-      ],
-      success: true,
-    };
-  }
-
-  // 4. Budget & Financial Query
-  if (/budget|cost|spend|spent|remaining|contingency|save|money|expense|cheaper|expensive|price/.test(textLower)) {
-    return {
-      transcript_received: text,
-      voice_reply: "Active room budget is tracked. Expenses and allocations are synchronized with your Financial Guardrails.",
-      action_type: "budget_query",
-      action_payload: { query: text },
-      action_chips: [
-        { label: "Open Budget Manager", action: "budget" },
-        { label: "View Expense Table", action: "expenses" },
-      ],
-      success: true,
-    };
-  }
-
-  // 5. Furniture & Spatial Layout
-  if (/sofa|couch|seating|table|chair|bed|wardrobe|cabinet|shelf|furniture|cozy|rearrange|layout|minimalist|add furniture/.test(textLower)) {
-    return {
-      transcript_received: text,
-      voice_reply: "Reconfiguring room layout with updated furniture specifications.",
-      action_type: "modify_furniture",
-      action_payload: { furniture_action: "update", description: text },
-      action_chips: [
-        { label: "Preview in 3D", action: "preview_3d" },
-        { label: "Check Budget Delta", action: "budget" },
-      ],
-      success: true,
-    };
-  }
-
-  // 6. Lighting & Ambiance
-  if (/lighting|light preset|warm light|neutral light|luxury light|ambient|daylight|brighten|dim/.test(textLower)) {
-    const preset = /luxury|ambient/.test(textLower) ? "luxury" : /neutral|day/.test(textLower) ? "neutral" : "warm";
-    return {
-      transcript_received: text,
-      voice_reply: `Adjusted 3D scene lighting to ${preset} ambiance preset.`,
-      action_type: "change_lighting",
-      action_payload: { lighting_preset: preset },
-      action_chips: [{ label: "Preview in 3D", action: "preview_3d" }],
-      success: true,
-    };
-  }
-
-  // 7. Execution Timeline
-  if (/timeline|milestone|schedule|progress|civil|electrical|finish|completion|deadline|duration/.test(textLower)) {
-    return {
-      transcript_received: text,
-      voice_reply: "Milestone status: Site measurement & preliminary 3D drafting complete. Design customization in progress.",
-      action_type: "timeline_query",
-      action_payload: { progress_percentage: 50.0 },
-      action_chips: [{ label: "Track Timeline", action: "execution" }],
-      success: true,
-    };
-  }
-
-  // 8. STRICTLY IGNORE: Non-relevant text / Irrelevant command
   return {
-    transcript_received: text,
-    voice_reply: `Command ignored: "${text}" does not specify a relevant room or design change, so no updates were applied. Please request a relevant design change such as painting walls, switching flooring materials, rearranging furniture, adjusting camera views, or checking your budget.`,
-    action_type: "ignored_command",
-    action_payload: { ignored: true, reason: "non_relevant_text", query: text },
-    action_chips: [
-      { label: "Try: 'Paint walls warm greige'", action: "prompt_sample" },
-      { label: "Try: 'Italian marble floor'", action: "prompt_sample" },
-      { label: "Try: 'Top-down blueprint view'", action: "prompt_sample" },
-      { label: "Try: 'Check remaining budget'", action: "prompt_sample" },
-    ],
-    success: false,
+    transcript_received: transcript,
+    voice_reply: res.voiceReply,
+    action_type: res.actionType,
+    action_payload: res.payload,
+    action_chips: chips,
+    success: res.success,
   };
 }
 
@@ -232,6 +128,10 @@ export default function VoiceAssistantWidget({
   onVoiceCommand,
   position = "bottom-left",
   className = "",
+  sharedSceneState,
+  onApplyImmediateAction,
+  onTriggerProposalRequest,
+  externalSpeechEvent,
 }: VoiceAssistantWidgetProps) {
   const [isOpenInternal, setIsOpenInternal] = useState(defaultOpen);
   const isControlled = typeof isOpenProp === "boolean";
@@ -253,6 +153,7 @@ export default function VoiceAssistantWidget({
     }
     onClose?.();
   };
+
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [inputQuery, setInputQuery] = useState("");
@@ -270,7 +171,7 @@ export default function VoiceAssistantWidget({
   >([
     {
       sender: "assistant",
-      text: "Hello! I'm AURA, your HomeVerse Voice Copilot. Speak or type design commands like 'Paint walls warm greige', 'Switch to Italian marble', or 'Show top-down view'. Note: Non-design requests are automatically ignored.",
+      text: "Hello! I'm AURA, your HomeVerse Voice Copilot. Speak design commands like 'Change room to Japandi style', 'Paint walls warm greige', or 'Switch to Italian marble'.",
     },
   ]);
 
@@ -280,7 +181,8 @@ export default function VoiceAssistantWidget({
   // Initialize Web Speech API if supported
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
@@ -299,7 +201,6 @@ export default function VoiceAssistantWidget({
         };
         recognition.onend = () => {
           setIsListening(false);
-          // If we have transcript upon ending, send it
           setTranscript((finalTranscript) => {
             if (finalTranscript.trim()) {
               handleSendCommand(finalTranscript);
@@ -330,15 +231,46 @@ export default function VoiceAssistantWidget({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
+  const speakText = (text: string) => {
+    if (ttsMuted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn("Speech synthesis notice:", e);
+    }
+  };
+
+  // Synchronized Voice Announcements triggered by the Shared Orchestrator (e.g. Copilot proposal applied)
+  useEffect(() => {
+    if (externalSpeechEvent?.text) {
+      speakText(externalSpeechEvent.text);
+      setHistory((prev) => [
+        ...prev,
+        {
+          sender: "assistant",
+          text: `[From AI Design Copilot] ${externalSpeechEvent.text}`,
+          actionType: "copilot_proposal_applied",
+        },
+      ]);
+    }
+  }, [externalSpeechEvent]);
+
   const toggleListening = () => {
     if (!recognitionRef.current) {
       // Fallback: simulate voice speech prompt
       const samplePrompts = [
+        "Change the room to Japandi style",
+        "Make this design 15% cheaper without losing the Japandi look",
         "Paint walls designer warm greige",
         "Switch the flooring to Italian statuario marble",
         "Show me top-down architectural floor plan view",
-        "How much budget is remaining?",
-        "Switch to European white oak floor",
       ];
       const randomPrompt = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
       handleSendCommand(randomPrompt);
@@ -358,22 +290,6 @@ export default function VoiceAssistantWidget({
     }
   };
 
-  const speakText = (text: string) => {
-    if (ttsMuted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn("Speech synthesis notice:", e);
-    }
-  };
-
   const handleSendCommand = async (queryText: string) => {
     if (!queryText.trim() || isProcessing) return;
 
@@ -383,79 +299,88 @@ export default function VoiceAssistantWidget({
 
     setHistory((prev) => [...prev, { sender: "user", text: trimmed }]);
 
-    let data: VoiceCommandResponse;
+    const fallbackScene: UnifiedSceneState = sharedSceneState || {
+      style: "Japandi",
+      walls: { color: "#EAE5D9", material: "limestone_wash", name: "Limestone Wash" },
+      flooring: { material: "wood_light", name: "European Natural Oak", costDelta: 18000 },
+      lighting: { preset: "warm", intensity: 0.8 },
+      camera: { view: "3d" },
+      budget: { totalBudget: 350000, spentAmount: 315000, remaining: 35000, currency: "INR" },
+      actionHistory: [],
+    };
 
-    try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiBase}/api/voice/command`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          transcript: trimmed,
-          project_id: projectId || null,
-          room_id: roomId || null,
-        }),
-      });
+    // Use unified orchestrator intent classifier
+    const intent = classifyUnifiedIntent(trimmed, fallbackScene, "aura");
 
-      if (!res.ok) throw new Error("API call failed");
-      data = await res.json();
-    } catch (_) {
-      // Fallback: Use robust client-side classification
-      data = classifyVoiceCommand(trimmed);
-    }
-
-    setLastResponse(data);
-
-    const isIgnored =
-      data.action_type === "ignored_command" ||
-      data.success === false ||
-      data.action_payload?.ignored === true;
+    const isIgnored = !intent.isRelevant || intent.executionMode === "ignored";
 
     setHistory((prev) => [
       ...prev,
       {
         sender: "assistant",
-        text: data.voice_reply,
-        actionType: data.action_type,
+        text: intent.voiceReply,
+        actionType: intent.actionType,
         isIgnored,
       },
     ]);
 
-    // Speak aloud via TTS so the user is informed by voice as well
-    speakText(data.voice_reply);
+    // Speak aloud via TTS so the user is informed by voice
+    speakText(intent.voiceReply);
+
+    setLastResponse({
+      transcript_received: trimmed,
+      voice_reply: intent.voiceReply,
+      action_type: intent.actionType,
+      action_payload: intent.payload,
+      action_chips: [
+        { label: "Change to Japandi", action: "prompt_sample", promptText: "Change the room to Japandi style" },
+        { label: "Make 15% cheaper", action: "prompt_sample", promptText: "Can you make this design 15% cheaper without losing the Japandi look?" },
+        { label: "Italian marble floor", action: "prompt_sample", promptText: "Switch flooring to Italian statuario marble" },
+        { label: "Top-down view", action: "preview_3d", promptText: "Show top-down blueprint view" },
+      ],
+      success: intent.success,
+    });
 
     if (isIgnored) {
-      // STRICTLY IGNORE: Inform parent that command was ignored; do NOT alter room or budget!
-      onVoiceCommand?.(trimmed, false, "ignored_command", data.action_payload);
+      onVoiceCommand?.(trimmed, false, "ignored_command", intent.payload);
       setIsProcessing(false);
       return;
     }
 
-    // Execute relevant side-effects on the 3D studio canvas
-    if (data.action_type === "change_wall_color" && data.action_payload?.color_hex) {
-      onWallColorChange?.(data.action_payload.color_hex, data.action_payload.color_name || "Custom");
-    } else if (data.action_type === "change_flooring" && data.action_payload?.flooring_material) {
-      onFlooringChange?.(data.action_payload.flooring_material, data.action_payload.cost_impact || 0);
-    } else if (data.action_type === "switch_camera_view" && data.action_payload?.view_type) {
-      onCameraChange?.(data.action_payload.view_type);
-    } else if (data.action_type === "change_lighting" && data.action_payload?.lighting_preset) {
-      onLightingChange?.(data.action_payload.lighting_preset);
+    if (intent.executionMode === "immediate") {
+      // Execute immediate spatial updates
+      if (intent.actionType === "apply_instant_style") {
+        onApplyImmediateAction?.("apply_instant_style", intent.payload, intent.summary);
+      } else if (intent.actionType === "change_wall_color") {
+        onWallColorChange?.(intent.payload.color_hex, intent.payload.color_name || "Custom");
+        onApplyImmediateAction?.("change_wall_color", intent.payload, intent.summary);
+      } else if (intent.actionType === "change_flooring") {
+        onFlooringChange?.(intent.payload.flooring_material, intent.payload.cost_impact || 0);
+        onApplyImmediateAction?.("change_flooring", intent.payload, intent.summary);
+      } else if (intent.actionType === "switch_camera_view") {
+        onCameraChange?.(intent.payload.view_type);
+        onApplyImmediateAction?.("switch_camera_view", intent.payload, intent.summary);
+      } else if (intent.actionType === "change_lighting") {
+        onLightingChange?.(intent.payload.lighting_preset);
+        onApplyImmediateAction?.("change_lighting", intent.payload, intent.summary);
+      }
+      onVoiceCommand?.(trimmed, true, intent.actionType, intent.payload);
+    } else if (intent.executionMode === "proposal") {
+      // Route complex proposal-based request to AI Design Copilot
+      if (intent.proposal && onTriggerProposalRequest) {
+        onTriggerProposalRequest(trimmed, intent.proposal);
+      }
+      onVoiceCommand?.(trimmed, true, intent.actionType, intent.payload);
     }
 
-    onVoiceCommand?.(trimmed, true, data.action_type, data.action_payload);
     setIsProcessing(false);
   };
 
   const handleChipClick = (chip: VoiceActionChip) => {
-    if (chip.action === "prompt_sample") {
-      const cleanPrompt = chip.label.replace(/^Try:\s*['"]?|['"]?$/g, "");
-      handleSendCommand(cleanPrompt);
+    if (chip.promptText) {
+      handleSendCommand(chip.promptText);
     } else if (chip.action === "preview_3d") {
       onCameraChange?.("isometric");
-    } else if (chip.action === "reset_camera") {
-      onCameraChange?.("isometric");
-    } else if (chip.action === "view_ar") {
-      onNavigateAction?.("#ar");
     } else if (chip.target_url && onNavigateAction) {
       onNavigateAction(chip.target_url);
     }
@@ -463,7 +388,7 @@ export default function VoiceAssistantWidget({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Actual Voice Assistant Panel - Displayed ONLY when open */}
+      {/* AURA Voice Panel - Displayed when open */}
       {isOpen && (
         <div
           className={`absolute bottom-14 ${
@@ -479,11 +404,12 @@ export default function VoiceAssistantWidget({
               <div>
                 <div className="text-sm font-semibold text-white flex items-center gap-1.5 font-sans">
                   AURA
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    v3
+                  <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Unified AI
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-400">PBR & Spatial Voice Assistant</div>
+                <div className="text-[11px] text-slate-400">Hands & Voice Engine • Synced</div>
               </div>
             </div>
 
@@ -518,49 +444,38 @@ export default function VoiceAssistantWidget({
                   className={`max-w-[85%] rounded-xl px-3.5 py-2.5 leading-relaxed ${
                     msg.sender === "user"
                       ? "bg-amber-500 text-slate-950 font-medium rounded-tr-none shadow-md shadow-amber-500/10"
-                      : msg.isIgnored || msg.actionType === "ignored_command"
-                      ? "bg-rose-950/40 text-rose-100 rounded-tl-none border border-rose-500/40"
-                      : "bg-slate-800/90 text-slate-200 rounded-tl-none border border-slate-700/60"
+                      : msg.isIgnored
+                      ? "bg-rose-950/40 text-rose-200 border border-rose-500/30 rounded-tl-none"
+                      : msg.actionType === "copilot_proposal_applied"
+                      ? "bg-emerald-950/40 text-emerald-200 border border-emerald-500/30 rounded-tl-none font-sans"
+                      : "bg-slate-800/90 text-slate-200 border border-slate-700/60 rounded-tl-none shadow-sm"
                   }`}
                 >
-                  {msg.text}
-                  {msg.isIgnored || msg.actionType === "ignored_command" ? (
-                    <div className="mt-2 pt-1.5 border-t border-rose-500/30 text-[10.5px] font-mono text-rose-300 flex items-center gap-1.5 bg-rose-950/60 px-2 py-1 rounded">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      <span>Command Ignored • Only room & design changes are accepted</span>
-                    </div>
-                  ) : msg.actionType ? (
-                    <div className="mt-1.5 pt-1 border-t border-slate-700/40 text-[10px] font-mono text-amber-400/90 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      Action: {msg.actionType.replace(/_/g, " ").toUpperCase()}
-                    </div>
-                  ) : null}
+                  <p>{msg.text}</p>
                 </div>
               </div>
             ))}
 
             {isListening && (
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 animate-pulse">
-                <div className="flex gap-1 items-center">
-                  <span className="w-1.5 h-3 bg-amber-400 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-5 bg-amber-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                  <span className="w-1.5 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-                </div>
-                <span className="text-[11px] font-medium">Listening... {transcript || "Say a command"}</span>
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-950/60 border border-amber-500/30 text-amber-300 text-xs animate-pulse">
+                <Mic className="w-4 h-4 text-amber-400 animate-bounce" />
+                <span className="italic font-mono text-[11px]">
+                  {transcript ? `"${transcript}"` : "Listening for design command..."}
+                </span>
               </div>
             )}
 
             {isProcessing && (
-              <div className="flex items-center gap-2 text-slate-400 text-[11px]">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
-                Analyzing spatial command & cost impact...
+              <div className="flex items-center gap-2 text-slate-400 text-xs italic py-1">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span>Orchestrating scene mutation...</span>
               </div>
             )}
           </div>
 
-          {/* Suggested Action Chips */}
+          {/* Action Chips */}
           {lastResponse?.action_chips && lastResponse.action_chips.length > 0 && (
-            <div className="px-4 py-2 bg-slate-950/40 border-t border-slate-800/60 flex flex-wrap gap-1.5">
+            <div className="px-4 py-2 border-t border-slate-800 bg-slate-950/50 flex flex-wrap gap-1.5">
               {lastResponse.action_chips.map((chip, idx) => (
                 <button
                   key={idx}
@@ -579,10 +494,10 @@ export default function VoiceAssistantWidget({
           {!lastResponse && (
             <div className="px-4 py-2 bg-slate-950/40 border-t border-slate-800/60 flex flex-wrap gap-1.5">
               {[
-                "Paint walls warm greige",
-                "Italian statuario marble floor",
+                "Change room to Japandi style",
+                "Make this 15% cheaper",
+                "Italian marble floor",
                 "Top-down blueprint view",
-                "Remaining budget",
               ].map((prompt, idx) => (
                 <button
                   key={idx}
@@ -622,7 +537,7 @@ export default function VoiceAssistantWidget({
                 type="text"
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                placeholder="Speak or type (e.g. 'Marble floor')..."
+                placeholder="Speak or type (e.g. 'Japandi style')..."
                 className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 outline-none"
               />
               <button
@@ -637,7 +552,7 @@ export default function VoiceAssistantWidget({
         </div>
       )}
 
-      {/* Floating Website-Style Chat / AURA Voice Copilot Button */}
+      {/* Floating AURA Voice Copilot Button */}
       <button
         type="button"
         onClick={handleToggle}

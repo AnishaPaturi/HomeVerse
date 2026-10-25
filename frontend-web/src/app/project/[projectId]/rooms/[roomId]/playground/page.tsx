@@ -40,6 +40,11 @@ import RoomPhotosDrawer from "@/components/playground/RoomPhotosDrawer";
 import RoomRendersViewer from "@/components/playground/RoomRendersViewer";
 import DimensionEditModal from "@/components/playground/DimensionEditModal";
 import { RealRoomPhotoHUD } from "@/components/playground/RealRoomPhotoHUD";
+import {
+  UnifiedSceneState,
+  ActionProposal,
+  getStylePreset,
+} from "@/lib/playgroundOrchestrator";
 
 import { formatIndianBudget } from "@/lib/utils";
 import { roomApi } from "@/lib/rooms";
@@ -165,6 +170,50 @@ function RoomPlaygroundContent() {
     cheaperAlt?: string;
   } | null>(null);
 
+  // Shared AI Orchestrator: Unified Scene State (Single Source of Truth)
+  const [sharedSceneState, setSharedSceneState] = useState<UnifiedSceneState>(() => {
+    const defaultPreset = getStylePreset("Japandi");
+    return {
+      style: "Japandi",
+      walls: {
+        color: defaultPreset.wallColor,
+        material: defaultPreset.wallMaterial,
+        name: defaultPreset.wallName,
+      },
+      flooring: {
+        material: defaultPreset.floorMaterial,
+        name: defaultPreset.floorName,
+        costDelta: defaultPreset.floorCostDelta,
+      },
+      lighting: {
+        preset: defaultPreset.lightingPreset,
+        intensity: 0.8,
+      },
+      camera: {
+        view: "3d",
+      },
+      budget: {
+        totalBudget: 350000,
+        spentAmount: 315000,
+        remaining: 35000,
+        currency: "INR",
+      },
+      actionHistory: [],
+    };
+  });
+
+  const [externalSpeechEvent, setExternalSpeechEvent] = useState<{
+    id: string;
+    text: string;
+    source?: "copilot" | "system";
+  } | null>(null);
+
+  const [incomingProposalTrigger, setIncomingProposalTrigger] = useState<{
+    prompt: string;
+    proposal: ActionProposal;
+    timestamp: number;
+  } | null>(null);
+
   // Load and synchronize authentic data from local storage & backend
   useEffect(() => {
     async function loadData() {
@@ -248,6 +297,23 @@ function RoomPlaygroundContent() {
         if (budgetData?.flexibility) {
           setBudgetFlexibility(budgetData.flexibility);
         }
+
+        const preset = getStylePreset(resolvedStyle);
+        const finalAlloc = match?.allocated_amount || 350000;
+        const finalSpent = match?.spent_amount ?? Math.round(finalAlloc * 0.9);
+        setSharedSceneState((prev) => ({
+          ...prev,
+          style: preset.name,
+          walls: { color: preset.wallColor, material: preset.wallMaterial, name: preset.wallName },
+          flooring: { material: preset.floorMaterial, name: preset.floorName, costDelta: preset.floorCostDelta },
+          lighting: { preset: preset.lightingPreset, intensity: 0.8 },
+          budget: {
+            totalBudget: finalAlloc,
+            spentAmount: finalSpent,
+            remaining: finalAlloc - finalSpent,
+            currency: "INR",
+          },
+        }));
       } catch (_) {
         // Fallback from storage
         const storedRooms = getStoredProjectRooms(projectId);
@@ -308,49 +374,283 @@ function RoomPlaygroundContent() {
     });
   };
 
-  // Handle AI Copilot Action & Budget Delta calculation
+  // Shared AI Orchestrator: Immediate Action Dispatcher (AURA / Live 3D Scene Controls)
+  const handleApplyImmediateAction = (
+    actionType: string,
+    payload: any,
+    summary: string,
+    source: "aura" | "user" | "copilot" = "aura"
+  ) => {
+    if (actionType === "apply_instant_style") {
+      const preset = getStylePreset(payload.styleName);
+      setDesignStyle(preset.name);
+      setLightingPreset(preset.lightingPreset);
+
+      // Mutate room objects (walls, floor, furniture accents)
+      setRoomObjects((prev) => {
+        return prev.map((o) => {
+          if (o.object_type === "wall") return { ...o, material: preset.wallColor };
+          if (o.object_type === "floor") return { ...o, material: preset.floorMaterial };
+          if (o.object_type.includes("sofa") || o.object_type.includes("chair")) {
+            return { ...o, material: preset.furnitureMaterial };
+          }
+          return o;
+        });
+      });
+
+      const updatedSpent = spentAmount + preset.floorCostDelta;
+      setSpentAmount(updatedSpent);
+
+      setDeltaNotification({
+        amount: preset.floorCostDelta,
+        description: `Switched room to ${preset.name} style`,
+        newTotal: updatedSpent,
+      });
+
+      setSharedSceneState((prev) => ({
+        ...prev,
+        style: preset.name,
+        walls: { color: preset.wallColor, material: preset.wallMaterial, name: preset.wallName },
+        flooring: { material: preset.floorMaterial, name: preset.floorName, costDelta: preset.floorCostDelta },
+        lighting: { preset: preset.lightingPreset, intensity: 0.8 },
+        budget: {
+          ...prev.budget,
+          spentAmount: updatedSpent,
+          remaining: prev.budget.totalBudget - updatedSpent,
+        },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source,
+          actionType,
+          summary,
+          deltaAmount: preset.floorCostDelta,
+        },
+        actionHistory: [
+          ...prev.actionHistory,
+          {
+            id: Date.now().toString(),
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            source,
+            actionType,
+            summary,
+            deltaAmount: preset.floorCostDelta,
+          },
+        ],
+      }));
+    } else if (actionType === "change_wall_color") {
+      const hex = payload.color_hex;
+      const name = payload.color_name || "Custom Wall Color";
+      setRoomObjects((prev) => {
+        const wall = prev.find((o) => o.object_type === "wall");
+        if (wall) {
+          return prev.map((o) => (o.id === wall.id ? { ...o, material: hex } : o));
+        }
+        return prev;
+      });
+      setSharedSceneState((prev) => ({
+        ...prev,
+        walls: { ...prev.walls, color: hex, name },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source,
+          actionType,
+          summary,
+        },
+      }));
+    } else if (actionType === "change_flooring") {
+      const mat = payload.flooring_material || payload.floorMat || "wood_light";
+      const costDelta = payload.cost_impact || 0;
+      setRoomObjects((prev) => {
+        const floor = prev.find((o) => o.object_type === "floor");
+        if (floor) {
+          return prev.map((o) => (o.id === floor.id ? { ...o, material: mat } : o));
+        }
+        return prev;
+      });
+      const updatedSpent = spentAmount + costDelta;
+      setSpentAmount(updatedSpent);
+      if (costDelta !== 0) {
+        setDeltaNotification({
+          amount: costDelta,
+          description: `Swapped flooring to ${mat}`,
+          newTotal: updatedSpent,
+        });
+      }
+      setSharedSceneState((prev) => ({
+        ...prev,
+        flooring: { ...prev.flooring, material: mat, name: mat, costDelta },
+        budget: {
+          ...prev.budget,
+          spentAmount: updatedSpent,
+          remaining: prev.budget.totalBudget - updatedSpent,
+        },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source,
+          actionType,
+          summary,
+          deltaAmount: costDelta,
+        },
+      }));
+    } else if (actionType === "change_lighting") {
+      const preset = payload.lighting_preset || "warm";
+      setLightingPreset(preset);
+      setSharedSceneState((prev) => ({
+        ...prev,
+        lighting: { ...prev.lighting, preset },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source,
+          actionType,
+          summary,
+        },
+      }));
+    } else if (actionType === "switch_camera_view") {
+      if (payload.view_type === "top_down") {
+        setActiveTab("2d");
+      } else {
+        setActiveTab("3d");
+      }
+      setSharedSceneState((prev) => ({
+        ...prev,
+        camera: { view: payload.view_type === "top_down" ? "2d" : "3d" },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source,
+          actionType,
+          summary,
+        },
+      }));
+    }
+  };
+
+  // Shared AI Orchestrator: Proposal Application (AI Design Copilot -> User Approval -> AURA Voice Announcement)
+  const handleApplyProposal = (proposal: ActionProposal) => {
+    const actionType = proposal.actionType;
+    const payload = proposal.payload;
+    const delta = proposal.costImpact?.delta ?? 0;
+
+    if (actionType === "reduce_budget_15" || actionType === "reduce_budget") {
+      const saving = Math.abs(delta) || Math.abs(payload?.delta) || 35000;
+      const updatedSpent = Math.max(spentAmount - saving, 50000);
+      setSpentAmount(updatedSpent);
+
+      if (payload?.wallColor) {
+        setRoomObjects((prev) =>
+          prev.map((o) => (o.object_type === "wall" ? { ...o, material: payload.wallColor } : o))
+        );
+      }
+      if (payload?.floorMaterial) {
+        setRoomObjects((prev) =>
+          prev.map((o) => (o.object_type === "floor" ? { ...o, material: payload.floorMaterial } : o))
+        );
+      }
+
+      setDeltaNotification({
+        amount: -saving,
+        description: `15% ${sharedSceneState.style} Budget Optimization applied`,
+        newTotal: updatedSpent,
+      });
+
+      setSharedSceneState((prev) => ({
+        ...prev,
+        budget: {
+          ...prev.budget,
+          spentAmount: updatedSpent,
+          remaining: prev.budget.totalBudget - updatedSpent,
+        },
+        lastAction: {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          source: "copilot",
+          actionType,
+          summary: `15% budget reduction applied (-₹${saving.toLocaleString("en-IN")})`,
+          deltaAmount: -saving,
+        },
+        actionHistory: [
+          ...prev.actionHistory,
+          {
+            id: Date.now().toString(),
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            source: "copilot",
+            actionType,
+            summary: `15% budget reduction applied (-₹${saving.toLocaleString("en-IN")})`,
+            deltaAmount: -saving,
+          },
+        ],
+      }));
+
+      // Trigger AURA Voice Announcement via Web Speech Synthesis
+      setExternalSpeechEvent({
+        id: Date.now().toString(),
+        text: `Your updated ${sharedSceneState.style} design has been applied. The estimated cost has decreased by 15%.`,
+        source: "copilot",
+      });
+    } else if (actionType === "apply_style") {
+      handleApplyImmediateAction(
+        "apply_instant_style",
+        payload,
+        `Copilot applied ${payload.styleName} transformation`,
+        "copilot"
+      );
+      setExternalSpeechEvent({
+        id: Date.now().toString(),
+        text: `Your ${payload.styleName} architectural proposal has been applied to the 3D scene.`,
+        source: "copilot",
+      });
+    } else if (actionType === "align_photos") {
+      setShowPhotoOnWall(true);
+      setShowPhotoOnFloor(true);
+      setLightingPreset("warm");
+      setDeltaNotification({
+        amount: 0,
+        description: "Step 10 Real Room Photo Alignment applied",
+        newTotal: spentAmount,
+      });
+      setExternalSpeechEvent({
+        id: Date.now().toString(),
+        text: "Step 10 real room photo calibration has been applied to your 3D digital twin.",
+        source: "copilot",
+      });
+    } else {
+      const updatedSpent = spentAmount + delta;
+      setSpentAmount(updatedSpent);
+      setDeltaNotification({
+        amount: delta,
+        description: proposal.title,
+        newTotal: updatedSpent,
+      });
+      setExternalSpeechEvent({
+        id: Date.now().toString(),
+        text: `Your spatial proposal "${proposal.title}" has been applied.`,
+        source: "copilot",
+      });
+    }
+  };
+
+  // Backward-compatible handleCopilotAction
   const handleCopilotAction = (actionType: string, payload: any) => {
-    // Strictly ignore non-relevant text / commands: do not alter budget or trigger alerts
     if (actionType === "ignored_command" || actionType === "voice_cmd_ignored" || !actionType) {
       return;
     }
-
-    let delta = 0;
-    let desc = "";
-    let alt = undefined;
-
-    if (actionType === "make_cozy" || payload?.sofa) {
-      delta = 18500;
-      desc = "Upgraded to Italian Bouclé Seating & Warm LED Track";
-      alt = "Consider standard woven linen to save ₹12,000";
-    } else if (actionType === "add_wood") {
-      delta = 24000;
-      desc = "Natural White Oak Parquet & Handcrafted Walnut Table";
-      alt = "Consider engineered veneer oak to save ₹16,000";
-    } else if (actionType === "reduce_budget") {
-      delta = -18500;
-      desc = "Switched to IKEA LINANÄS durable fabric";
-    } else if (actionType === "update_material") {
-      delta = 12000;
-      desc = `Synchronized ${designStyle} PBR architectural surface`;
-    } else {
-      delta = 8500;
-      desc = "Custom spatial reconfiguration";
-    }
-
-    const updatedSpent = spentAmount + delta;
-    setSpentAmount(updatedSpent);
-
-    setDeltaNotification({
-      amount: delta,
-      description: desc,
-      newTotal: updatedSpent,
-      cheaperAlt: alt,
+    handleApplyProposal({
+      id: Date.now().toString(),
+      title: payload?.title || "Spatial Update",
+      changes: ["Updated 3D digital twin"],
+      applied: true,
+      actionType,
+      payload,
+      costImpact: {
+        before: spentAmount,
+        after: spentAmount + (payload?.delta || 0),
+        delta: payload?.delta || 0,
+      },
     });
-
-    setTimeout(() => {
-      setDeltaNotification(null);
-    }, 8000);
   };
 
   const remaining = roomBudget - spentAmount;
@@ -859,55 +1159,35 @@ function RoomPlaygroundContent() {
             </div>
           )}
 
-          {/* Floating Website-Style AURA Voice Copilot Button (in 3D/2D views) */}
+          {/* Floating AURA Voice Copilot (Hands & Voice Engine) */}
           {activeTab !== "renders" && (
             <div className="absolute bottom-6 left-20 z-30">
               <VoiceAssistantWidget
-                onWallColorChange={(hex, name) => {
-                  setRoomObjects((prev) => {
-                    const wall = prev.find((o) => o.object_type === "wall");
-                    if (wall) {
-                      return prev.map((o) => (o.id === wall.id ? { ...o, material: hex } : o));
-                    }
-                    return prev;
+                sharedSceneState={sharedSceneState}
+                onApplyImmediateAction={handleApplyImmediateAction}
+                onTriggerProposalRequest={(prompt, proposal) => {
+                  setIncomingProposalTrigger({
+                    prompt,
+                    proposal,
+                    timestamp: Date.now(),
                   });
-                  handleCopilotAction("update_material", { material: name });
+                }}
+                externalSpeechEvent={externalSpeechEvent}
+                onWallColorChange={(hex, name) => {
+                  handleApplyImmediateAction("change_wall_color", { color_hex: hex, color_name: name }, `Changed wall color to ${name}`);
                 }}
                 onFlooringChange={(material, costDelta) => {
-                  setRoomObjects((prev) => {
-                    const floor = prev.find((o) => o.object_type === "floor");
-                    if (floor) {
-                      return prev.map((o) => (o.id === floor.id ? { ...o, material } : o));
-                    }
-                    return prev;
-                  });
-                  if (costDelta !== 0) {
-                    const updated = spentAmount + costDelta;
-                    setSpentAmount(updated);
-                    setDeltaNotification({
-                      amount: costDelta,
-                      description: `Swapped flooring to ${material}`,
-                      newTotal: updated,
-                    });
-                  }
+                  handleApplyImmediateAction("change_flooring", { flooring_material: material, cost_impact: costDelta }, `Swapped flooring to ${material}`);
                 }}
                 onCameraChange={(viewType) => {
-                  if (viewType === "top_down") {
-                    setActiveTab("2d");
-                  } else {
-                    setActiveTab("3d");
-                  }
+                  handleApplyImmediateAction("switch_camera_view", { view_type: viewType }, `Oriented camera to ${viewType}`);
                 }}
                 onLightingChange={(preset) => {
-                  setLightingPreset(preset);
+                  handleApplyImmediateAction("change_lighting", { lighting_preset: preset }, `Switched lighting to ${preset}`);
                 }}
                 onVoiceCommand={(_cmd, isRelevant, actionType, payload) => {
-                  // Any text other than relevant room/design changes MUST BE STRICTLY IGNORED
                   if (!isRelevant || actionType === "ignored_command") {
                     return;
-                  }
-                  if (actionType) {
-                    handleCopilotAction(actionType, payload);
                   }
                 }}
               />
@@ -963,6 +1243,9 @@ function RoomPlaygroundContent() {
               currentStyle={designStyle}
               onCopilotAction={handleCopilotAction}
               roomPhotosCount={roomPhotos.length}
+              sharedSceneState={sharedSceneState}
+              onApplyProposal={handleApplyProposal}
+              incomingProposalTrigger={incomingProposalTrigger}
             />
           )}
         </div>
