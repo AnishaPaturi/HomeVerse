@@ -270,7 +270,7 @@ export default function VoiceAssistantWidget({
   >([
     {
       sender: "assistant",
-      text: "Hello! I'm your HomeVerse Voice Copilot. Speak or type design commands like 'Paint walls warm greige', 'Switch to Italian marble', or 'Show top-down view'. Note: Non-design requests are automatically ignored.",
+      text: "Hello! I'm AURA, your HomeVerse Voice Copilot. Speak or type design commands like 'Paint walls warm greige', 'Switch to Italian marble', or 'Show top-down view'. Note: Non-design requests are automatically ignored.",
     },
   ]);
 
@@ -478,7 +478,7 @@ export default function VoiceAssistantWidget({
               </div>
               <div>
                 <div className="text-sm font-semibold text-white flex items-center gap-1.5 font-sans">
-                  Voice Copilot
+                  AURA
                   <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     v3
                   </span>
@@ -500,7 +500,7 @@ export default function VoiceAssistantWidget({
                 type="button"
                 onClick={handleClose}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-                title="Minimize Voice Copilot"
+                title="Minimize AURA"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -637,12 +637,12 @@ export default function VoiceAssistantWidget({
         </div>
       )}
 
-      {/* Floating Website-Style Chat / Voice Copilot Button */}
+      {/* Floating Website-Style Chat / AURA Voice Copilot Button */}
       <button
         type="button"
         onClick={handleToggle}
-        aria-label={isOpen ? "Close Voice Copilot" : "Open Voice Copilot"}
-        title={isOpen ? "Close Voice Copilot" : "Voice Copilot • Click to speak or chat"}
+        aria-label={isOpen ? "Close AURA" : "Open AURA"}
+        title={isOpen ? "Close AURA" : "AURA • Click to speak or chat"}
         className={`relative flex items-center gap-2.5 shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 group select-none ${
           isOpen
             ? "h-12 w-12 rounded-full bg-slate-900 border border-slate-700 text-slate-300 hover:text-white justify-center shadow-black/60"
@@ -665,7 +665,7 @@ export default function VoiceAssistantWidget({
             </div>
 
             {/* Label */}
-            <span className="font-mono text-xs font-bold tracking-tight">Voice Copilot</span>
+            <span className="font-mono text-xs font-bold tracking-tight">AURA</span>
           </>
         )}
 

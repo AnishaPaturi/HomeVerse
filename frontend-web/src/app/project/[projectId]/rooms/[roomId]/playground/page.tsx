@@ -859,7 +859,7 @@ function RoomPlaygroundContent() {
             </div>
           )}
 
-          {/* Floating Website-Style Voice Assistant Chat Button (in 3D/2D views) */}
+          {/* Floating Website-Style AURA Voice Copilot Button (in 3D/2D views) */}
           {activeTab !== "renders" && (
             <div className="absolute bottom-6 left-20 z-30">
               <VoiceAssistantWidget
