@@ -68,10 +68,21 @@ flowchart TD
 ```
 
 ### Architectural Principles:
-1. **Dual Geometry Representation**:
+1. **Dynamic Kernel Formulation & Dimensions**:
+   The pixel decoder upsamples the $P_8$ feature map ($128 \times 48 \times 48$) to produce high-resolution spatial feature map $F \in \mathbb{R}^{B \times 64 \times 96 \times 96}$. Each query $q$ generates a 64-dimensional dynamic kernel weight $w_q \in \mathbb{R}^{64}$ and scalar bias $b_q \in \mathbb{R}$ via an MLP projection ($\text{Linear}(768, 256) \rightarrow \text{ReLU} \rightarrow \text{Linear}(256, 65)$):
+   $$M_q(x, y) = \sigma\left( \sum_{c=1}^{64} w_{q, c} F_c(x, y) + b_q \right)$$
+   For 40 queries ($Q=40$) and a $96 \times 96$ feature map, this dynamic $1 \times 1$ convolution produces 40 individual $96 \times 96$ instance mask predictions per layout: $[B, 40, 96, 96]$.
+
+2. **Geometric Ground-Truth Preservation (Interior Polygons)**:
+   Room-instance ground-truth masks must be rasterized directly from the original CAD interior polygon vertices stored in the dataset annotations (`sample['rooms'][i]['polygon']`).
+   > [!IMPORTANT]
+   > Do **NOT** generate room masks by simply subtracting wall segmentation from the floor-plan image. Subtraction heuristics create noisy, jagged perimeters and artificially bridge adjacent rooms across door openings. Direct polygon rasterization guarantees that interior non-convex boundaries, partition gaps, and exact square meterage are preserved with mathematical ground truth.
+
+3. **Dual Geometry Representation**:
    - The **Bounding Box Head** (`bbox_head_0` + `bbox_head_1`) is **fully preserved** to provide spatial anchor localization, initial aspect ratio, and fast CAD bounding fallback.
    - The **Dynamic Instance Mask Head** predicts fine-grained interior boundary geometry.
-2. **Decoupled Wall vs. Room Supervision**:
+
+4. **Decoupled Wall vs. Room Supervision**:
    - The wall segmentation head ($\mathcal{L}_{\text{wall}}$) supervises structural wall masks.
    - The dynamic mask head ($\mathcal{L}_{\text{inst\_mask}}$) supervises room interior instances matched via Hungarian assignment.
 
