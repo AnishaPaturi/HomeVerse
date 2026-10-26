@@ -6,13 +6,13 @@ This document tracks the official model progression and validation checkpoints f
 
 ## 🏆 Current Model Status
 
-- **Current Best Production Candidate**: [`checkpoints/multitask/experiment_g4b_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g4b_best.pt) (483.9 MB)
+- **Primary Candidate**: [`checkpoints/multitask/experiment_g4b_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g4b_best.pt) (483.9 MB)
   - Architecture: Two-scale queries (20 Global + 20 High-Res P8) + Iterative BBox Refinement + Hierarchical Functional Supervision + Dynamic Instance Masks (Per-Query 64D Kernel + Bias).
-  - Status: **Active Best Checkpoint (Promoted)** following successful G4-B validation across dynamic masks and multi-task metrics.
-- **Preserved Semantic Baseline**: [`checkpoints/multitask/experiment_g4a_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g4a_best.pt) (482.8 MB)
+  - Status: **Promoted as Active Primary Candidate** following successful G4-B validation across dynamic masks and multi-task metrics.
+- **Hierarchical Semantic Reference**: [`checkpoints/multitask/experiment_g4a_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g4a_best.pt) (482.8 MB)
   - Architecture: Two-scale queries + Iterative BBox Refinement + Hierarchical Functional Supervision (9 Parent categories + Consistency Loss).
   - Status: **Preserved Baseline (Frozen)**.
-- **Preserved Geometric Standard**: [`checkpoints/multitask/experiment_g3c_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g3c_best.pt) (482.8 MB)
+- **Geometric Reference**: [`checkpoints/multitask/experiment_g3c_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g3c_best.pt) (482.8 MB)
   - Architecture: Two-scale queries + Iterative BBox Refinement (Inverse-Sigmoid deltas).
   - Status: **Preserved Baseline** on disk for geometric comparison and regression testing.
 - **Preserved Predecessor**: [`checkpoints/multitask/experiment_g3b_best.pt`](file:///C:/Users/anish/OneDrive/College/Projects/HomeVerse/checkpoints/multitask/experiment_g3b_best.pt) (481.7 MB)
@@ -36,13 +36,19 @@ Evaluated on the authoritative 75-layout unseen test benchmark (2,202 ground-tru
 | **Small-Room Recall, IoU $\ge$ 0.25** | 36.51% (46/126) | 40.48% (51/126)| **20.63% (26/126)**| **23.02% (29/126)**| Trade-off for high precision |
 | **Child Semantic F1, IoU $\ge$ 0.50** | 0.0768 | 0.0853 | **0.0987** | **0.0975** | **Improved (+1.34%)** |
 | **Parent Functional F1, IoU $\ge$ 0.50**| N/A | 0.2042 | **0.2315** | **0.2340** | **Improved (+2.73%)** |
-| **Hierarchical Consistency Accuracy** | N/A | 62.20% | **82.63%** | **81.80%** | **Massive Gain (+20.43%)** |
-| **True Positive Consistency Acc ($A_{\text{hier}}^{\text{TP}}$)** | N/A | 47.53% | **82.29%** | **81.41%** | **Massive Gain (+34.76%)** |
+| **Dual-Head Internal Consistency ($A_{\text{internal}}$)** | N/A | 62.20% | **82.63%** | **81.80%** | **Massive Gain (+20.43%)** |
+| **Internal TP Consistency ($A_{\text{internal}}^{\text{TP}}$)** | N/A | 47.53% (target proxy) | **82.29%** | **81.41%** | **Rigorous Evaluation** |
+| **Target Agreement Consistency ($A_{\text{target}}^{\text{TP}}$)**| N/A | 47.53% (423/890) | **52.05% (532/1022)** | **51.86% (558/1076)**| **Improved (+4.52%)** |
 | **Hierarchical Credit Count (IoU 0.50)**| N/A | 297 rooms | **370 rooms** | **397 rooms** | **+73 rooms credited** |
 | **Instance Mask IoU** | N/A | N/A | **0.7873** | **0.7873** | **New Metric Established** |
 | **Boundary F1 (2-pixel tolerance)** | N/A | N/A | **0.8489** | **0.8489** | **New Metric Established** |
 | **Non-Convex Room Mask IoU** | N/A | N/A | **0.6733** | **0.6733** | **New Metric Established** |
 | **Non-Convex Room Mask Dice** | N/A | N/A | **0.7780** | **0.7780** | **New Metric Established** |
+
+> [!NOTE]
+> **Reconciliation of Hierarchical Consistency Metrics**:
+> 1. **Dual-Head Internal Consistency ($A_{\text{internal}}^{\text{TP}}$)**: Measures whether the predicted parent class agrees with the parent implied by the predicted child class ($P_{\text{pred\_parent}} == \text{ImpliedParent}(P_{\text{pred\_child}})$). This evaluates model self-coherence on detected rooms, reaching **82.29%** at nominal threshold 0.20 and **81.41%** at peak threshold 0.05.
+> 2. **Target Agreement Consistency ($A_{\text{target}}^{\text{TP}}$)**: Measures the proportion of detected rooms where the child prediction fell into the correct ground-truth functional category ($(\text{sem\_tp} + \text{within\_family\_confusion}) / \text{det\_tp}$). Under this exact formulation, G4-B reaches **52.05%** ($532 / 1,022$) vs. G4-A's **47.53%** ($423 / 890$), representing a **+4.52%** empirical gain.
 
 ---
 

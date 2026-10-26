@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" style="background-color: #FAFAFA;">
+  <defs>
+    <style>
+      .room-poly { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; fill-opacity: 0.35; }
+      .room-poly:hover { fill-opacity: 0.65; stroke-width: 3.5; cursor: pointer; }
+      .room-label { font-family: "Segoe UI", Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #111; text-anchor: middle; }
+      .room-sub { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; fill: #444; text-anchor: middle; }
+    </style>
+  </defs>
+  <g id="HomeVerse_Rooms">
+    <!-- Room: Bathroom | Bedroom Area -->
+    <polygon points="302.0,619.0 298.0,623.0 301.0,631.0 310.0,638.0 314.0,645.0 325.0,647.0 327.0,645.0 319.0,638.0 319.0,635.0 311.0,622.0 307.0,619.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_18">
+      <title>Bathroom [Bedroom Area]&#10;Area: 0.08 m²</title>
+    </polygon>
+    <!-- Room: Entrance/Foyer | Circulation -->
+    <polygon points="826.0,647.0 814.0,670.0 708.0,668.0 699.0,682.0 627.0,674.0 614.0,676.0 597.0,688.0 591.0,698.0 596.0,710.0 589.0,724.0 601.0,760.0 598.0,783.0 590.0,794.0 593.0,805.0 583.0,821.0 563.0,837.0 608.0,857.0 609.0,862.0 603.0,875.0 589.0,879.0 583.0,924.0 577.0,923.0 571.0,910.0 568.0,912.0 570.0,948.0 613.0,952.0 624.0,947.0 642.0,955.0 699.0,948.0 737.0,958.0 764.0,956.0 774.0,948.0 782.0,954.0 797.0,949.0 816.0,958.0 829.0,955.0 831.0,660.0" fill="#DAA520" stroke="#DAA520" class="room-poly" id="room_20">
+      <title>Entrance/Foyer [Circulation]&#10;Area: 16.25 m²</title>
+    </polygon>
+    <!-- Room: Master Bedroom | Bedroom Area -->
+    <polygon points="179.0,677.0 187.0,686.0 181.0,705.0 182.0,741.0 191.0,765.0 183.0,783.0 183.0,801.0 191.0,825.0 195.0,955.0 217.0,958.0 229.0,947.0 282.0,949.0 292.0,955.0 302.0,950.0 347.0,952.0 362.0,947.0 362.0,698.0 358.0,681.0 337.0,672.0 256.0,671.0 241.0,667.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_21">
+      <title>Master Bedroom [Bedroom Area]&#10;Area: 11.71 m²</title>
+    </polygon>
+    <!-- Room: Master Bedroom | Bedroom Area -->
+    <polygon points="549.0,484.0 544.0,496.0 538.0,672.0 543.0,679.0 557.0,681.0 592.0,681.0 612.0,671.0 708.0,668.0 713.0,658.0 713.0,578.0 704.0,552.0 707.0,527.0 713.0,519.0 718.0,488.0 736.0,485.0 730.0,481.0 719.0,484.0 703.0,480.0 558.0,480.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_23">
+      <title>Master Bedroom [Bedroom Area]&#10;Area: 7.79 m²</title>
+    </polygon>
+    <!-- Room: Children's Bedroom | Bedroom Area -->
+    <polygon points="559.0,66.0 555.0,75.0 557.0,319.0 613.0,319.0 632.0,311.0 649.0,317.0 666.0,309.0 694.0,306.0 693.0,122.0 698.0,109.0 709.0,111.0 713.0,103.0 711.0,89.0 727.0,69.0 719.0,64.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_26">
+      <title>Children's Bedroom [Bedroom Area]&#10;Area: 8.56 m²</title>
+    </polygon>
+    <!-- Room: Living Room | Living Area -->
+    <polygon points="697.0,65.0 690.0,70.0 685.0,89.0 687.0,109.0 699.0,107.0 702.0,111.0 703.0,134.0 697.0,137.0 688.0,124.0 684.0,131.0 683.0,304.0 698.0,317.0 816.0,319.0 827.0,333.0 834.0,315.0 831.0,69.0 826.0,64.0" fill="#4169E1" stroke="#4169E1" class="room-poly" id="room_27">
+      <title>Living Room [Living Area]&#10;Area: 8.99 m²</title>
+    </polygon>
+    <!-- Room: Bedroom | Bedroom Area -->
+    <polygon points="581.0,69.0 603.0,69.0 629.0,78.0 624.0,86.0 607.0,90.0 606.0,113.0 586.0,133.0 592.0,147.0 633.0,161.0 670.0,184.0 671.0,231.0 655.0,252.0 671.0,260.0 672.0,295.0 763.0,299.0 782.0,307.0 802.0,307.0 814.0,298.0 829.0,297.0 832.0,77.0 828.0,65.0 633.0,64.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_31">
+      <title>Bedroom [Bedroom Area]&#10;Area: 10.76 m²</title>
+    </polygon>
+    <!-- Room: Bedroom | Bedroom Area -->
+    <polygon points="831.0,826.0 826.0,819.0 816.0,831.0 720.0,836.0 693.0,833.0 679.0,838.0 657.0,832.0 602.0,832.0 584.0,841.0 570.0,834.0 554.0,847.0 551.0,856.0 556.0,917.0 565.0,940.0 563.0,955.0 570.0,959.0 826.0,959.0 831.0,954.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_33">
+      <title>Bedroom [Bedroom Area]&#10;Area: 8.31 m²</title>
+    </polygon>
+    <!-- Room: Bedroom | Bedroom Area -->
+    <polygon points="192.0,677.0 196.0,761.0 192.0,794.0 196.0,818.0 210.0,809.0 218.0,818.0 240.0,816.0 250.0,828.0 264.0,810.0 275.0,805.0 261.0,800.0 260.0,791.0 293.0,789.0 304.0,778.0 337.0,776.0 349.0,786.0 352.0,816.0 358.0,826.0 356.0,850.0 367.0,848.0 372.0,839.0 372.0,708.0 377.0,693.0 385.0,687.0 401.0,689.0 430.0,679.0 466.0,683.0 473.0,689.0 466.0,698.0 468.0,709.0 462.0,718.0 465.0,724.0 489.0,726.0 519.0,736.0 526.0,753.0 538.0,742.0 526.0,732.0 538.0,721.0 543.0,679.0 538.0,672.0 297.0,672.0 271.0,665.0 261.0,671.0 197.0,672.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_34">
+      <title>Bedroom [Bedroom Area]&#10;Area: 7.03 m²</title>
+    </polygon>
+    <!-- Room: Living Room | Living Area -->
+    <polygon points="324.0,674.0 311.0,688.0 316.0,695.0 327.0,698.0 347.0,689.0 359.0,697.0 362.0,706.0 362.0,746.0 355.0,774.0 362.0,783.0 360.0,858.0 367.0,899.0 372.0,886.0 372.0,858.0 378.0,851.0 439.0,856.0 476.0,879.0 487.0,912.0 465.0,936.0 441.0,939.0 438.0,945.0 483.0,950.0 537.0,947.0 542.0,933.0 533.0,923.0 539.0,902.0 534.0,875.0 543.0,837.0 538.0,815.0 525.0,805.0 514.0,782.0 524.0,773.0 524.0,759.0 540.0,742.0 544.0,677.0 537.0,672.0 451.0,670.0" fill="#4169E1" stroke="#4169E1" class="room-poly" id="room_35">
+      <title>Living Room [Living Area]&#10;Area: 9.57 m²</title>
+    </polygon>
+    <!-- Room: Living Room | Bedroom Area -->
+    <polygon points="201.0,687.0 194.0,698.0 196.0,721.0 192.0,739.0 194.0,944.0 207.0,958.0 378.0,959.0 390.0,955.0 399.0,959.0 465.0,958.0 473.0,953.0 485.0,956.0 492.0,953.0 495.0,943.0 510.0,930.0 523.0,910.0 538.0,900.0 542.0,889.0 530.0,864.0 507.0,846.0 423.0,854.0 416.0,858.0 417.0,880.0 425.0,889.0 415.0,900.0 419.0,913.0 411.0,925.0 391.0,938.0 383.0,936.0 373.0,923.0 373.0,907.0 380.0,889.0 373.0,877.0 371.0,835.0 361.0,815.0 351.0,806.0 352.0,787.0 307.0,760.0 305.0,751.0 315.0,740.0 312.0,730.0 288.0,711.0 297.0,699.0 293.0,691.0 282.0,692.0 250.0,674.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_36">
+      <title>Living Room [Bedroom Area]&#10;Area: 13.12 m²</title>
+    </polygon>
+    <!-- Room: Master Bedroom | Bedroom Area -->
+    <polygon points="700.0,674.0 671.0,670.0 616.0,676.0 548.0,672.0 544.0,676.0 544.0,699.0 537.0,729.0 544.0,759.0 544.0,806.0 539.0,815.0 543.0,827.0 535.0,837.0 547.0,858.0 548.0,870.0 555.0,845.0 573.0,840.0 582.0,827.0 562.0,793.0 561.0,783.0 581.0,762.0 590.0,717.0 612.0,703.0 620.0,683.0 636.0,680.0 659.0,693.0 692.0,687.0 700.0,682.0" fill="#8A2BE2" stroke="#8A2BE2" class="room-poly" id="room_39">
+      <title>Master Bedroom [Bedroom Area]&#10;Area: 2.10 m²</title>
+    </polygon>
+  </g>
+  <g id="HomeVerse_Labels">
+    <text x="312.1" y="627.9" class="room-label">Bathroom</text>
+    <text x="312.1" y="644.9" class="room-sub">0.1 m² [Bedroom Area]</text>
+    <text x="658.8" y="829.2" class="room-label">Entrance/Foyer</text>
+    <text x="658.8" y="846.2" class="room-sub">16.2 m² [Circulation]</text>
+    <text x="250.3" y="803.8" class="room-label">Master Bedroom</text>
+    <text x="250.3" y="820.8" class="room-sub">11.7 m² [Bedroom Area]</text>
+    <text x="650.4" y="561.5" class="room-label">Master Bedroom</text>
+    <text x="650.4" y="578.5" class="room-sub">7.8 m² [Bedroom Area]</text>
+    <text x="659.7" y="174.3" class="room-label">Children's Bedroom</text>
+    <text x="659.7" y="191.3" class="room-sub">8.6 m² [Bedroom Area]</text>
+    <text x="732.2" y="159.6" class="room-label">Living Room</text>
+    <text x="732.2" y="176.6" class="room-sub">9.0 m² [Living Area]</text>
+    <text x="685.6" y="171.5" class="room-label">Bedroom</text>
+    <text x="685.6" y="188.5" class="room-sub">10.8 m² [Bedroom Area]</text>
+    <text x="666.3" y="867.7" class="room-label">Bedroom</text>
+    <text x="666.3" y="884.7" class="room-sub">8.3 m² [Bedroom Area]</text>
+    <text x="360.2" y="743.9" class="room-label">Bedroom</text>
+    <text x="360.2" y="760.9" class="room-sub">7.0 m² [Bedroom Area]</text>
+    <text x="444.0" y="806.6" class="room-label">Living Room</text>
+    <text x="444.0" y="823.6" class="room-sub">9.6 m² [Living Area]</text>
+    <text x="373.8" y="845.0" class="room-label">Living Room</text>
+    <text x="373.8" y="862.0" class="room-sub">13.1 m² [Bedroom Area]</text>
+    <text x="588.3" y="745.5" class="room-label">Master Bedroom</text>
+    <text x="588.3" y="762.5" class="room-sub">2.1 m² [Bedroom Area]</text>
+  </g>
+</svg>

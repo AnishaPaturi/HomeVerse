@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" style="background-color: #FAFAFA;">
+  <defs>
+    <style>
+      .room-poly { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; fill-opacity: 0.35; }
+      .room-poly:hover { fill-opacity: 0.65; stroke-width: 3.5; cursor: pointer; }
+      .room-label { font-family: "Segoe UI", Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #111; text-anchor: middle; }
+      .room-sub { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; fill: #444; text-anchor: middle; }
+    </style>
+  </defs>
+  <g id="HomeVerse_Rooms">
+    <!-- Room: Living Room | Living Area -->
+    <polygon points="109.0,108.0 107.0,742.0 112.0,746.0 741.0,746.0 746.0,741.0 745.0,430.0 741.0,426.0 449.0,423.0 430.0,426.0 426.0,422.0 426.0,112.0 422.0,107.0" fill="#4169E1" stroke="#4169E1" class="room-poly" id="room_0">
+      <title>Living Room [Living Area]&#10;Area: 122.29 m²</title>
+    </polygon>
+    <!-- Room: Kitchen | Cooking Area -->
+    <polygon points="452.0,107.0 448.0,111.0 449.0,423.0 741.0,426.0 746.0,421.0 745.0,110.0" fill="#FF8C00" stroke="#FF8C00" class="room-poly" id="room_0">
+      <title>Kitchen [Cooking Area]&#10;Area: 37.54 m²</title>
+    </polygon>
+  </g>
+  <g id="HomeVerse_Labels">
+    <text x="454.5" y="447.4" class="room-label">Living Room</text>
+    <text x="454.5" y="464.4" class="room-sub">122.3 m² [Living Area]</text>
+    <text x="596.8" y="261.3" class="room-label">Kitchen</text>
+    <text x="596.8" y="278.3" class="room-sub">37.5 m² [Cooking Area]</text>
+  </g>
+</svg>
