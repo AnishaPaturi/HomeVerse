@@ -74,6 +74,8 @@ Evaluated on the authoritative 75-layout unseen test benchmark (2,202 ground-tru
 | **G3-A** | Class-balanced semantic calibration & loss weighting | **Benchmark Reference** | Loss calibration test |
 | **G3-B** | Two-Scale Query Pathway (20 Global + 20 High-Res P8 queries) | **Preserved Predecessor** | High-res pathway validation |
 | **G3-C** | Iterative Bounding-Box Refinement (Inverse-Sigmoid deltas) | **Preserved Geometric Standard** | Coordinate refinement standard |
-| **G4-A** | Hierarchical Functional Supervision (9 parent categories + consistency loss) | **Completed & Frozen** | Active best checkpoint |
-| **G4-B** | Dynamic Instance Mask Head (High-Res FPN features for non-convex / L-shaped rooms) | **Approved Next** | Non-convex interior reconstruction |
-| **G4-C** | Polygon Geometry Refinement (Contour extraction & polygon vertex approximation) | **Future Study** | CAD dimension finalization |
+| **G4-A** | Hierarchical Functional Supervision (9 parent categories + consistency loss) | **Preserved Baseline (Frozen)** | Semantic reference |
+| **G4-B** | Dynamic Instance Mask Head (High-Res FPN features for non-convex / L-shaped rooms) | **Active Primary Candidate** | Primary model checkpoint (`experiment_g4b_best.pt`) |
+| **G4-C** | Polygon Boundary Refinement & Deterministic CAD Vectorization (DXF/SVG) | **Completed Milestone** | 0.41% invalid rate, 100% round-trip |
+| **G5** | Metric Geometry & Multi-Modal Dimension Calibration (5-tier hierarchy) | **Completed Milestone** | Root-cause error isolation, 9.24% area error on scale-bars, 100% non-hallucination |
+| **G6** | Property-Level Area Modeling (GIA/NIA), Wall Volumes & Construction Cost | **Next Milestone** | Architectural estimation & quantity takeoff |
