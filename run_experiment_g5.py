@@ -171,6 +171,7 @@ def export_enriched_dxf(
     rooms: List[Dict[str, Any]],
     scale_meta: Dict[str, Any],
     filepath: Path,
+    img_height: float = 1024.0,
 ):
     """Exports AutoCAD DXF file with closed polylines, layer assignments, and metric room text labels."""
     try:
@@ -199,7 +200,7 @@ def export_enriched_dxf(
         p_name = r.get("parent_category", "Living Area")
         c_name = r.get("room_type", "Room")
         # In DXF Y-coordinates are inverted from raster
-        dxf_pts = [(float(x), float(1024 - y)) for x, y in poly]
+        dxf_pts = [(float(x), float(img_height - y)) for x, y in poly]
 
         msp.add_lwpolyline(dxf_pts, close=True, dxfattribs={"layer": p_name})
 
@@ -326,17 +327,26 @@ def run_experiment_g5(conf_thresh: float = 0.20, img_size: int = 384):
                 effective_gt_ppm = gt_ppm if gt_ppm is not None else raw_gt_ppm
                 gt_scale_s = 1.0 / max(1e-4, effective_gt_ppm)
 
+                # Determine native image dimensions to avoid arbitrary coordinate space distortion
+                native_w, native_h = 1024, 1024
+                if img_path.exists():
+                    try:
+                        with Image.open(img_path) as im:
+                            native_w, native_h = im.size
+                    except Exception:
+                        pass
+
                 vit_pred_ppm = float(pred_scales[b].item())
 
                 # Step 1: Extract all detected room boxes in pixel space for calibrator
                 s_idx, t_idx = indices[b]
                 q_to_gt = {s_idx[k].item(): t_idx[k].item() for k in range(len(t_idx))}
 
-                # Extract Tier 3 refined polygons for all queries
+                # Extract Tier 3 refined polygons for all queries in native image space
                 query_rooms = []
                 for q_i in range(pred_masks_prob.size(1)):
                     m_prob = pred_masks_prob[b, q_i].cpu().numpy()
-                    raw_poly = extract_unrefined_polygon(m_prob, orig_size=(1024, 1024), threshold=0.50)
+                    raw_poly = extract_unrefined_polygon(m_prob, orig_size=(native_w, native_h), threshold=0.50)
                     if raw_poly and len(raw_poly) >= 3:
                         refined_poly = adaptive_polygon_simplification(
                             raw_poly, epsilon_factor=0.012, max_eps_px=3.0, protect_non_convex=True
@@ -417,8 +427,8 @@ def run_experiment_g5(conf_thresh: float = 0.20, img_size: int = 384):
                     if len(gt_poly_norm) < 3:
                         continue
 
-                    # Ground Truth Geometry in native 1024x1024 space
-                    gt_poly_px = [(float(x) * 1024.0, float(y) * 1024.0) for x, y in gt_poly_norm]
+                    # Ground Truth Geometry in native image space
+                    gt_poly_px = [(float(x) * native_w, float(y) * native_h) for x, y in gt_poly_norm]
                     gt_area_px = calculate_shoelace_area_px(gt_poly_px)
                     gt_mabr = calculate_mabr_dimensions(gt_poly_px, gt_scale_s)
                     gt_walls = calculate_wall_segments(gt_poly_px, gt_scale_s)
@@ -531,8 +541,8 @@ def run_experiment_g5(conf_thresh: float = 0.20, img_size: int = 384):
                 if current_sample_idx in exported_sample_indices:
                     sample_dxf_path = cad_export_dir / f"metric_floorplan_sample_{current_sample_idx}.dxf"
                     sample_svg_path = cad_export_dir / f"metric_floorplan_sample_{current_sample_idx}.svg"
-                    export_enriched_dxf(enriched_rooms_for_cad, calib_res, sample_dxf_path)
-                    export_enriched_svg(enriched_rooms_for_cad, calib_res, sample_svg_path)
+                    export_enriched_dxf(enriched_rooms_for_cad, calib_res, sample_dxf_path, img_height=float(native_h))
+                    export_enriched_svg(enriched_rooms_for_cad, calib_res, sample_svg_path, img_size=(native_w, native_h))
 
             if (batch_idx + 1) % 3 == 0 or (batch_idx + 1) == len(test_loader):
                 elapsed = time.time() - t0_eval
