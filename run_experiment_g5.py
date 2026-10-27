@@ -96,6 +96,19 @@ def compute_distribution_stats(vals: List[float], multiplier: float = 1.0) -> Di
     }
 
 
+PARENT_NAME_TO_COLOR = {
+    "Living Area": "#4169E1",
+    "Sleeping Area": "#8A2BE2",
+    "Cooking Area": "#FF8C00",
+    "Sanitary Area": "#00BFFF",
+    "Circulation Area": "#20B2AA",
+    "Outdoor Area": "#32CD32",
+    "Utility Area": "#DAA520",
+    "Storage Area": "#8B4513",
+    "Vehicle Area": "#708090",
+}
+
+
 def export_enriched_svg(
     rooms: List[Dict[str, Any]],
     scale_meta: Dict[str, Any],
@@ -118,11 +131,11 @@ def export_enriched_svg(
 
     for r in rooms:
         poly = r.get("polygon_pixels", [])
-        if len(poly) < 3:
+        if not poly or len(poly) < 3:
             continue
         c_name = r.get("room_type", "Room")
         p_name = r.get("parent_category", "Living Area")
-        color = PARENT_COLORS_HEX.get(p_name, "#64748b")
+        color = PARENT_NAME_TO_COLOR.get(p_name, "#64748b")
         pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in poly)
         
         area_m2_str = f"{r.get('area_m2', 0.0):.2f} m²" if r.get("area_m2") is not None else f"{r.get('area_px2', 0.0):.0f} px²"
@@ -181,7 +194,7 @@ def export_enriched_dxf(
 
     for r in rooms:
         poly = r.get("polygon_pixels", [])
-        if len(poly) < 3:
+        if not poly or len(poly) < 3:
             continue
         p_name = r.get("parent_category", "Living Area")
         c_name = r.get("room_type", "Room")
@@ -316,29 +329,49 @@ def run_experiment_g5(conf_thresh: float = 0.20, img_size: int = 384):
                 vit_pred_ppm = float(pred_scales[b].item())
 
                 # Step 1: Extract all detected room boxes in pixel space for calibrator
-                detected_rooms_for_calib = []
                 s_idx, t_idx = indices[b]
                 q_to_gt = {s_idx[k].item(): t_idx[k].item() for k in range(len(t_idx))}
 
                 # Extract Tier 3 refined polygons for all queries
-                query_polygons = {}
+                query_rooms = []
                 for q_i in range(pred_masks_prob.size(1)):
                     m_prob = pred_masks_prob[b, q_i].cpu().numpy()
                     raw_poly = extract_unrefined_polygon(m_prob, orig_size=(1024, 1024), threshold=0.50)
-                    if len(raw_poly) >= 3:
-                        query_polygons[q_i] = raw_poly
+                    if raw_poly and len(raw_poly) >= 3:
+                        refined_poly = adaptive_polygon_simplification(
+                            raw_poly, epsilon_factor=0.012, max_eps_px=3.0, protect_non_convex=True
+                        )
+                        c_idx = pred_logits[b, q_i].argmax(-1).item()
+                        r_name = ROOM_CLASSES[c_idx] if c_idx < NUM_ROOM_CLASSES else "Room"
+                        query_rooms.append({
+                            "query_id": q_i,
+                            "polygon_tier2": raw_poly,
+                            "polygon_tier3": refined_poly,
+                            "type": r_name,
+                        })
 
-                # Snap shared boundaries across all queries in this floor plan
-                snapped_polygons = snap_shared_boundaries(query_polygons, snap_distance=6.0, overlap_threshold=0.30)
+                # Snap shared boundaries across all rooms in this floor plan
+                if len(query_rooms) >= 2:
+                    query_rooms = snap_shared_boundaries(query_rooms, snap_tolerance_px=8.0)
 
-                for q_i, poly in snapped_polygons.items():
+                snapped_polygons = {
+                    r["query_id"]: r["polygon_tier3"]
+                    for r in query_rooms
+                    if r.get("polygon_tier3") and len(r.get("polygon_tier3", [])) >= 3
+                }
+
+                detected_rooms_for_calib = []
+                for r in query_rooms:
+                    poly = r.get("polygon_tier3")
+                    if not poly or len(poly) < 3:
+                        continue
                     mabr_px = calculate_mabr_dimensions(poly)
                     np_pts = np.array(poly)
                     min_x, min_y = np_pts[:, 0].min(), np_pts[:, 1].min()
                     max_x, max_y = np_pts[:, 0].max(), np_pts[:, 1].max()
                     detected_rooms_for_calib.append({
-                        "query_id": q_i,
-                        "type": ROOM_CLASSES[pred_logits[b, q_i].argmax(-1).item()] if pred_logits[b, q_i].argmax(-1).item() < NUM_ROOM_CLASSES else "Room",
+                        "query_id": r["query_id"],
+                        "type": r["type"],
                         "bbox_pixels": [min_x, min_y, max_x - min_x, max_y - min_y],
                         "pixel_width": mabr_px["width_px"],
                         "pixel_length": mabr_px["length_px"],
@@ -401,7 +434,7 @@ def run_experiment_g5(conf_thresh: float = 0.20, img_size: int = 384):
 
                     # Predicted CAD Geometry
                     pred_poly_px = snapped_polygons.get(q_i, [])
-                    if len(pred_poly_px) < 3:
+                    if not pred_poly_px or len(pred_poly_px) < 3:
                         continue
 
                     pred_area_px = calculate_shoelace_area_px(pred_poly_px)

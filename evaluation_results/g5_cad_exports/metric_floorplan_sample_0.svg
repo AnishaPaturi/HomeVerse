@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#f8fafc" />
+  <!-- Header Metadata -->
+  <g id="metadata" font-family="sans-serif" font-size="14" fill="#0f172a">
+    <text x="20" y="30" font-weight="bold">HomeVerse Architectural Metric Plan</text>
+    <text x="20" y="50" fill="#64748b">Scale: 65.661 px/m | Provenance: MEASURED | Confidence: 94%</text>
+  </g>
+  <g id="rooms" stroke-linejoin="round" stroke-linecap="round">
+    <polygon points="79.0,301.0 65.0,323.0 66.0,391.0 70.0,398.0 64.0,425.0 66.0,574.0 123.0,574.0 150.0,559.0 129.0,549.0 122.0,529.0 138.0,507.0 142.0,493.0 149.0,496.0 149.0,506.0 158.0,514.0 160.0,524.0 172.0,527.0 165.0,535.0 154.0,528.0 153.0,552.0 164.0,569.0 185.0,574.0 280.0,571.0 277.0,558.0 272.0,553.0 241.0,541.0 224.0,546.0 210.0,528.0 211.0,517.0 201.0,509.0 199.0,494.0 210.0,474.0 203.0,463.0 204.0,442.0 196.0,421.0 194.0,398.0 200.0,389.0 204.0,331.0 216.0,314.0 197.0,309.0 142.0,309.0 122.0,300.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Toilet (Living Area)&#10;Dims: 4.19 x 3.26 m&#10;Area: 8.59 m²&#10;Solidity: 0.76</title></polygon>
+    <text x="167.3" y="466.2" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Toilet</text>
+    <text x="167.3" y="484.2" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">4.19 x 3.26 m</text>
+    <text x="167.3" y="499.2" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">8.59 m²</text>
+    <polygon points="954.0,564.0 805.0,565.0 775.0,570.0 730.0,565.0 695.0,568.0 692.0,610.0 693.0,873.0 698.0,894.0 743.0,895.0 775.0,901.0 784.0,897.0 947.0,895.0 957.0,891.0 959.0,570.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Living Room (Living Area)&#10;Dims: 5.12 x 4.07 m&#10;Area: 20.31 m²&#10;Solidity: 0.99</title></polygon>
+    <text x="800.5" y="724.7" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Living Room</text>
+    <text x="800.5" y="742.7" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.12 x 4.07 m</text>
+    <text x="800.5" y="757.7" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">20.31 m²</text>
+    <polygon points="273.0,566.0 164.0,569.0 162.0,572.0 169.0,578.0 165.0,585.0 154.0,582.0 144.0,569.0 86.0,567.0 69.0,575.0 64.0,590.0 66.0,880.0 74.0,892.0 101.0,889.0 120.0,896.0 223.0,894.0 238.0,885.0 251.0,884.0 265.0,869.0 266.0,848.0 276.0,836.0 276.0,608.0 285.0,592.0 277.0,582.0 280.0,571.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Kitchen &amp; Dining (Living Area)&#10;Dims: 5.01 x 3.37 m&#10;Area: 15.67 m²&#10;Solidity: 0.97</title></polygon>
+    <text x="185.3" y="695.3" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Kitchen &amp; Dining</text>
+    <text x="185.3" y="713.3" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.01 x 3.37 m</text>
+    <text x="185.3" y="728.3" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">15.67 m²</text>
+    <polygon points="393.0,131.0 379.0,120.0 357.0,118.0 344.0,121.0 281.0,118.0 272.0,126.0 242.0,127.0 229.0,118.0 164.0,122.0 142.0,118.0 134.0,125.0 123.0,119.0 79.0,121.0 66.0,133.0 64.0,152.0 66.0,325.0 71.0,326.0 70.0,314.0 99.0,303.0 131.0,302.0 143.0,308.0 301.0,309.0 322.0,316.0 350.0,312.0 364.0,318.0 379.0,317.0 393.0,305.0 396.0,293.0 397.0,165.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Children&#x27;s Bedroom (Living Area)&#10;Dims: 5.07 x 3.16 m&#10;Area: 14.45 m²&#10;Solidity: 0.93</title></polygon>
+    <text x="232.8" y="201.7" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Children&#x27;s Bedroom</text>
+    <text x="232.8" y="219.7" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.07 x 3.16 m</text>
+    <text x="232.8" y="234.7" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">14.45 m²</text>
+    <polygon points="643.0,398.0 640.0,511.0 644.0,553.0 657.0,556.0 665.0,551.0 678.0,551.0 694.0,562.0 710.0,565.0 719.0,574.0 762.0,575.0 793.0,568.0 859.0,573.0 886.0,565.0 939.0,566.0 955.0,571.0 959.0,561.0 958.0,409.0 953.0,398.0 937.0,396.0 921.0,401.0 885.0,395.0 872.0,393.0 675.0,395.0 667.0,402.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Living Room (Living Area)&#10;Dims: 4.86 x 2.75 m&#10;Area: 12.59 m²&#10;Solidity: 0.97</title></polygon>
+    <text x="794.6" y="491.5" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Living Room</text>
+    <text x="794.6" y="509.5" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">4.86 x 2.75 m</text>
+    <text x="794.6" y="524.5" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">12.59 m²</text>
+    <polygon points="818.0,132.0 807.0,127.0 738.0,128.0 698.0,137.0 666.0,128.0 643.0,133.0 640.0,390.0 645.0,398.0 655.0,402.0 661.0,399.0 665.0,365.0 673.0,370.0 671.0,399.0 678.0,403.0 713.0,404.0 739.0,396.0 805.0,394.0 810.0,390.0 809.0,336.0 798.0,281.0 800.0,244.0 809.0,226.0 804.0,195.0 809.0,180.0 810.0,142.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Office (Living Area)&#10;Dims: 4.24 x 2.66 m&#10;Area: 10.18 m²&#10;Solidity: 0.94</title></polygon>
+    <text x="734.6" y="276.0" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Office</text>
+    <text x="734.6" y="294.0" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">4.24 x 2.66 m</text>
+    <text x="734.6" y="309.0" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">10.18 m²</text>
+    <polygon points="952.0,130.0 910.0,124.0 889.0,128.0 817.0,128.0 804.0,134.0 800.0,149.0 800.0,389.0 815.0,403.0 892.0,405.0 903.0,413.0 932.0,415.0 957.0,405.0 959.0,143.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Bathroom (Living Area)&#10;Dims: 4.43 x 2.42 m&#10;Area: 10.19 m²&#10;Solidity: 0.99</title></polygon>
+    <text x="879.2" y="250.9" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Bathroom</text>
+    <text x="879.2" y="268.9" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">4.43 x 2.42 m</text>
+    <text x="879.2" y="283.9" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">10.19 m²</text>
+    <polygon points="279.0,564.0 277.0,583.0 277.0,827.0 266.0,869.0 261.0,874.0 237.0,876.0 220.0,890.0 229.0,895.0 476.0,894.0 478.0,655.0 464.0,613.0 453.0,606.0 448.0,613.0 449.0,624.0 440.0,630.0 420.0,613.0 415.0,600.0 405.0,592.0 401.0,572.0 390.0,566.0 358.0,561.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Bedroom (Living Area)&#10;Dims: 5.10 x 3.90 m&#10;Area: 14.74 m²&#10;Solidity: 0.87</title></polygon>
+    <text x="364.0" y="683.3" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Bedroom</text>
+    <text x="364.0" y="701.3" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.10 x 3.90 m</text>
+    <text x="364.0" y="716.3" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">14.74 m²</text>
+    <polygon points="68.0,364.0 64.0,389.0 64.0,558.0 68.0,574.0 111.0,564.0 279.0,564.0 292.0,555.0 304.0,558.0 312.0,554.0 346.0,553.0 358.0,561.0 389.0,548.0 393.0,533.0 393.0,473.0 387.0,464.0 391.0,441.0 384.0,428.0 392.0,403.0 391.0,333.0 378.0,318.0 360.0,311.0 140.0,310.0 128.0,314.0 148.0,324.0 142.0,355.0 148.0,377.0 145.0,391.0 132.0,381.0 100.0,395.0 79.0,361.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Bedroom (Living Area)&#10;Dims: 5.03 x 4.00 m&#10;Area: 17.68 m²&#10;Solidity: 0.93</title></polygon>
+    <text x="242.9" y="433.8" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Bedroom</text>
+    <text x="242.9" y="451.8" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.03 x 4.00 m</text>
+    <text x="242.9" y="466.8" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">17.68 m²</text>
+    <polygon points="394.0,570.0 395.0,582.0 425.0,623.0 423.0,634.0 431.0,655.0 461.0,637.0 471.0,640.0 479.0,651.0 482.0,893.0 691.0,893.0 692.0,610.0 685.0,570.0 668.0,565.0 633.0,565.0 624.0,560.0 612.0,562.0 603.0,555.0 581.0,550.0 569.0,553.0 560.0,548.0 505.0,555.0 466.0,567.0 448.0,555.0 422.0,555.0" fill="#4169E1" fill-opacity="0.25" stroke="#4169E1" stroke-width="2"><title>Living Room (Living Area)&#10;Dims: 5.25 x 4.54 m&#10;Area: 17.77 m²&#10;Solidity: 0.89</title></polygon>
+    <text x="530.0" y="602.3" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Living Room</text>
+    <text x="530.0" y="620.3" font-family="sans-serif" font-size="11" fill="#475569" text-anchor="middle">5.25 x 4.54 m</text>
+    <text x="530.0" y="635.3" font-family="sans-serif" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">17.77 m²</text>
+  </g>
+</svg>
