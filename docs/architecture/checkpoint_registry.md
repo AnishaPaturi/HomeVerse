@@ -66,6 +66,24 @@ Evaluated on the authoritative 75-layout unseen test benchmark (2,202 ground-tru
 
 ---
 
+## 📐 Milestone G5 Metric Benchmark & Historical Progression
+
+The table below preserves both the reconciled benchmark (unified native resolution coordinates) and the historical canonical-resolution baseline (evaluating $1024 \times 1024$ raster polygons directly against native-resolution ground-truth metadata).
+
+| Metric Category | Metric Standard | Historical Baseline (1024 Canonical Grid) | Authoritative Reconciled Standard (Native Resolution) | Status & Variance Explanation |
+| :--- | :--- | :---: | :---: | :--- |
+| **Pure Geometry (Scen 2)** | Median Shoelace Area Error | **7.73%** | **7.73%** | Invariant to coordinate system (pure segmentation quality: 92.27% accuracy) |
+| **Group 2 Area Error** | Median Room Area MAPE | **53.91%** | **9.24%** | Reconciled: 53.91% caused by $(1024/W_{\text{native}})^2$ coordinate distortion |
+| **Group 2 Scale Error** | Median Scale MAPE | **0.70%** | **0.70%** | Virtually unbiased (signed bias: -0.14%) |
+| **Group 1 Area Error** | Median Room Area MAPE | **44.21%** | **48.38%** | Controlled by OCR-to-room spatial association bottleneck |
+| **Group 1 Scale Error** | Median Scale MAPE | **25.86%** | **25.86%** | Systematic expansion bias (+18.42%) due to centroid mismatch |
+| **Group 3 Area Error** | Median Room Area MAPE | **78.53%** | **45.95%** | Controlled by reference symbol prior variance |
+| **Group 3 Scale Error** | Median Scale MAPE | **15.61%** | **15.61%** | Positive bias (+11.20%) |
+| **Group 4 Non-Hallucination**| Availability Accuracy | **100.0%** | **100.0%** | 27/27 plans correctly return `UNAVAILABLE` |
+| **Aggregate Calibrated Area** | Median Room Area MAPE | **53.42%** | **31.64%** | Reconciled: converges directly to Scenario 3 under unified coordinates |
+
+---
+
 ## 🗺️ Experimental Roadmap & Research Trajectory
 
 | Experiment | Focus & Intervention | Status | Role |
@@ -77,5 +95,5 @@ Evaluated on the authoritative 75-layout unseen test benchmark (2,202 ground-tru
 | **G4-A** | Hierarchical Functional Supervision (9 parent categories + consistency loss) | **Preserved Baseline (Frozen)** | Semantic reference |
 | **G4-B** | Dynamic Instance Mask Head (High-Res FPN features for non-convex / L-shaped rooms) | **Active Primary Candidate** | Primary model checkpoint (`experiment_g4b_best.pt`) |
 | **G4-C** | Polygon Boundary Refinement & Deterministic CAD Vectorization (DXF/SVG) | **Completed Milestone** | 0.41% invalid rate, 100% round-trip |
-| **G5** | Metric Geometry & Multi-Modal Dimension Calibration (5-tier hierarchy) | **Completed Milestone** | Root-cause error isolation, 9.24% area error on scale-bars, 100% non-hallucination |
-| **G6** | Property-Level Area Modeling (GIA/NIA), Wall Volumes & Construction Cost | **Next Milestone** | Architectural estimation & quantity takeoff |
+| **G5** | Metric Geometry & Multi-Modal Dimension Calibration (5-tier hierarchy) | **Implemented — Reconciliation Passed** | Root-cause error isolation, 9.24% area error on scale-bars, 100% non-hallucination |
+| **G6** | Property-Level Area Modeling (GIA/NIA), Wall Volumes & Construction Cost | **Specification preparation (G6-A Approved)** | Architectural estimation & quantity takeoff |

@@ -21,7 +21,10 @@ Milestone G6 bridges CAD vector geometry with architectural quantity surveying, 
 
 ## 2. Standardized Measurement Framework: GIA and NIA
 
-HomeVerse adopts the **RICS Property Measurement (2nd Edition, incorporating IPMS: International Property Measurement Standards)** to ensure legal, financial, and construction validity.
+HomeVerse adopts a versioned measurement standard framework to ensure international, legal, and quantity surveying validity:
+- **Active Primary Standard**: **IPMS: All Buildings (2023 Standard)** — incorporating **IPMS 2 - Residential** for Gross Internal Area and **IPMS 3.1 - Residential** for Exclusive Use / Net Internal Area.
+- **Legacy Reference Profile**: **RICS Property Measurement (2nd Edition, May 2018 - Archived Reference)** preserved for historical backwards-compatibility.
+- **National Practice Crosswalk**: **RICS Code of Measuring Practice (6th Edition)**.
 
 ```mermaid
 flowchart TD
@@ -30,44 +33,55 @@ flowchart TD
         EXT["Internal Face of External Perimeter Walls"]
         EXT --> HAB["Habitable Rooms (Living, Bedrooms, Kitchen)"]
         EXT --> UTIL["Service & Utility Spaces (Bathrooms, Closets)"]
-        EXT --> CIRC["Circulation (Corridors, Stairs, Foyers)"]
+        EXT --> CIRC["Circulation (Corridors, Private Stairs, Foyers)"]
         EXT --> PART["Internal Partition Wall Footprints"]
+        EXT --> STRUCT["Structural Inclusions: Columns, Piers, Internal Shafts"]
     end
     
-    subgraph NIA_DEF["Net Internal Area (NIA / IPMS 3)"]
+    subgraph NIA_DEF["Net Internal Area (NIA / IPMS 3.1)"]
         direction TB
         HAB
         CIRC_PRIV["Private Internal Corridors"]
-        EXCL["Excluded: Common Stairs, Lift Shafts, Perimeter Thickness"]
+        EXCL["Excluded: Common Stairs, Lift Shafts, Perimeter Thickness, Balconies"]
     end
 ```
 
 ### Mathematical Formulations:
 
-#### 1. Gross Internal Area (GIA):
-The total enclosed area measured to the internal face of external perimeter walls across all levels:
-$$\text{GIA} = \sum_{r=1}^{M} A_{m^2, r} + A_{\text{internal\_partitions}}$$
+#### 1. Gross Internal Area (GIA / IPMS 2):
+The total enclosed floor-plate area measured to the internal face of external perimeter walls across all levels:
+$$\text{GIA} = \sum_{r=1}^{M} A_{m^2, r} + A_{\text{internal\_partitions}} + A_{\text{columns\_piers}} + A_{\text{service\_shafts}}$$
 
-Where $A_{\text{internal\_partitions}}$ is derived directly from detected interior wall polylines:
-$$A_{\text{internal\_partitions}} = \sum_{w \in \text{InternalWalls}} L_{m, w} \times T_{m, w}$$
-* $L_{m, w}$: Length of interior wall polyline in meters.
-* $T_{m, w}$: Calibrated wall thickness in meters (nominal $0.10\,\text{m}\text{--}0.15\,\text{m}$).
-* Arbitrary blanket percentage wall markups are strictly forbidden.
+> [!IMPORTANT]
+> **GIA Geometry Contract**:
+> GIA must **never** be calculated by simply summing room polygons and adding a flat percentage markup.
+> - When an external perimeter boundary polygon is reconstructed: GIA is the direct area enclosed by the internal face of external perimeter walls.
+> - Under decomposed summation: Room polygons, partition footprints, columns, and enclosed vertical shafts must form a complete non-overlapping geometric decomposition of the enclosed plate.
+> - Partition footprint provenance must be explicitly tracked:
+>   - `MEASURED_WALL_GEOMETRY`: Derived from explicit CAD wall segment boundaries.
+>   - `ESTIMATED_NOMINAL_THICKNESS`: Synthesized as $\sum L_{w} \times T_w$ with nominal thickness $T_w = 0.12\,\text{m} \pm 0.02\,\text{m}$ (uncertainty bounds explicitly stated).
 
-#### 2. Net Internal Area (NIA / Net Usable Habitable Area):
-The usable floor area measured to the internal finish of individual room walls, excluding common building service infrastructure:
+#### 2. Net Internal Area (NIA / IPMS 3.1 - Exclusive Use Habitable Area):
+The usable floor area measured to the internal finish of individual room walls, excluding common building infrastructure and unenclosed spaces:
 $$\text{NIA} = \sum_{r \in \mathcal{H}} A_{m^2, r}$$
-Where $\mathcal{H}$ denotes the set of usable habitable and ancillary rooms:
-$$\mathcal{H} = \{\text{Living Room, Bedrooms, Kitchen, Dining, Study, Private Bathrooms, Internal Foyers}\}$$
-Excluded from NIA:
-* Central stairwells and vertical penetrations
-* Lift motor rooms and shared MEP plant rooms
-* Perimeter wall footprints and structural columns
+Where $\mathcal{H}$ denotes the set of usable habitable and private ancillary rooms:
+$$\mathcal{H} = \{\text{Living Room, Bedrooms, Kitchen, Dining, Study, Private Bathrooms, Internal Foyers, Closets}\}$$
+Explicitly excluded from NIA under IPMS 3.1 / RICS:
+* Central common stairwells and vertical passenger lift shafts
+* Shared MEP plant rooms, transformer rooms, and boiler rooms
+* Unenclosed accessory spaces: Balconies, terraces, open verandas, and patios
+* Vehicle storage: Garages and carports
+* Perimeter wall footprints, structural columns, and piers
 
 #### 3. Building Efficiency Ratio ($\eta$):
 $$\eta = \frac{\text{NIA}}{\text{GIA}} \times 100\%$$
-* Typical residential architectural benchmark: $\eta \in [82.0\%, 90.0\%]$.
-* Plans exhibiting $\eta < 75.0\%$ or $\eta > 95.0\%$ trigger an automated geometric layout audit alert.
+
+> [!NOTE]
+> **Internal Plausibility Heuristic**:
+> The $80.0\%\text{--}92.0\%$ residential efficiency range is an **internal HomeVerse architectural plausibility heuristic** for standard residential flats and single-family houses, **not** a formal RICS or IPMS mandate.
+> - Layouts exhibiting $\eta < 75.0\%$ trigger a plausibility alert (potential excessive circulation or service void share).
+> - Layouts exhibiting $\eta > 95.0\%$ trigger an alert to audit missing partition wall footprints or boundary leakage.
+> - Complex custom residences or mixed-use layouts are validated against their specific building classification.
 
 ---
 

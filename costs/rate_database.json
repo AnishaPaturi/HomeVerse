@@ -1,0 +1,75 @@
+{
+  "database_version": "2026.4",
+  "currency": "USD",
+  "effective_date": "2026-10-01",
+  "measurement_standard": "RICS Property Measurement 2nd Edition / IPMS",
+  "regional_multipliers": {
+    "us_national_average": 1.00,
+    "metro_high_cost": 1.30,
+    "metro_moderate": 1.12,
+    "rural_low_cost": 0.88
+  },
+  "finish_grades": {
+    "economy": {
+      "flooring_sqm": {
+        "tile": 35.0,
+        "wood": 30.0,
+        "carpet": 20.0,
+        "vinyl": 22.0
+      },
+      "painting_sqm": 8.50,
+      "drywall_partition_sqm": 45.0,
+      "interior_doors_unit": 180.0,
+      "exterior_doors_unit": 450.0,
+      "windows_unit": 320.0
+    },
+    "standard": {
+      "flooring_sqm": {
+        "tile": 65.0,
+        "wood": 60.0,
+        "carpet": 35.0,
+        "vinyl": 40.0
+      },
+      "painting_sqm": 14.00,
+      "drywall_partition_sqm": 68.0,
+      "interior_doors_unit": 320.0,
+      "exterior_doors_unit": 850.0,
+      "windows_unit": 580.0
+    },
+    "premium": {
+      "flooring_sqm": {
+        "tile": 125.0,
+        "wood": 120.0,
+        "carpet": 65.0,
+        "vinyl": 75.0
+      },
+      "painting_sqm": 24.00,
+      "drywall_partition_sqm": 110.0,
+      "interior_doors_unit": 650.0,
+      "exterior_doors_unit": 1800.0,
+      "windows_unit": 1100.0
+    }
+  },
+  "labor_rates_hourly": {
+    "carpentry": 55.0,
+    "painting": 42.0,
+    "flooring": 48.0,
+    "mep": 72.0
+  },
+  "overhead_and_profit_defaults": {
+    "overhead_pct": 0.10,
+    "profit_pct": 0.10
+  },
+  "contingency_defaults": {
+    "provisional_pct": 0.12,
+    "minimum_pct": 0.10,
+    "maximum_pct": 0.15
+  },
+  "cost_calculation_sequence": {
+    "step_1_base_cost": "C_base = C_materials + C_labor + C_finishes",
+    "step_2_contractor_oh_and_p": "C_OHP = C_base * (overhead_pct + profit_pct)",
+    "step_3_contingency": "C_contingency = (C_base + C_OHP) * contingency_pct",
+    "step_4_total_turnkey_cost": "C_total = C_base + C_OHP + C_contingency",
+    "status_guardrail": "PROVISIONAL until G5 spatial calibration and quantity takeoff are formally validated. No cost shall be generated for UNAVAILABLE scale plans."
+  }
+}
