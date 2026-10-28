@@ -1,0 +1,173 @@
+{
+  "audit_timestamp": "2026-10-28T10:49:17Z",
+  "total_test_images": 5,
+  "total_paired_rooms": 50,
+  "checks_summary": {
+    "check1_stable_identifiers": true,
+    "check2_exclusive_1to1_matching": true,
+    "check3_group2_discrepancy_resolved": true,
+    "check4_aggregate_reconciliation": true,
+    "check5_identical_room_populations": true,
+    "check6_signed_scale_bias_isolated": true,
+    "check7_aggregation_levels_separated": true,
+    "check8_per_observation_formula_verified": true
+  },
+  "reconciled_groups": {
+    "dimensioned": {
+      "image_count": 2,
+      "room_count": 20,
+      "scale_mape_image_level": {
+        "median": 125.044,
+        "mean": 125.044,
+        "p90": 195.5427,
+        "p95": 204.355,
+        "count": 2
+      },
+      "signed_scale_error_image_level": {
+        "median": 125.044,
+        "mean": 125.044,
+        "p90": 195.5427,
+        "p95": 204.355,
+        "count": 2
+      },
+      "scenario1_pure_calibration": {
+        "median": 484.1051,
+        "mean": 484.1051,
+        "p90": 880.7378,
+        "p95": 880.7378,
+        "count": 20
+      },
+      "scenario2_pure_geometry": {
+        "median": 7.1734,
+        "mean": 15.711,
+        "p90": 29.3395,
+        "p95": 82.8368,
+        "count": 20
+      },
+      "scenario3_reconciled_area_mape": {
+        "median": 464.7308,
+        "mean": 541.237,
+        "p90": 962.1533,
+        "p95": 999.673,
+        "count": 20
+      }
+    },
+    "scale-bar": {
+      "image_count": 2,
+      "room_count": 20,
+      "scale_mape_image_level": {
+        "median": 1.3749,
+        "mean": 1.3749,
+        "p90": 1.713,
+        "p95": 1.7552,
+        "count": 2
+      },
+      "signed_scale_error_image_level": {
+        "median": -1.3749,
+        "mean": -1.3749,
+        "p90": -1.0368,
+        "p95": -0.9946,
+        "count": 2
+      },
+      "scenario1_pure_calibration": {
+        "median": 2.7291,
+        "mean": 2.7291,
+        "p90": 3.5626,
+        "p95": 3.5626,
+        "count": 20
+      },
+      "scenario2_pure_geometry": {
+        "median": 3.5531,
+        "mean": 24.745,
+        "p90": 63.6246,
+        "p95": 72.7792,
+        "count": 20
+      },
+      "scenario3_reconciled_area_mape": {
+        "median": 4.3832,
+        "mean": 23.9781,
+        "p90": 58.4476,
+        "p95": 73.1056,
+        "count": 20
+      }
+    },
+    "reference-object": {
+      "image_count": 0,
+      "room_count": 0,
+      "scale_mape_image_level": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "signed_scale_error_image_level": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "scenario1_pure_calibration": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "scenario2_pure_geometry": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "scenario3_reconciled_area_mape": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      }
+    },
+    "no-scale": {
+      "image_count": 1,
+      "room_count": 10,
+      "scale_mape_image_level": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "signed_scale_error_image_level": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "scenario1_pure_calibration": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      },
+      "scenario2_pure_geometry": {
+        "median": 7.0347,
+        "mean": 9.0684,
+        "p90": 18.4318,
+        "p95": 20.9095,
+        "count": 10
+      },
+      "scenario3_reconciled_area_mape": {
+        "median": 0.0,
+        "mean": 0.0,
+        "p90": 0.0,
+        "p95": 0.0,
+        "count": 0
+      }
+    }
+  }
+}

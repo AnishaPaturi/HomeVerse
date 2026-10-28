@@ -105,6 +105,38 @@ Flooring materials are automatically mapped from the 9-class functional hierarch
 | **Storage Area** | Storage Room, Walk-in Closet | Durable Laminate / Sealed Concrete |
 | **Vehicle Area** | Garage | Epoxy Coated Concrete / Screed |
 
+### 3. Ceiling Surface Modeling:
+Ceiling finish quantities are aggregated at room and property levels:
+$$A_{\text{ceiling, total}} = \sum_{r \in \text{InternalRooms}} A_{m^2, r} \times K_{\text{slope}, r}$$
+* $K_{\text{slope}, r}$: Slope correction factor ($1.00$ for flat ceilings, $\frac{1}{\cos \theta}$ for vaulted/sloped ceilings, default $1.00$).
+* Outdoor spaces (Balconies/Terraces) are segregated into exterior soffit schedules.
+* Wet areas (Bathrooms, Utility) are routed to moisture-resistant plasterboard/suspended ceilings.
+
+### 4. Openings & Penetrations Schedule:
+Counts and physical dimensions of all detected and inferred openings are exported for both surface deductions and millwork takeoff:
+* Interior Passage Doors: count, standard width ($0.85\,\text{m}$), height ($2.10\,\text{m}$), unit cost.
+* Exterior / Entry Doors: count, heavy-duty width ($1.00\,\text{m}$), height ($2.10\,\text{m}$), unit cost.
+* Glazed Windows: count, standard width ($1.20\,\text{m}$), height ($1.50\,\text{m}$), glazing unit cost.
+
+### 5. Mandatory G6 Output Components Matrix:
+Every generated property takeoff must compute and expose the following itemized components:
+
+| Component | Required Output | Derivation Method / Standard |
+| :--- | :--- | :--- |
+| **Room areas** | Individual room areas in m² | Tier 3 refined CAD polygon shoelace formula |
+| **NIA** | Net Internal Area in m² | Sum of habitable room areas (RICS Property Measurement 2nd Ed.) |
+| **GIA** | Gross Internal Area in m² | NIA + partition footprints ($L_w \times T_w$) + internal circulation |
+| **Flooring** | Material quantity in m² | Room area mapped by 9-class functional taxonomy |
+| **Ceiling** | Ceiling finish quantity in m² | Flat / vaulted ceiling area with moisture-resistant segregation |
+| **Walls** | Gross wall surface area in m² | Refined perimeter $\sum (P_r \times H_{\text{ceiling}})$ |
+| **Paint** | Net paintable surface area in m²| Gross wall elevation minus door and window opening areas |
+| **Doors / windows** | Opening counts and dimensions | Explicit counts, opening types, and deduction geometry |
+| **Construction cost** | Itemized direct costs in currency | (Material + Labor + Finishes) $\times$ Regional Multiplier |
+| **Contingency** | Explicit percentage and amount | Configurable rate ($10.0\%\text{--}15.0\%$) and exact currency value |
+
+> [!CAUTION]
+> **Provisional Cost Status**: Until G5 scale calibration and spatial association are signed off, all cost dollar totals must be flagged with `status: "PROVISIONAL"` and explicitly reference calibration provenance. No cost shall be generated for `UNAVAILABLE` scale mode plans.
+
 ---
 
 ## 4. Parametric Construction Cost Modeling
