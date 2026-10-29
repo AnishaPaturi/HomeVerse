@@ -1,10 +1,13 @@
 # Milestone G6 Technical Specification: Property-Level Area & Construction Cost Modeling
 
 > [!IMPORTANT]
-> **Status**: Approved Specification Preparation Milestone.
+> **Status**: G6-A Provisional Formalization (Approved) | G6-B/C Construction Cost Modeling Frozen.
 > **Role**: Extends single-room metric geometry into property-wide architectural aggregations (Gross Internal Area, Net Internal Area, wall takeoffs) and configurable construction cost estimation.
 > **Prerequisites**: G5 Metric Geometry & Scale Reconciliation Audit.
-> **Strict Operational Rule**: GIA and NIA must follow authoritative measurement standards (RICS Property Measurement 2nd Edition / IPMS). Construction cost modeling must strictly use configurable regional rate databases rather than hardcoded global constants.
+> **Promotion Policy**: G5-OCR-v2 may be considered for production promotion only after all five acceptance gates pass. Until then, G6-A remains provisional and G6-B/C cost modeling remains frozen.
+> **Rationale**: Preserves independently verified architectural progress without allowing unvalidated dimension assignments to contaminate downstream production or cost estimates.
+> **Operational Mandate**: Don't abandon G6-A because G5 OCR failed, but don't let G6-A's architectural validation become an indirect approval of unvalidated measurements. Keep those validation boundaries explicit.
+> **Measurement Standards Basis**: Active Primary Standard is **IPMS: All Buildings (2023)** (IPMS 2 and IPMS 3.1). Archived reference profile is RICS 2018 (2nd Edition). Construction cost modeling strictly uses configurable regional rate databases rather than hardcoded global constants.
 
 ---
 

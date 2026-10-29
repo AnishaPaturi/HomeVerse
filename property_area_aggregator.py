@@ -310,17 +310,19 @@ class AreaStandardsEngine:
     def calculate_standards(
         self,
         processed_rooms: List[Dict[str, Any]],
-        boundary_analysis: Dict[str, Any],
+        boundary_data: Optional[Dict[str, Any]] = None,
         scale_m_per_px: Optional[float] = None,
         scale_provenance: str = "UNAVAILABLE",
         structural_columns_m2: float = 0.0,
         vertical_shafts_m2: float = 0.0,
+        boundary_analysis: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Computes GIA, NIA, and standardized exclusions under active and legacy measurement profiles.
         Enforces precise GIA geometry contract:
           GIA = Sum(Room Areas) + Partition Footprints + Structural Columns + Vertical Shafts
         """
+        b_info = boundary_data if boundary_data is not None else (boundary_analysis or {})
         is_calibrated = (scale_m_per_px is not None and scale_m_per_px > 0 and scale_provenance != "UNAVAILABLE")
 
         nia_rooms = []
@@ -350,7 +352,7 @@ class AreaStandardsEngine:
 
         # GIA Calculation (Measured to internal face of external perimeter walls):
         # Includes all room finished areas, partition wall footprints, columns, and enclosed shafts.
-        internal_footprint_m2 = boundary_analysis.get("internal_partition_footprint_m2", 0.0) or 0.0
+        internal_footprint_m2 = b_info.get("internal_partition_footprint_m2", 0.0) or 0.0
 
         if is_calibrated:
             total_room_m2 = sum(r.get("area_m2", 0.0) or 0.0 for r in processed_rooms)
@@ -371,7 +373,7 @@ class AreaStandardsEngine:
             "net_internal_area_nia_m2": nia_m2,
             "excluded_space_area_m2": excluded_m2,
             "internal_partition_footprint_m2": internal_footprint_m2 if is_calibrated else None,
-            "partition_thickness_provenance": boundary_analysis.get("partition_thickness_provenance", "ESTIMATED_NOMINAL_THICKNESS (0.12m +/- 0.02m)"),
+            "partition_thickness_provenance": b_info.get("partition_thickness_provenance", "ESTIMATED_NOMINAL_THICKNESS (0.12m +/- 0.02m)"),
             "structural_inclusions_m2": {
                 "columns_and_piers_m2": structural_columns_m2 if is_calibrated else None,
                 "vertical_service_ducts_m2": vertical_shafts_m2 if is_calibrated else None,
@@ -468,6 +470,7 @@ class EfficiencyAnalyzer:
         return {
             "efficiency_ratio_pct": efficiency_ratio_pct,
             "heuristic_assessment": heuristic_assessment,
+            "feasibility_status": heuristic_assessment,
             "heuristic_rule": "Internal HomeVerse heuristic for residential apartments/flats (80%-92%). Not a formal RICS/IPMS mandate.",
             "reconciliation_table": reconciliation_table,
         }
@@ -536,6 +539,19 @@ class PropertyAreaAggregator:
 
         return {
             "property_id": property_id or "property_eval_01",
+            "formal_status": "PROVISIONAL",
+            "production_restrictions": {
+                "calibration_readiness": "UNVALIDATED_FOR_PRODUCTION",
+                "cost_modeling_status": "FROZEN_NOT_PRODUCTION_READY",
+                "restriction_notice": (
+                    "G6-A property area schedules (GIA, NIA, partition quantities) are formalized "
+                    "under provisional status. All downstream construction cost modeling (G6-B/C) "
+                    "remains strictly frozen until G5 metric calibration passes all acceptance gates. "
+                    "Preserves independently verified architectural progress without allowing unvalidated "
+                    "dimension assignments to contaminate downstream production or cost estimates. "
+                    "Validation boundaries remain strictly enforced."
+                ),
+            },
             "active_measurement_standard": standards_data["active_measurement_standard"],
             "legacy_reference_profile": standards_data["legacy_reference_profile"],
             "national_code_crosswalk": standards_data["national_code_crosswalk"],

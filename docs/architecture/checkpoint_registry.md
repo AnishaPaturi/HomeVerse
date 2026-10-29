@@ -95,5 +95,42 @@ The table below preserves both the reconciled benchmark (unified native resoluti
 | **G4-A** | Hierarchical Functional Supervision (9 parent categories + consistency loss) | **Preserved Baseline (Frozen)** | Semantic reference |
 | **G4-B** | Dynamic Instance Mask Head (High-Res FPN features for non-convex / L-shaped rooms) | **Active Primary Candidate** | Primary model checkpoint (`experiment_g4b_best.pt`) |
 | **G4-C** | Polygon Boundary Refinement & Deterministic CAD Vectorization (DXF/SVG) | **Completed Milestone** | 0.41% invalid rate, 100% round-trip |
-| **G5** | Metric Geometry & Multi-Modal Dimension Calibration (5-tier hierarchy) | **Implemented — Reconciliation Passed** | Root-cause error isolation, 9.24% area error on scale-bars, 100% non-hallucination |
-| **G6** | Property-Level Area Modeling (GIA/NIA), Wall Volumes & Construction Cost | **Specification preparation (G6-A Approved)** | Architectural estimation & quantity takeoff |
+| **G5** | Metric Geometry & Multi-Modal Dimension Calibration (5-tier hierarchy) | **Implemented — Reconciliation Passed** | Root-cause error isolation, 9.24% area error on scale-bars, 100% non-hallucination. Group 1 OCR matcher failed acceptance gates (Precision: 37.93%, Coverage: 31.35%); baseline preserved; unvalidated for production. |
+| **G5-OCR-v2** | Corrective Spatial Matcher (Query Filtering, Margin Fix, No Dummy Centers) | **Rejected for Promotion** | Scale MAPE halved to 6.13%, Area MAPE halved to 15.13%, but failed Gate 1 (Precision 52.38%) and Gate 2 (Coverage 24.74%). Unvalidated for production; historical G5 baseline preserved. |
+| **G5-OCR-v3** | Token-Localization Diagnostic & Dimension Recovery | **Investigation Approved** | Design phase: Recover 159 unlocalized tokens, token bounding boxes, wall-segment matching. |
+| **G6-A** | Property Area Modeling (GIA/NIA), Boundaries & Wall Takeoffs | **Provisional; Topology Verification Next** | Verified geometry & planar decomposition under IPMS: All Buildings (2023). |
+| **G6-B/C**| Construction Takeoff & Parametric Cost Modeling | **Frozen / Not Production-Ready** | Cost outputs strictly frozen and marked PROVISIONAL until calibration is resolved. |
+
+---
+
+## 🔒 Governance Decision: G6-A Provisional Formalization and Explicit Validation Boundaries
+
+- **Decision**: Formalize G6-A's verified property area schedules (GIA, NIA, partition quantities) under an explicit `PROVISIONAL` status. All G6-B/C construction cost outputs remain strictly frozen and marked `PROVISIONAL / NOT PRODUCTION-READY`.
+- **Promotion Policy**: G5-OCR-v2 remains rejected for promotion based on its frozen benchmark. Any subsequent corrective implementation, including G5-OCR-v3, must be independently evaluated against the same acceptance gates before promotion. Until then, G6-A remains provisional and G6-B/C cost modeling remains frozen.
+- **Rationale**: This decision preserves independently verified architectural progress without allowing unvalidated dimension assignments to contaminate downstream production or cost estimates.
+- **Operational Mandate**: Don't abandon G6-A because G5 OCR failed, but don't let G6-A's architectural validation become an indirect approval of unvalidated measurements. Keep those validation boundaries explicit.
+- **Required Status Summary**:
+  | Component | Status |
+  | :--- | :--- |
+  | **G5 historical baseline** | **Locked** |
+  | **G5-OCR-v2** | **Rejected for promotion** |
+  | **G5-OCR-v3** | **Investigation approved** |
+  | **G6-A** | **Provisional; topology verification next** |
+  | **G6-B** | **Frozen** |
+  | **G6-C** | **Frozen** |
+- **Production Restrictions**:
+  1. Group 1 dimensioned calibration remains **`UNVALIDATED FOR PRODUCTION`**.
+  2. The historical G5 baseline remains unchanged and immutable.
+  3. The official frozen benchmark records (`frozen_group1_benchmark_results.json` and `frozen_group1_benchmark_v2_results.json`) are preserved.
+  4. No construction cost output may be promoted to production based on unvalidated calibration results.
+### Execution Sequence & Roadmap Milestones
+
+| Stage | Action | Target / Required Status | Evaluated Status | Outcome |
+| :---: | :--- | :---: | :---: | :--- |
+| **1** | Formalize G6-A area schedules: GIA, NIA, partition quantities | Provisional | **Provisional** | Implemented & unit-tested in `property_area_aggregator.py` under IPMS 2023. |
+| **2** | Freeze G6-B/C construction cost outputs | Not production-ready | **Frozen / Not Production-Ready** | Cost outputs locked; non-compounding rate formulas in `costs/rate_database.json`. |
+| **3** | Preserve the failed G5 benchmark and baseline | Locked | **Locked / Immutable** | `experiment_g5_results.json` and `frozen_group1_benchmark_results.json` preserved. |
+| **4** | Create versioned G5-OCR-v2 experiment | Experimental | **Completed** | Versioned in `ocr_spatial_matcher_v2.py`. |
+| **5** | Correct dummy bounding boxes, Hungarian margin evaluation, and query confidence filtering | Under investigation | **Active Safeguards** | 159 dummy boxes dropped; margin fix applied; 393 low-conf queries filtered. |
+| **6** | Re-run the frozen 79-image, 772-room benchmark | Awaiting validation | **Evaluated** | Executed in `run_frozen_group1_benchmark_v2.py` across 79 images / 772 rooms. |
+| **7** | Promote only if all five acceptance gates pass | Conditional | **Promotion Rejected** | Gate 1 (52.38%) and Gate 2 (24.74%) failed; baseline preserved. |

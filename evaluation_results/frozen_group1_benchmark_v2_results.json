@@ -1,0 +1,957 @@
+{
+  "benchmark_timestamp": "2026-10-28T20:56:21Z",
+  "total_group1_images": 79,
+  "total_gt_rooms": 772,
+  "gates_evaluation": {
+    "all_gates_passed": false,
+    "gate1_precision": {
+      "target": ">= 95.0%",
+      "achieved": "52.38%",
+      "formula": "Correct / Accepted = 11 / 21",
+      "passed": false
+    },
+    "gate2_coverage": {
+      "target": ">= 80.0%",
+      "achieved": "24.74%",
+      "formula": "Calibrated Rooms / Eligible Rooms = 191 / 772",
+      "passed": false
+    },
+    "gate3_ambiguous_handling": {
+      "target": "Explicitly flagged",
+      "ambiguous_count": 77,
+      "ambiguous_rate": "78.57%",
+      "passed": true
+    },
+    "gate4_scale_mape": {
+      "baseline": "12.65%",
+      "target": "<= 5.0%",
+      "achieved": "6.13%",
+      "passed": false
+    },
+    "gate5_room_area_mape": {
+      "baseline": "29.55%",
+      "target": "<= 12.0%",
+      "achieved": "15.13%",
+      "passed": false
+    }
+  },
+  "assignment_counts": {
+    "total_ocr_detected": 952,
+    "unlocalized_dummy_boxes_rejected": 159,
+    "filtered_low_conf_queries": 393,
+    "accepted_assignments": 21,
+    "correct_accepted_assignments": 11,
+    "ambiguous_assignments": 77,
+    "rejected_assignments": 0
+  },
+  "scale_metrics": {
+    "baseline_g5": {
+      "median": 12.651,
+      "mean": 18.019,
+      "p90": 36.81,
+      "p95": 41.438,
+      "count": 47
+    },
+    "v2_matcher": {
+      "median": 6.128,
+      "mean": 9.949,
+      "p90": 27.013,
+      "p95": 29.15,
+      "count": 19
+    },
+    "v2_signed_bias": {
+      "median": -4.826,
+      "mean": -2.873,
+      "p90": 3.287,
+      "p95": 13.179,
+      "count": 19
+    }
+  },
+  "room_area_metrics": {
+    "baseline_g5": {
+      "median": 29.551,
+      "mean": 34.832,
+      "p90": 67.537,
+      "p95": 92.523,
+      "count": 465
+    },
+    "v2_matcher": {
+      "median": 15.13,
+      "mean": 31.057,
+      "p90": 76.827,
+      "p95": 153.221,
+      "count": 191
+    }
+  },
+  "per_image_records": [
+    {
+      "image_id": "homeverse_026864",
+      "layout_id": "layout_008955",
+      "gt_ppm": 25.1732,
+      "baseline_ppm": 22.64,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_025932",
+      "layout_id": "layout_008644",
+      "gt_ppm": 99.4717,
+      "baseline_ppm": 105.607,
+      "v2_ppm": 104.954,
+      "v2_scale_error_pct": 5.511416815033819,
+      "accepted_count": 2,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_011551",
+      "layout_id": "layout_003851",
+      "gt_ppm": 90.6689,
+      "baseline_ppm": 89.552,
+      "v2_ppm": 94.571,
+      "v2_scale_error_pct": 4.303680754922587,
+      "accepted_count": 1,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_011552",
+      "layout_id": "layout_003851",
+      "gt_ppm": 54.5004,
+      "baseline_ppm": 58.223,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_011553",
+      "layout_id": "layout_003851",
+      "gt_ppm": 90.6689,
+      "baseline_ppm": 89.633,
+      "v2_ppm": 116.301,
+      "v2_scale_error_pct": 28.27000217274061,
+      "accepted_count": 2,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_002524",
+      "layout_id": "layout_000842",
+      "gt_ppm": 49.0503,
+      "baseline_ppm": 84.521,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_002525",
+      "layout_id": "layout_000842",
+      "gt_ppm": 61.3408,
+      "baseline_ppm": 76.54,
+      "v2_ppm": 60.088,
+      "v2_scale_error_pct": 2.042360060514373,
+      "accepted_count": 1,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_002526",
+      "layout_id": "layout_000842",
+      "gt_ppm": 24.3575,
+      "baseline_ppm": 28.056,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_006819",
+      "layout_id": "layout_002273",
+      "gt_ppm": 79.5894,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_001944",
+      "layout_id": "layout_000648",
+      "gt_ppm": 29.1249,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_005423",
+      "layout_id": "layout_001808",
+      "gt_ppm": 32.6837,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_005424",
+      "layout_id": "layout_001808",
+      "gt_ppm": 49.4753,
+      "baseline_ppm": 52.507,
+      "v2_ppm": 52.507,
+      "v2_scale_error_pct": 6.127704127109893,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_012808",
+      "layout_id": "layout_004270",
+      "gt_ppm": 46.0894,
+      "baseline_ppm": 34.865,
+      "v2_ppm": 53.602,
+      "v2_scale_error_pct": 16.300060317556746,
+      "accepted_count": 1,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_000710",
+      "layout_id": "layout_000237",
+      "gt_ppm": 45.5801,
+      "baseline_ppm": 33.289,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_000711",
+      "layout_id": "layout_000237",
+      "gt_ppm": 45.5801,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_009347",
+      "layout_id": "layout_003116",
+      "gt_ppm": 94.752,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 6
+    },
+    {
+      "image_id": "homeverse_017372",
+      "layout_id": "layout_005791",
+      "gt_ppm": 76.7618,
+      "baseline_ppm": 75.387,
+      "v2_ppm": 83.731,
+      "v2_scale_error_pct": 9.07899502096095,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_015950",
+      "layout_id": "layout_005317",
+      "gt_ppm": 117.0515,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_015951",
+      "layout_id": "layout_005317",
+      "gt_ppm": 58.6146,
+      "baseline_ppm": 56.566,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 3,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_017845",
+      "layout_id": "layout_005949",
+      "gt_ppm": 51.4419,
+      "baseline_ppm": 51.967,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_017846",
+      "layout_id": "layout_005949",
+      "gt_ppm": 33.9829,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_002224",
+      "layout_id": "layout_000742",
+      "gt_ppm": 57.3414,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_002510",
+      "layout_id": "layout_000837",
+      "gt_ppm": 88.397,
+      "baseline_ppm": 120.753,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_002511",
+      "layout_id": "layout_000837",
+      "gt_ppm": 29.2421,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_004701",
+      "layout_id": "layout_001567",
+      "gt_ppm": 62.849,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_011129",
+      "layout_id": "layout_003710",
+      "gt_ppm": 44.5344,
+      "baseline_ppm": 40.602,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 6
+    },
+    {
+      "image_id": "homeverse_019345",
+      "layout_id": "layout_006449",
+      "gt_ppm": 86.2529,
+      "baseline_ppm": 110.039,
+      "v2_ppm": 88.276,
+      "v2_scale_error_pct": 2.345544323727086,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_017494",
+      "layout_id": "layout_005832",
+      "gt_ppm": 101.5408,
+      "baseline_ppm": 142.928,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 3,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_017496",
+      "layout_id": "layout_005832",
+      "gt_ppm": 101.5408,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_023555",
+      "layout_id": "layout_007852",
+      "gt_ppm": 45.2365,
+      "baseline_ppm": 48.225,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 3,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_022827",
+      "layout_id": "layout_007609",
+      "gt_ppm": 61.2701,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_026380",
+      "layout_id": "layout_008794",
+      "gt_ppm": 37.6511,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_026381",
+      "layout_id": "layout_008794",
+      "gt_ppm": 37.6511,
+      "baseline_ppm": 39.483,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_028992",
+      "layout_id": "layout_009664",
+      "gt_ppm": 69.5515,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_026461",
+      "layout_id": "layout_008821",
+      "gt_ppm": 26.1705,
+      "baseline_ppm": 34.173,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_026462",
+      "layout_id": "layout_008821",
+      "gt_ppm": 52.7011,
+      "baseline_ppm": 64.753,
+      "v2_ppm": 54.863,
+      "v2_scale_error_pct": 4.102191415359457,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_026792",
+      "layout_id": "layout_008931",
+      "gt_ppm": 44.5946,
+      "baseline_ppm": 57.852,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_026793",
+      "layout_id": "layout_008931",
+      "gt_ppm": 44.5946,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_021031",
+      "layout_id": "layout_007011",
+      "gt_ppm": 92.8169,
+      "baseline_ppm": 102.499,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_008013",
+      "layout_id": "layout_002671",
+      "gt_ppm": 24.5357,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_018043",
+      "layout_id": "layout_006015",
+      "gt_ppm": 35.133,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_015301",
+      "layout_id": "layout_005101",
+      "gt_ppm": 43.5644,
+      "baseline_ppm": 38.053,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 3,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_015302",
+      "layout_id": "layout_005101",
+      "gt_ppm": 86.9967,
+      "baseline_ppm": 123.299,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_015303",
+      "layout_id": "layout_005101",
+      "gt_ppm": 57.9538,
+      "baseline_ppm": 77.824,
+      "v2_ppm": 61.679,
+      "v2_scale_error_pct": 6.427878758597368,
+      "accepted_count": 1,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_016891",
+      "layout_id": "layout_005631",
+      "gt_ppm": 37.246,
+      "baseline_ppm": 38.889,
+      "v2_ppm": 38.154,
+      "v2_scale_error_pct": 2.4378456747033272,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_016892",
+      "layout_id": "layout_005631",
+      "gt_ppm": 61.9639,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_028901",
+      "layout_id": "layout_009634",
+      "gt_ppm": 74.8466,
+      "baseline_ppm": 102.63,
+      "v2_ppm": 78.642,
+      "v2_scale_error_pct": 5.070905024409928,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 5
+    },
+    {
+      "image_id": "homeverse_028902",
+      "layout_id": "layout_009634",
+      "gt_ppm": 44.9898,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_010487",
+      "layout_id": "layout_003496",
+      "gt_ppm": 66.3043,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_008700",
+      "layout_id": "layout_002900",
+      "gt_ppm": 92.8169,
+      "baseline_ppm": 96.828,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_012357",
+      "layout_id": "layout_004119",
+      "gt_ppm": 78.936,
+      "baseline_ppm": 95.986,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_022910",
+      "layout_id": "layout_007637",
+      "gt_ppm": 70.2495,
+      "baseline_ppm": 79.791,
+      "v2_ppm": 79.174,
+      "v2_scale_error_pct": 12.704005010711834,
+      "accepted_count": 1,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 5
+    },
+    {
+      "image_id": "homeverse_019954",
+      "layout_id": "layout_006652",
+      "gt_ppm": 108.5667,
+      "baseline_ppm": 131.168,
+      "v2_ppm": 137.552,
+      "v2_scale_error_pct": 26.69814961677936,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 6
+    },
+    {
+      "image_id": "homeverse_000666",
+      "layout_id": "layout_000222",
+      "gt_ppm": 61.5471,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_028118",
+      "layout_id": "layout_009373",
+      "gt_ppm": 25.1297,
+      "baseline_ppm": 36.565,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_022782",
+      "layout_id": "layout_007594",
+      "gt_ppm": 44.3548,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_016242",
+      "layout_id": "layout_005414",
+      "gt_ppm": 49.6241,
+      "baseline_ppm": 64.323,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_005534",
+      "layout_id": "layout_001845",
+      "gt_ppm": 60.8985,
+      "baseline_ppm": 73.779,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_025181",
+      "layout_id": "layout_008394",
+      "gt_ppm": 37.457,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_018481",
+      "layout_id": "layout_006161",
+      "gt_ppm": 43.0405,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_005311",
+      "layout_id": "layout_001771",
+      "gt_ppm": 33.2317,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_005312",
+      "layout_id": "layout_001771",
+      "gt_ppm": 83.689,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_013721",
+      "layout_id": "layout_004574",
+      "gt_ppm": 59.3243,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_013722",
+      "layout_id": "layout_004574",
+      "gt_ppm": 59.3243,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_018301",
+      "layout_id": "layout_006101",
+      "gt_ppm": 52.512,
+      "baseline_ppm": 47.266,
+      "v2_ppm": 56.398,
+      "v2_scale_error_pct": 7.400213284582577,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 2
+    },
+    {
+      "image_id": "homeverse_018302",
+      "layout_id": "layout_006101",
+      "gt_ppm": 26.0766,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_012400",
+      "layout_id": "layout_004134",
+      "gt_ppm": 78.1495,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_012402",
+      "layout_id": "layout_004134",
+      "gt_ppm": 62.4911,
+      "baseline_ppm": 61.477,
+      "v2_ppm": 65.149,
+      "v2_scale_error_pct": 4.253245662182292,
+      "accepted_count": 1,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_028288",
+      "layout_id": "layout_009430",
+      "gt_ppm": 47.2103,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_028289",
+      "layout_id": "layout_009430",
+      "gt_ppm": 47.2103,
+      "baseline_ppm": 64.109,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 5
+    },
+    {
+      "image_id": "homeverse_006895",
+      "layout_id": "layout_002299",
+      "gt_ppm": 46.9751,
+      "baseline_ppm": null,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 0
+    },
+    {
+      "image_id": "homeverse_020596",
+      "layout_id": "layout_006866",
+      "gt_ppm": 50.7514,
+      "baseline_ppm": 55.86,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 6
+    },
+    {
+      "image_id": "homeverse_020597",
+      "layout_id": "layout_006866",
+      "gt_ppm": 38.1503,
+      "baseline_ppm": 50.265,
+      "v2_ppm": 35.292,
+      "v2_scale_error_pct": 7.492208449212718,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 5
+    },
+    {
+      "image_id": "homeverse_024885",
+      "layout_id": "layout_008295",
+      "gt_ppm": 46.3158,
+      "baseline_ppm": 44.577,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_025007",
+      "layout_id": "layout_008336",
+      "gt_ppm": 90.8189,
+      "baseline_ppm": 87.554,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 1,
+      "unlocalized_rejected": 4
+    },
+    {
+      "image_id": "homeverse_019617",
+      "layout_id": "layout_006539",
+      "gt_ppm": 35.1613,
+      "baseline_ppm": 38.261,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 0,
+      "unlocalized_rejected": 1
+    },
+    {
+      "image_id": "homeverse_025256",
+      "layout_id": "layout_008419",
+      "gt_ppm": 58.8472,
+      "baseline_ppm": 59.966,
+      "v2_ppm": null,
+      "v2_scale_error_pct": null,
+      "accepted_count": 0,
+      "ambiguous_count": 4,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_020674",
+      "layout_id": "layout_006892",
+      "gt_ppm": 75.3603,
+      "baseline_ppm": 98.729,
+      "v2_ppm": 47.425,
+      "v2_scale_error_pct": 37.068987251908496,
+      "accepted_count": 1,
+      "ambiguous_count": 4,
+      "unlocalized_rejected": 3
+    },
+    {
+      "image_id": "homeverse_020676",
+      "layout_id": "layout_006892",
+      "gt_ppm": 60.2608,
+      "baseline_ppm": 61.163,
+      "v2_ppm": 61.104,
+      "v2_scale_error_pct": 1.399251254546896,
+      "accepted_count": 1,
+      "ambiguous_count": 2,
+      "unlocalized_rejected": 5
+    }
+  ]
+}
