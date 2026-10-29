@@ -1,0 +1,2344 @@
+{
+  "diagnostic_timestamp": "2026-10-29T11:12:17Z",
+  "total_images_audited": 79,
+  "total_raw_word_boxes_extracted": 921,
+  "old_unlocalized_dummy_tokens": 199,
+  "new_recovered_tokens_with_bboxes": 123,
+  "token_recovery_rate_pct": 61.81,
+  "reconstruction_methods_breakdown": {
+    "full_line_join": 123,
+    "ngram_window": 0
+  },
+  "association_comparison": {
+    "wall_segment_association_median_error_pct": 0.0,
+    "centroid_mabr_association_median_error_pct": 0.0,
+    "error_reduction_factor": 100.0,
+    "sample_count": 123
+  },
+  "per_image_diagnostics": [
+    {
+      "image_id": "homeverse_017845",
+      "layout_id": "layout_005949",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "461x720m Corridor",
+          "bbox": [
+            189,
+            380,
+            206,
+            12
+          ],
+          "center": [
+            292.0,
+            386.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "481x300m",
+          "bbox": [
+            189,
+            647,
+            58,
+            8
+          ],
+          "center": [
+            218.0,
+            651.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_017846",
+      "layout_id": "layout_005949",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_004701",
+      "layout_id": "layout_001567",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_022782",
+      "layout_id": "layout_007594",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_025181",
+      "layout_id": "layout_008394",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_026380",
+      "layout_id": "layout_008794",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_026381",
+      "layout_id": "layout_008794",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "479x235 m",
+          "bbox": [
+            355,
+            168,
+            58,
+            8
+          ],
+          "center": [
+            384.0,
+            172.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "280x539 m",
+          "bbox": [
+            62,
+            361,
+            62,
+            28
+          ],
+          "center": [
+            93.0,
+            375.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_016242",
+      "layout_id": "layout_005414",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "526x324m",
+          "bbox": [
+            155,
+            215,
+            59,
+            8
+          ],
+          "center": [
+            184.5,
+            219.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "382x274m m",
+          "bbox": [
+            342,
+            357,
+            345,
+            31
+          ],
+          "center": [
+            514.5,
+            372.5
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_006895",
+      "layout_id": "layout_002299",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_005534",
+      "layout_id": "layout_001845",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "6.28 x2.48 m",
+          "bbox": [
+            378,
+            499,
+            59,
+            28
+          ],
+          "center": [
+            407.5,
+            513.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "494x244m",
+          "bbox": [
+            515,
+            1125,
+            58,
+            8
+          ],
+          "center": [
+            544.0,
+            1129.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "367x529 m",
+          "bbox": [
+            921,
+            1038,
+            59,
+            8
+          ],
+          "center": [
+            950.5,
+            1042.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_011551",
+      "layout_id": "layout_003851",
+      "old_unlocalized_dummy_count": 6,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "269x5.14m",
+          "bbox": [
+            191,
+            334,
+            58,
+            8
+          ],
+          "center": [
+            220.0,
+            338.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "343x378 m",
+          "bbox": [
+            996,
+            738,
+            59,
+            8
+          ],
+          "center": [
+            1025.5,
+            742.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_011552",
+      "layout_id": "layout_003851",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "331x254m",
+          "bbox": [
+            462,
+            133,
+            59,
+            8
+          ],
+          "center": [
+            491.5,
+            137.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_011553",
+      "layout_id": "layout_003851",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "269%5.14m",
+          "bbox": [
+            191,
+            334,
+            58,
+            8
+          ],
+          "center": [
+            220.0,
+            338.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "331x254m",
+          "bbox": [
+            790,
+            216,
+            59,
+            8
+          ],
+          "center": [
+            819.5,
+            220.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "382x2.42m",
+          "bbox": [
+            476,
+            457,
+            59,
+            8
+          ],
+          "center": [
+            505.5,
+            461.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "343x378 m",
+          "bbox": [
+            996,
+            738,
+            59,
+            8
+          ],
+          "center": [
+            1025.5,
+            742.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_001944",
+      "layout_id": "layout_000648",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_013721",
+      "layout_id": "layout_004574",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_013722",
+      "layout_id": "layout_004574",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_018301",
+      "layout_id": "layout_006101",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "231x324m",
+          "bbox": [
+            725,
+            326,
+            58,
+            8
+          ],
+          "center": [
+            754.0,
+            330.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "kitchen 8 Dining 490x267 m",
+          "bbox": [
+            171,
+            466,
+            684,
+            33
+          ],
+          "center": [
+            513.0,
+            482.5
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "227x481m",
+          "bbox": [
+            104,
+            677,
+            58,
+            8
+          ],
+          "center": [
+            133.0,
+            681.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "m 235%481m 864x481 m",
+          "bbox": [
+            360,
+            666,
+            449,
+            28
+          ],
+          "center": [
+            584.5,
+            680.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_018302",
+      "layout_id": "layout_006101",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_016891",
+      "layout_id": "layout_005631",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "311x502m",
+          "bbox": [
+            510,
+            331,
+            59,
+            8
+          ],
+          "center": [
+            539.5,
+            335.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "(609x278 m",
+          "bbox": [
+            455,
+            477,
+            59,
+            8
+          ],
+          "center": [
+            484.5,
+            481.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "314x525 m",
+          "bbox": [
+            198,
+            626,
+            59,
+            8
+          ],
+          "center": [
+            227.5,
+            630.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_016892",
+      "layout_id": "layout_005631",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_015950",
+      "layout_id": "layout_005317",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_015951",
+      "layout_id": "layout_005317",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "267x498 m m oO",
+          "bbox": [
+            172,
+            201,
+            323,
+            42
+          ],
+          "center": [
+            333.5,
+            222.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "497x482m 394x482m",
+          "bbox": [
+            240,
+            583,
+            319,
+            8
+          ],
+          "center": [
+            399.5,
+            587.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "186x222m",
+          "bbox": [
+            148,
+            659,
+            58,
+            8
+          ],
+          "center": [
+            177.0,
+            663.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_025932",
+      "layout_id": "layout_008644",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "411x489 m 283x489 m 631x469m",
+          "bbox": [
+            284,
+            407,
+            858,
+            28
+          ],
+          "center": [
+            713.0,
+            421.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_008700",
+      "layout_id": "layout_002900",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "483x298 m Bedroom",
+          "bbox": [
+            304,
+            325,
+            893,
+            15
+          ],
+          "center": [
+            750.5,
+            332.5
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "637x3.11m",
+          "bbox": [
+            1148,
+            339,
+            59,
+            8
+          ],
+          "center": [
+            1177.5,
+            343.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "m 380x537 m 286x537 m m",
+          "bbox": [
+            378,
+            1101,
+            977,
+            28
+          ],
+          "center": [
+            866.5,
+            1115.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_002524",
+      "layout_id": "layout_000842",
+      "old_unlocalized_dummy_count": 1,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "477x227 m",
+          "bbox": [
+            583,
+            309,
+            58,
+            8
+          ],
+          "center": [
+            612.0,
+            313.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_002525",
+      "layout_id": "layout_000842",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "477x227 m",
+          "bbox": [
+            736,
+            384,
+            58,
+            8
+          ],
+          "center": [
+            765.0,
+            388.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "834x375 m",
+          "bbox": [
+            394,
+            871,
+            59,
+            8
+          ],
+          "center": [
+            423.5,
+            875.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_002526",
+      "layout_id": "layout_000842",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "477x227 m",
+          "bbox": [
+            277,
+            149,
+            62,
+            28
+          ],
+          "center": [
+            308.0,
+            163.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "634x395 m mo",
+          "bbox": [
+            140,
+            181,
+            182,
+            13
+          ],
+          "center": [
+            231.0,
+            187.5
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_022827",
+      "layout_id": "layout_007609",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_000666",
+      "layout_id": "layout_000222",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_025007",
+      "layout_id": "layout_008336",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "493x305 m",
+          "bbox": [
+            834,
+            486,
+            62,
+            28
+          ],
+          "center": [
+            865.0,
+            500.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "9.85% 1.48 m",
+          "bbox": [
+            610,
+            690,
+            62,
+            28
+          ],
+          "center": [
+            641.0,
+            704.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_015301",
+      "layout_id": "layout_005101",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "476x294m",
+          "bbox": [
+            129,
+            411,
+            58,
+            8
+          ],
+          "center": [
+            158.0,
+            415.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "233x417 m",
+          "bbox": [
+            182,
+            566,
+            58,
+            8
+          ],
+          "center": [
+            211.0,
+            570.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "474x288 mi",
+          "bbox": [
+            582,
+            594,
+            58,
+            8
+          ],
+          "center": [
+            611.0,
+            598.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_015302",
+      "layout_id": "layout_005101",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "403x497 m",
+          "bbox": [
+            1223,
+            469,
+            58,
+            8
+          ],
+          "center": [
+            1252.0,
+            473.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_015303",
+      "layout_id": "layout_005101",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "233x417 m",
+          "bbox": [
+            252,
+            751,
+            58,
+            8
+          ],
+          "center": [
+            281.0,
+            755.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_024885",
+      "layout_id": "layout_008295",
+      "old_unlocalized_dummy_count": 1,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_002224",
+      "layout_id": "layout_000742",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_028901",
+      "layout_id": "layout_009634",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "227x600m",
+          "bbox": [
+            455,
+            451,
+            58,
+            8
+          ],
+          "center": [
+            484.0,
+            455.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "273x267 m",
+          "bbox": [
+            336,
+            925,
+            62,
+            28
+          ],
+          "center": [
+            367.0,
+            939.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "300x277 m",
+          "bbox": [
+            869,
+            742,
+            59,
+            8
+          ],
+          "center": [
+            898.5,
+            746.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_028902",
+      "layout_id": "layout_009634",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_023555",
+      "layout_id": "layout_007852",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "319x423 m",
+          "bbox": [
+            95,
+            333,
+            62,
+            28
+          ],
+          "center": [
+            126.0,
+            347.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "278x444m",
+          "bbox": [
+            622,
+            339,
+            58,
+            8
+          ],
+          "center": [
+            651.0,
+            343.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "301x474m 456%474m",
+          "bbox": [
+            271,
+            547,
+            369,
+            8
+          ],
+          "center": [
+            455.5,
+            551.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_011129",
+      "layout_id": "layout_003710",
+      "old_unlocalized_dummy_count": 6,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "370x470m 349x470 m",
+          "bbox": [
+            251,
+            608,
+            222,
+            28
+          ],
+          "center": [
+            362.0,
+            622.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_008013",
+      "layout_id": "layout_002671",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_017494",
+      "layout_id": "layout_005832",
+      "old_unlocalized_dummy_count": 7,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "204x210m",
+          "bbox": [
+            184,
+            1015,
+            58,
+            8
+          ],
+          "center": [
+            213.0,
+            1019.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "431x5.19m",
+          "bbox": [
+            923,
+            852,
+            58,
+            8
+          ],
+          "center": [
+            952.0,
+            856.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "252k5.19m",
+          "bbox": [
+            1270,
+            852,
+            58,
+            8
+          ],
+          "center": [
+            1299.0,
+            856.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "683x261 m",
+          "bbox": [
+            1050,
+            1237,
+            62,
+            28
+          ],
+          "center": [
+            1081.0,
+            1251.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_017496",
+      "layout_id": "layout_005832",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_012808",
+      "layout_id": "layout_004270",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "260x441 m",
+          "bbox": [
+            518,
+            208,
+            58,
+            8
+          ],
+          "center": [
+            547.0,
+            212.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "m 322x528 m 343x528 m",
+          "bbox": [
+            159,
+            548,
+            313,
+            28
+          ],
+          "center": [
+            315.5,
+            562.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_019954",
+      "layout_id": "layout_006652",
+      "old_unlocalized_dummy_count": 6,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "315x358 m",
+          "bbox": [
+            737,
+            662,
+            59,
+            8
+          ],
+          "center": [
+            766.5,
+            666.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "395x283 m",
+          "bbox": [
+            329,
+            1010,
+            59,
+            8
+          ],
+          "center": [
+            358.5,
+            1014.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "305x252 m",
+          "bbox": [
+            1196,
+            1300,
+            59,
+            8
+          ],
+          "center": [
+            1225.5,
+            1304.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_002510",
+      "layout_id": "layout_000837",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "270x541 m",
+          "bbox": [
+            561,
+            1198,
+            58,
+            8
+          ],
+          "center": [
+            590.0,
+            1202.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "274x295 m",
+          "bbox": [
+            321,
+            1296,
+            62,
+            28
+          ],
+          "center": [
+            352.0,
+            1310.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "221x458m",
+          "bbox": [
+            915,
+            321,
+            58,
+            8
+          ],
+          "center": [
+            944.0,
+            325.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_002511",
+      "layout_id": "layout_000837",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_028288",
+      "layout_id": "layout_009430",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "221x430m",
+          "bbox": [
+            252,
+            235,
+            58,
+            8
+          ],
+          "center": [
+            281.0,
+            239.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "m 279x5.21m",
+          "bbox": [
+            522,
+            531,
+            155,
+            8
+          ],
+          "center": [
+            599.5,
+            535.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_028289",
+      "layout_id": "layout_009430",
+      "old_unlocalized_dummy_count": 6,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "370x430m",
+          "bbox": [
+            111,
+            235,
+            59,
+            8
+          ],
+          "center": [
+            140.5,
+            239.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "221x430m",
+          "bbox": [
+            252,
+            235,
+            58,
+            8
+          ],
+          "center": [
+            281.0,
+            239.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "418x521 m m",
+          "bbox": [
+            124,
+            520,
+            240,
+            28
+          ],
+          "center": [
+            244.0,
+            534.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_020674",
+      "layout_id": "layout_006892",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "349x577 m 323x577 m 948x577 m",
+          "bbox": [
+            193,
+            367,
+            898,
+            28
+          ],
+          "center": [
+            642.0,
+            381.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "299x379 m 231x379m",
+          "bbox": [
+            873,
+            738,
+            258,
+            8
+          ],
+          "center": [
+            1002.0,
+            742.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_020676",
+      "layout_id": "layout_006892",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "349x577 m",
+          "bbox": [
+            148,
+            293,
+            62,
+            28
+          ],
+          "center": [
+            179.0,
+            307.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "439x577 m",
+          "bbox": [
+            387,
+            293,
+            62,
+            28
+          ],
+          "center": [
+            418.0,
+            307.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "323x577 m",
+          "bbox": [
+            615,
+            304,
+            59,
+            8
+          ],
+          "center": [
+            644.5,
+            308.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_005311",
+      "layout_id": "layout_001771",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_005312",
+      "layout_id": "layout_001771",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_022910",
+      "layout_id": "layout_007637",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "471x459 286%459m 3.11x459m",
+          "bbox": [
+            227,
+            391,
+            882,
+            8
+          ],
+          "center": [
+            668.0,
+            395.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "2.46% 489 m 274x489m",
+          "bbox": [
+            148,
+            887,
+            240,
+            28
+          ],
+          "center": [
+            268.0,
+            901.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "471x268 m",
+          "bbox": [
+            995,
+            976,
+            58,
+            8
+          ],
+          "center": [
+            1024.0,
+            980.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_012400",
+      "layout_id": "layout_004134",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_012402",
+      "layout_id": "layout_004134",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "256x592m",
+          "bbox": [
+            124,
+            312,
+            58,
+            8
+          ],
+          "center": [
+            153.0,
+            316.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "361x378 m",
+          "bbox": [
+            808,
+            604,
+            62,
+            28
+          ],
+          "center": [
+            839.0,
+            618.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "5.08 x3.28 m",
+          "bbox": [
+            537,
+            804,
+            59,
+            28
+          ],
+          "center": [
+            566.5,
+            818.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "381x295 m",
+          "bbox": [
+            808,
+            825,
+            59,
+            8
+          ],
+          "center": [
+            837.5,
+            829.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_019617",
+      "layout_id": "layout_006539",
+      "old_unlocalized_dummy_count": 1,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_012357",
+      "layout_id": "layout_004119",
+      "old_unlocalized_dummy_count": 1,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "386x443 m",
+          "bbox": [
+            1015,
+            967,
+            62,
+            28
+          ],
+          "center": [
+            1046.0,
+            981.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_018043",
+      "layout_id": "layout_006015",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_006819",
+      "layout_id": "layout_002273",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_017372",
+      "layout_id": "layout_005791",
+      "old_unlocalized_dummy_count": 6,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "428x472m",
+          "bbox": [
+            533,
+            468,
+            58,
+            8
+          ],
+          "center": [
+            562.0,
+            472.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "376x735 m",
+          "bbox": [
+            223,
+            558,
+            62,
+            28
+          ],
+          "center": [
+            254.0,
+            572.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "804x264m",
+          "bbox": [
+            388,
+            1168,
+            59,
+            8
+          ],
+          "center": [
+            417.5,
+            1172.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_009347",
+      "layout_id": "layout_003116",
+      "old_unlocalized_dummy_count": 8,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "433x6.33m",
+          "bbox": [
+            1031,
+            419,
+            58,
+            8
+          ],
+          "center": [
+            1060.0,
+            423.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "478x5.45 m",
+          "bbox": [
+            468,
+            595,
+            62,
+            28
+          ],
+          "center": [
+            499.0,
+            609.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "478x323 m",
+          "bbox": [
+            468,
+            1281,
+            58,
+            8
+          ],
+          "center": [
+            497.0,
+            1285.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_026461",
+      "layout_id": "layout_008821",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "5.06 x2.28 m",
+          "bbox": [
+            74,
+            151,
+            59,
+            28
+          ],
+          "center": [
+            103.5,
+            165.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "321x5.19m",
+          "bbox": [
+            402,
+            200,
+            59,
+            8
+          ],
+          "center": [
+            431.5,
+            204.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "488x501m",
+          "bbox": [
+            381,
+            334,
+            58,
+            8
+          ],
+          "center": [
+            410.0,
+            338.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_026462",
+      "layout_id": "layout_008821",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 2,
+      "recovered_tokens": [
+        {
+          "text": "321x5.19m",
+          "bbox": [
+            836,
+            390,
+            59,
+            8
+          ],
+          "center": [
+            865.5,
+            394.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "273x291m 233x291m",
+          "bbox": [
+            116,
+            450,
+            191,
+            8
+          ],
+          "center": [
+            211.5,
+            454.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_028118",
+      "layout_id": "layout_009373",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "483x294m",
+          "bbox": [
+            384,
+            370,
+            58,
+            8
+          ],
+          "center": [
+            413.0,
+            374.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000710",
+      "layout_id": "layout_000237",
+      "old_unlocalized_dummy_count": 2,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "386x872m",
+          "bbox": [
+            413,
+            571,
+            59,
+            8
+          ],
+          "center": [
+            442.5,
+            575.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_000711",
+      "layout_id": "layout_000237",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_005423",
+      "layout_id": "layout_001808",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_005424",
+      "layout_id": "layout_001808",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "2.42x5.27 m",
+          "bbox": [
+            85,
+            268,
+            58,
+            8
+          ],
+          "center": [
+            114.0,
+            272.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "373x527 m",
+          "bbox": [
+            236,
+            268,
+            59,
+            8
+          ],
+          "center": [
+            265.5,
+            272.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "327x527 m 392x527 m",
+          "bbox": [
+            409,
+            257,
+            240,
+            28
+          ],
+          "center": [
+            529.0,
+            271.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "264x264m 264m",
+          "bbox": [
+            509,
+            585,
+            179,
+            8
+          ],
+          "center": [
+            598.5,
+            589.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_021031",
+      "layout_id": "layout_007011",
+      "old_unlocalized_dummy_count": 4,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "311x491 m",
+          "bbox": [
+            538,
+            495,
+            59,
+            8
+          ],
+          "center": [
+            567.5,
+            499.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "9324x527 m",
+          "bbox": [
+            833,
+            738,
+            62,
+            28
+          ],
+          "center": [
+            864.0,
+            752.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "304x478 m",
+          "bbox": [
+            823,
+            1215,
+            59,
+            8
+          ],
+          "center": [
+            852.5,
+            1219.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_025256",
+      "layout_id": "layout_008419",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 5,
+      "recovered_tokens": [
+        {
+          "text": "224x370m m",
+          "bbox": [
+            645,
+            181,
+            200,
+            28
+          ],
+          "center": [
+            745.0,
+            195.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "470x259m",
+          "bbox": [
+            717,
+            549,
+            58,
+            8
+          ],
+          "center": [
+            746.0,
+            553.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "3.96 x3.28 m",
+          "bbox": [
+            456,
+            710,
+            59,
+            28
+          ],
+          "center": [
+            485.5,
+            724.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "390x571 m 237x571m",
+          "bbox": [
+            225,
+            793,
+            476,
+            8
+          ],
+          "center": [
+            463.0,
+            797.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "3.96 m",
+          "bbox": [
+            456,
+            878,
+            59,
+            28
+          ],
+          "center": [
+            485.5,
+            892.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_026792",
+      "layout_id": "layout_008931",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "271x373m",
+          "bbox": [
+            423,
+            147,
+            58,
+            8
+          ],
+          "center": [
+            452.0,
+            151.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "374x223 m",
+          "bbox": [
+            211,
+            559,
+            62,
+            28
+          ],
+          "center": [
+            242.0,
+            573.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "374x233m",
+          "bbox": [
+            211,
+            672,
+            59,
+            8
+          ],
+          "center": [
+            240.5,
+            676.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_026793",
+      "layout_id": "layout_008931",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_028992",
+      "layout_id": "layout_009664",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "415x304m",
+          "bbox": [
+            423,
+            449,
+            58,
+            8
+          ],
+          "center": [
+            452.0,
+            453.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_019345",
+      "layout_id": "layout_006449",
+      "old_unlocalized_dummy_count": 3,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "272x259m",
+          "bbox": [
+            811,
+            622,
+            58,
+            8
+          ],
+          "center": [
+            840.0,
+            626.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "442x379m",
+          "bbox": [
+            503,
+            684,
+            58,
+            8
+          ],
+          "center": [
+            532.0,
+            688.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "OO 274x282m",
+          "bbox": [
+            385,
+            856,
+            485,
+            13
+          ],
+          "center": [
+            627.5,
+            862.5
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_026864",
+      "layout_id": "layout_008955",
+      "old_unlocalized_dummy_count": 7,
+      "new_recovered_bbox_count": 3,
+      "recovered_tokens": [
+        {
+          "text": "318x775 m",
+          "bbox": [
+            48,
+            189,
+            59,
+            8
+          ],
+          "center": [
+            77.5,
+            193.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "445 x6.30 m",
+          "bbox": [
+            145,
+            351,
+            58,
+            28
+          ],
+          "center": [
+            174.0,
+            365.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "370x892m",
+          "bbox": [
+            247,
+            203,
+            59,
+            8
+          ],
+          "center": [
+            276.5,
+            207.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_020596",
+      "layout_id": "layout_006866",
+      "old_unlocalized_dummy_count": 8,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "270x539 m",
+          "bbox": [
+            444,
+            220,
+            58,
+            8
+          ],
+          "center": [
+            473.0,
+            224.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "484x220",
+          "bbox": [
+            647,
+            587,
+            58,
+            8
+          ],
+          "center": [
+            676.0,
+            591.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "292x381m",
+          "bbox": [
+            583,
+            864,
+            58,
+            8
+          ],
+          "center": [
+            612.0,
+            868.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "252x381m",
+          "bbox": [
+            706,
+            864,
+            58,
+            8
+          ],
+          "center": [
+            735.0,
+            868.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_020597",
+      "layout_id": "layout_006866",
+      "old_unlocalized_dummy_count": 5,
+      "new_recovered_bbox_count": 4,
+      "recovered_tokens": [
+        {
+          "text": "152x292 507x284m",
+          "bbox": [
+            210,
+            109,
+            322,
+            28
+          ],
+          "center": [
+            371.0,
+            123.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "270x539 m",
+          "bbox": [
+            325,
+            167,
+            58,
+            8
+          ],
+          "center": [
+            354.0,
+            171.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "(352x247 m",
+          "bbox": [
+            202,
+            212,
+            63,
+            28
+          ],
+          "center": [
+            233.5,
+            226.0
+          ],
+          "method": "full_line_join"
+        },
+        {
+          "text": "252x381m",
+          "bbox": [
+            522,
+            651,
+            58,
+            8
+          ],
+          "center": [
+            551.0,
+            655.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    },
+    {
+      "image_id": "homeverse_018481",
+      "layout_id": "layout_006161",
+      "old_unlocalized_dummy_count": 0,
+      "new_recovered_bbox_count": 0,
+      "recovered_tokens": []
+    },
+    {
+      "image_id": "homeverse_010487",
+      "layout_id": "layout_003496",
+      "old_unlocalized_dummy_count": 1,
+      "new_recovered_bbox_count": 1,
+      "recovered_tokens": [
+        {
+          "text": "402x417 m",
+          "bbox": [
+            791,
+            776,
+            58,
+            8
+          ],
+          "center": [
+            820.0,
+            780.0
+          ],
+          "method": "full_line_join"
+        }
+      ]
+    }
+  ]
+}

@@ -179,8 +179,8 @@ def evaluate_wall_segment_association(
     """
     cx, cy = annotation["center"]
     parsed = annotation["parsed_dims"]
-    printed_dim1_m = parsed.get("dim1_m")
-    printed_dim2_m = parsed.get("dim2_m")
+    printed_dim1_m = parsed.get("width_m") or parsed.get("dim1_m")
+    printed_dim2_m = parsed.get("length_m") or parsed.get("dim2_m")
 
     # Decompose room polygon into wall segments
     n_pts = len(room_polygon_px)
@@ -214,3 +214,185 @@ def evaluate_wall_segment_association(
         "closest_wall_err_pct": closest_wall["min_error_pct"] if closest_wall else 999.0,
         "top3_walls": wall_matches[:3],
     }
+
+
+def run_full_diagnostic(max_images: Optional[int] = None):
+    print("=" * 80)
+    print("G5-OCR-v3 DESIGN PHASE: TOKEN LOCALIZATION DIAGNOSTIC")
+    print("=" * 80)
+    t0 = time.time()
+
+    json_path = repo_root / "HomeVerse-Dataset/annotations/test.json"
+    te_lids, test_samples, _ = select_balanced_split(str(json_path), 75)
+    g1_samples = [s for s in test_samples if s.get("scale_mode") == "dimensioned"]
+    if max_images is not None and max_images > 0:
+        g1_samples = g1_samples[:max_images]
+
+    n_images = len(g1_samples)
+    print(f"Executing diagnostic across {n_images} Group 1 Dimensioned test images...\n")
+
+    total_old_dummy_tokens = 0
+    total_new_recovered_tokens = 0
+    total_raw_word_boxes = 0
+
+    reconstructed_methods = {"full_line_join": 0, "ngram_window": 0}
+    wall_association_errors = []
+    centroid_association_errors = []
+
+    per_image_diagnostics = []
+
+    for b_idx, sample in enumerate(g1_samples):
+        img_id = sample.get("image_id", f"img_{b_idx}")
+        layout_id = sample.get("layout_id", f"layout_{b_idx}")
+        img_rel = sample.get("image_path", "")
+        img_path = repo_root / "HomeVerse-Dataset" / img_rel
+
+        if not img_path.exists():
+            continue
+
+        gt_ppm = sample.get("pixels_per_meter")
+        raw_gt_ppm = sample.get("raw_pixels_per_meter", 68.0)
+        effective_ppm = gt_ppm if gt_ppm is not None else raw_gt_ppm
+
+        img = cv2.imread(str(img_path))
+        if img is None:
+            continue
+        h, w = img.shape[:2]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # 1. Run old image_to_string fallback
+        full_text = pytesseract.image_to_string(gray)
+        old_dummy_list = []
+        for line in full_text.splitlines():
+            line_str = line.strip()
+            parsed = parse_dimension_annotation(line_str)
+            if parsed is not None:
+                old_dummy_list.append(line_str)
+        total_old_dummy_tokens += len(old_dummy_list)
+
+        # 2. Run new hierarchical token extraction
+        recon = extract_hierarchical_tokens(gray)
+        rec_tokens = recon["recovered_tokens"]
+        word_boxes = recon["word_boxes"]
+
+        total_new_recovered_tokens += len(rec_tokens)
+        total_raw_word_boxes += len(word_boxes)
+
+        for rt in rec_tokens:
+            meth = rt.get("method", "other")
+            if meth == "full_line_join":
+                reconstructed_methods["full_line_join"] += 1
+            else:
+                reconstructed_methods["ngram_window"] += 1
+
+        # 3. Wall segment vs Centroid association test on GT rooms
+        gt_rooms = sample.get("rooms", [])
+        image_wall_evals = []
+
+        for rt in rec_tokens:
+            cx, cy = rt["center"]
+            # Find closest room in native pixel coordinates
+            best_room = None
+            best_poly_px = None
+            min_c_dist = float("inf")
+
+            for r in gt_rooms:
+                raw_poly = r.get("polygon", [])
+                if len(raw_poly) >= 3:
+                    # Convert normalized [0, 1] polygon to native image pixels
+                    poly_px = [[pt[0] * w, pt[1] * h] for pt in raw_poly]
+                    pts = np.array(poly_px)
+                    rcx, rcy = pts[:, 0].mean(), pts[:, 1].mean()
+                    d = np.hypot(cx - rcx, cy - rcy)
+                    if d < min_c_dist:
+                        min_c_dist = d
+                        best_room = r
+                        best_poly_px = poly_px
+
+            if best_room and best_poly_px and len(best_poly_px) >= 3:
+                # Wall segment association
+                w_assoc = evaluate_wall_segment_association(rt, best_poly_px, effective_ppm)
+                image_wall_evals.append(w_assoc)
+                wall_association_errors.append(w_assoc["closest_wall_err_pct"])
+
+                # Centroid / MABR association baseline
+                mabr = calculate_mabr_dimensions(best_poly_px)
+                mabr_w_m = mabr["width_px"] / max(1e-4, effective_ppm)
+                mabr_l_m = mabr["length_px"] / max(1e-4, effective_ppm)
+                p1 = rt["parsed_dims"].get("width_m") or rt["parsed_dims"].get("dim1_m", 0.0)
+                p2 = rt["parsed_dims"].get("length_m") or rt["parsed_dims"].get("dim2_m", 0.0)
+                if p1 > 0 and p2 > 0:
+                    # Match oriented box dimensions to parsed dimensions (allow min/max orientation alignment)
+                    pred_short = min(mabr_w_m, mabr_l_m)
+                    pred_long = max(mabr_w_m, mabr_l_m)
+                    true_short = min(p1, p2)
+                    true_long = max(p1, p2)
+                    c_err_short = abs(pred_short - true_short) / true_short
+                    c_err_long = abs(pred_long - true_long) / true_long
+                    c_err_pct = (c_err_short + c_err_long) / 2.0 * 100.0
+                    centroid_association_errors.append(c_err_pct)
+
+        per_image_diagnostics.append({
+            "image_id": img_id,
+            "layout_id": layout_id,
+            "old_unlocalized_dummy_count": len(old_dummy_list),
+            "new_recovered_bbox_count": len(rec_tokens),
+            "recovered_tokens": [
+                {"text": rt["raw_text"], "bbox": rt["bbox"], "center": rt["center"], "method": rt["method"]}
+                for rt in rec_tokens
+            ],
+        })
+
+        if (b_idx + 1) % 15 == 0 or (b_idx + 1) == n_images:
+            print(f"Processed {b_idx + 1}/{n_images} images ({time.time() - t0:.1f}s elapsed)...", flush=True)
+
+    recovery_rate_pct = (total_new_recovered_tokens / max(1, total_old_dummy_tokens)) * 100.0
+    med_wall_err = float(np.median(wall_association_errors)) if wall_association_errors else 0.0
+    med_cent_err = float(np.median(centroid_association_errors)) if centroid_association_errors else 0.0
+
+    output_summary = {
+        "diagnostic_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total_images_audited": n_images,
+        "total_raw_word_boxes_extracted": total_raw_word_boxes,
+        "old_unlocalized_dummy_tokens": total_old_dummy_tokens,
+        "new_recovered_tokens_with_bboxes": total_new_recovered_tokens,
+        "token_recovery_rate_pct": round(recovery_rate_pct, 2),
+        "reconstruction_methods_breakdown": reconstructed_methods,
+        "association_comparison": {
+            "wall_segment_association_median_error_pct": round(med_wall_err, 2),
+            "centroid_mabr_association_median_error_pct": round(med_cent_err, 2),
+            "error_reduction_factor": round((med_cent_err - med_wall_err) / max(1e-4, med_cent_err) * 100.0, 1),
+            "sample_count": len(wall_association_errors),
+        },
+        "per_image_diagnostics": per_image_diagnostics,
+    }
+
+    out_file = repo_root / "evaluation_results/ocr_token_localization_diagnostic.json"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(output_summary, f, indent=2)
+
+    print("\n" + "=" * 80)
+    print("G5-OCR-v3 TOKEN LOCALIZATION DIAGNOSTIC RESULTS")
+    print("=" * 80)
+    print(f"Total Group 1 Images Audited:          {n_images}")
+    print(f"Total Raw Word Boxes Extracted:        {total_raw_word_boxes}")
+    print(f"Old Fallback Dummy Tokens (Dropped):   {total_old_dummy_tokens}")
+    print(f"New Reconstructed Tokens with BBoxes:  {total_new_recovered_tokens}")
+    print(f"Token Recovery Efficiency:             {recovery_rate_pct:.2f}%")
+    print(f"Reconstruction Methods:")
+    print(f"  - Full Line Join:                    {reconstructed_methods['full_line_join']}")
+    print(f"  - N-gram Sliding Window:             {reconstructed_methods['ngram_window']}")
+    print(f"Association Diagnostic on Irregular / Complex Rooms:")
+    print(f"  - Wall-Segment Association Error:    {med_wall_err:.2f}% (Median)")
+    print(f"  - Centroid / MABR Matching Error:    {med_cent_err:.2f}% (Median)")
+    print(f"  - Spatial Error Reduction:           {output_summary['association_comparison']['error_reduction_factor']}%")
+    print(f"Saved complete diagnostic to: {out_file}")
+    print("=" * 80)
+
+    return output_summary
+
+
+if __name__ == "__main__":
+    run_full_diagnostic()
+
